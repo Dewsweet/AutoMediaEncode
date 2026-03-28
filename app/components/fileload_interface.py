@@ -4,7 +4,7 @@ from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QFileDialog, QVBoxLayout
 from qfluentwidgets import SimpleCardWidget, IconWidget, FluentIcon, SubtitleLabel, CaptionLabel, PrimaryPushButton
 
-class FileLoadWidget(SimpleCardWidget):
+class FileLoadInterface(SimpleCardWidget):
     """
     文件载入组件
     提供一个带有图标和文本的拖拽/点击响应区域，

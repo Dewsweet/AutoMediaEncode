@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon
 from qfluentwidgets import FluentWindow, NavigationItemPosition
 from qfluentwidgets import FluentIcon as FIF
 
-from .mediaif_interface import MediaifInterface
+from .mediainfo_interface import MediaifInterface
 from .setting_interface import SettingInterface
 
 class MainWindow(FluentWindow):

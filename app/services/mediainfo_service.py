@@ -1,5 +1,4 @@
-import subprocess
-import json
+from pymediainfo import MediaInfo
 import math
 
 class MediaInfoService:
@@ -7,6 +6,10 @@ class MediaInfoService:
     处理与 MediaInfo CLI 工具交互的逻辑类
     提取出与界面无关的业务逻辑
     """
+    def __init__(self):
+        # 缓存解析过的文件避免重复加载
+        self._cache = {}
+
     @staticmethod
     def format_size(size_bytes): 
         if not size_bytes: return "0 B"
@@ -69,128 +72,185 @@ class MediaInfoService:
         except:
             return dar
 
-    @staticmethod
-    def _parse_basic_markdown(json_output: str) -> str: # 从 mediainfo 的 JSON 输出中提取关键信息，并格式化为 Markdown 文本
-        try:
-            data = json.loads(json_output)
-            tracks = data.get("media", {}).get("track", []) 
-            
-            general = {} 
-            videos = []
-            audios = []
-            texts = []
-            
-            for t in tracks:
-                t_type = t.get("@type")
-                if t_type == "General": general = t
-                elif t_type == "Video": videos.append(t)
-                elif t_type == "Audio": audios.append(t)
-                elif t_type == "Text": texts.append(t)
-            
-            md_lines = ["### 容器和一般信息"]
-            
-            container = general.get("Format", "未知格式") 
-            size = MediaInfoService.format_size(general.get("FileSize"))
-            duration = MediaInfoService.format_duration(general.get("Duration"))
-            overall_br = MediaInfoService.format_bitrate(general.get("OverallBitRate"))    
-            
-            md_lines.append(f"**{container}** : {size}, {duration}, {overall_br}   ")
-            
-            if videos:
-                v_codecs = " | ".join([v.get("Format", "未知") for v in videos])
-                md_lines.append(f"{len(videos)}个视频流: {v_codecs}   ")
-            if audios:
-                a_codecs = " | ".join([a.get("Format", "未知") for a in audios[:2]])
-                if len(audios) > 2: a_codecs += " | ..."
-                md_lines.append(f"{len(audios)}个音频流: {a_codecs}   ")
-            if texts:
-                t_codecs = " | ".join([t.get("Format", "未知") for t in texts[:3]])
-                if len(texts) > 3: t_codecs += " | ..."
-                md_lines.append(f"{len(texts)}个字幕流: {t_codecs}    ")
-            
-            md_lines.append("")
-            
-            for i, v in enumerate(videos, 1):
-                md_lines.append(f"#### 视频 {i}")
-                md_lines.append(f"-视频码率: {MediaInfoService.format_bitrate(v.get('BitRate'))}   ")
-                dar_str = MediaInfoService.format_displayAspectRatio(v.get("DisplayAspectRatio"))        
-                md_lines.append(f"-分辨率: {v.get('Width', '?')} x {v.get('Height', '?')} ({dar_str})   ")
-                md_lines.append(f"-帧率: {v.get('FrameRate', '?')} FPS   ")
-                md_lines.append(f"-位深: {v.get('BitDepth', '?')} bit   ")
-                md_lines.append(f"-色彩抽样: {v.get('ColorSpace', '?')}:{v.get('ChromaSubsampling', '?')}   ")
-                md_lines.append(f"-编码格式: {v.get('Format', '?')} {v.get('Format_Profile', '')}   ".strip())
-                md_lines.append("")
-                
-            for i, a in enumerate(audios[:2], 1):
-                md_lines.append(f"#### 音频 {i}")
-                md_lines.append(f"-音频码率: {MediaInfoService.format_bitrate(a.get('BitRate'))}   ")
-                md_lines.append(f"-采样率: {a.get('SamplingRate', '?')} Hz   ")
-                md_lines.append(f"-声道数: {a.get('Channels', '?')} ch   ")
-                md_lines.append(f"-编码格式: {a.get('Format', '?')} {a.get('Format_AdditionalFeatures', '')}   ".strip())
-                md_lines.append("")
-                
-            for i, t in enumerate(texts[:3], 1):
-                md_lines.append(f"#### 字幕 {i}")
-                md_lines.append(f"-字幕类型: {t.get('Format', '未知')}   ")
-                md_lines.append("")
-            
-            return "\n".join(md_lines) 
-        except Exception as e:
-            return f"解析基础信息时出错:\n{e}\n\n{json_output}"
 
-    @staticmethod
-    def _clean_raw_text(raw_text: str) -> str:
-        cleaned_lines = []
-        for line in raw_text.splitlines(): 
-            # 只有包含冒号的行才当做 Key-Value 处理
-            if ':' in line:
-                # 只针对第一个冒号进行切割，防止拆坏文件路径(比如 C:\xxx)或时间(12:30:00)
-                key, val = line.split(':', 1)
-                # 清除左右两端空格，重新拼接紧凑格式
-                cleaned_lines.append(f"{key.strip()}: {val.strip()}")
-            else:
-                # 对没有冒号的普通行(如 Video, Audio 标题)也去掉行尾的冗余换行空格
-                cleaned_lines.append(line.strip())
-        
-        return "\n".join(cleaned_lines)
-
-    @staticmethod
-    def get_info(file_path: str, basic_mode: bool = True) -> str: 
+    def get_info(self, file_path: str) -> tuple[dict, str]: 
         """
         调用 mediainfo CLI 获取媒体信息
         参数:
         file_path: 媒体文件路径
-        basic_mode: 是否只获取基础信息(Markdown), 还是完整信息(Json_raw)
+        返回: 
+        (基础信息字典, 完整长文本信息)
         """
-        cmd = ["mediainfo"]
-        if basic_mode:
-            cmd.append("--Output=JSON")
+        if getattr(self, "_cache", None) is not None and file_path in self._cache:
+            return self._cache[file_path]
+
+        media_info = MediaInfo.parse(file_path)
+
+        # 获取需要组装的信息参数
+        general = media_info.general_tracks[0] if media_info.general_tracks else None
+        videos = media_info.video_tracks
+        audios = media_info.audio_tracks
+        texts = media_info.text_tracks
+        iamges = media_info.image_tracks
+
+        general_info = {}
+        if general:
+            general_info = {
+                "fileName": general.file_name,
+                "fileSize": MediaInfoService.format_size(general.file_size) if general.file_size else "未知",
+                "format": general.format,
+                "duration": MediaInfoService.format_duration(general.duration) if general.duration else "未知",
+                "bitRate": MediaInfoService.format_bitrate(general.overall_bit_rate) if general.overall_bit_rate else "未知",
+            }
+
+        video_info = []
+        for v in videos:
+            video_info.append({
+                "language": v.language,
+                "format": v.format,
+                "formatProfile": v.format_profile,
+                "bitRate": MediaInfoService.format_bitrate(v.bit_rate) if v.bit_rate else "未知",
+                "width": v.width,
+                "height": v.height,
+                "displayAspectRatio": MediaInfoService.format_displayAspectRatio(v.display_aspect_ratio),
+                "frameRate": f"{v.frame_rate} FPS" if v.frame_rate else "未知",
+                "bitDepth": f"{v.bit_depth} bit" if v.bit_depth else "未知",
+                "colorSpace": v.color_space,
+                "chromaSubsampling": v.chroma_subsampling,
+            })
+        audio_info = []
+        for a in audios:
+            audio_info.append({
+                "language": a.language,
+                "format": a.format,
+                "formatProfile": a.format_profile,
+                "bitRate": MediaInfoService.format_bitrate(a.bit_rate) if a.bit_rate else "未知",
+                "samplingRate": f"{a.sampling_rate} Hz" if a.sampling_rate else "未知",
+                "channels": f"{a.channel_s} ch" if getattr(a, "channel_s", None) else (f"{a.channels} ch" if getattr(a, "channels", None) else "未知"),
+            })
+        text_info = []
+        for t in texts:
+            text_info.append({
+                "format": t.format,
+                "language": t.language,
+                "title": t.title,
+            })
+        image_info = []
+        for i in iamges:
+            image_info.append({
+                "format": i.format,
+                "width": i.width,
+                "height": i.height,
+            })
+
+        base_info = {
+            "general": general_info,
+            "video": video_info,
+            "audio": audio_info,
+            "text": text_info,
+            "image": image_info,
+        }
         
-        cmd.append(file_path)
-
+        # 尝试使用输出文本格式获取全部信息
         try:
-            import sys 
-            creationflags = 0
-            if sys.platform == "win32":
-                creationflags = subprocess.CREATE_NO_WINDOW 
+            full_info = MediaInfo.parse(file_path, output="Text", full=False)
+        except:
+            full_info = str(media_info.to_data())
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                creationflags=creationflags
-            )
-            if result.returncode == 0:
-                raw_out = result.stdout.strip() 
-                if basic_mode:
-                    return MediaInfoService._parse_basic_markdown(raw_out)
-                else:
-                    return MediaInfoService._clean_raw_text(raw_out)
+        if getattr(self, "_cache", None) is not None:
+            self._cache[file_path] = (base_info, full_info)
+
+        return base_info, full_info
+
+    def view_info(self, file_path: str) -> str:
+        """组装并返回基础信息的 Markdown 文本输出"""
+        base_info, _ = self.get_info(file_path)
+        
+
+        general = base_info.get("general", {})
+        audio = base_info.get("audio", [])
+        video = base_info.get("video", [])
+        image = base_info.get("image", [])
+        text = base_info.get("text", [])
+
+        md_lines= ["### 基础信息"]
+        if audio and not video:
+            md_lines.append(f"**{general.get('format', '未知格式')}** ; {general.get('fileSize')};  {general.get('duration')}; {general.get('bitRate')}   ")
+        elif image and not video and not audio:
+            md_lines.append(f"**格式: {general.get('format', '未知格式')}** ; {general.get('fileSize')}")
+        elif general:
+            md_lines.append(f"**{general.get('format', '未知格式')}** ; {general.get('fileSize', '')};  {general.get('duration', '')}; {general.get('bitRate', '')}   ")
+        md_lines.append("   ")
+
+        if video:
+            v_codecs = " | ".join([v.get("format", "未知") for v in video])
+            md_lines.append(f"**{len(video)}** 个视频流: {v_codecs}   ")
+        if audio:
+            a_codecs = " | ".join([a.get("format", "未知") for a in audio])
+            md_lines.append(f"**{len(audio)}** 个音频流: {a_codecs}   ")
+        if text:
+            t_formats = " | ".join([t.get("format", "未知") for t in text])
+            md_lines.append(f"**{len(text)}** 个字幕流: {t_formats}   ")
+        md_lines.append("   ")
+
+        for i, v in enumerate(video, 1):
+            md_lines.append(f"#### 视频 {i}")
+            if v.get("language"): md_lines.append(f"-语言: {v.get('language')}   ")
+            md_lines.append(f"-编码格式: {v.get('format', '未知')} ({v.get('formatProfile', '')})    ")
+            md_lines.append(f"-分辨率: {v.get('width', '?')} x {v.get('height', '?')} ({v.get('displayAspectRatio')})    ")
+            md_lines.append(f"-帧率: {v.get('frameRate')}    ")
+            md_lines.append(f"-视频码率: {v.get('bitRate')}    ")
+            md_lines.append(f"-位深: {v.get('bitDepth')}    ")
+            md_lines.append(f"-色彩抽样: {v.get('colorSpace', '?')}{v.get('chromaSubsampling', '?')}    ")
+            md_lines.append("")
+
+        for i, a in enumerate(audio[:2], 1):
+            md_lines.append(f"#### 音频 {i}")
+            if a.get("language"): md_lines.append(f"-语言: {a.get('language')}   ")
+            md_lines.append(f"-编码格式: {a.get('format', '未知')}    ")
+            md_lines.append(f"-音频码率: {a.get('bitRate')}   ")
+            md_lines.append(f"-采样率: {a.get('samplingRate')}   ")
+            md_lines.append(f"-声道数: {a.get('channels')}   ")
+            md_lines.append("")
+
+        for i, t in enumerate(text[:2], 1):
+            md_lines.append(f"#### 字幕 {i}")
+            if t.get("language"): md_lines.append(f"-语言: {t.get('language')}   ")
+            md_lines.append(f"-类型: {t.get('format', '未知')}   ")
+            md_lines.append("")
+
+        for i, img in enumerate(image, 1):
+            md_lines.append(f"#### 图片 {i}")
+            md_lines.append(f"-格式: {img.get('format', '未知')}   ")
+            ratio = int(img.get('width', 0)) / int(img.get('height', 1)) if img.get('width') and img.get('height') else ""
+            md_lines.append(f"-分辨率: {img.get('width', '?')} x {img.get('height', '?')} ({round(ratio, 2)})   ")
+            md_lines.append("")
+
+        return "\n".join(md_lines)
+
+
+    def full_info(self, file_path: str) -> str:
+        """组装并返回完整的原始媒体文本（便于作为完整信息查看）"""
+        _, full_text = self.get_info(file_path)
+
+        cleaned_lines = []
+        for line in str(full_text).splitlines():
+            # 过滤多余的空行，只在段落间保留单行空行
+            if not line.strip():
+                if cleaned_lines and cleaned_lines[-1] != "":
+                    cleaned_lines.append("")
+                continue
+
+            if ':' in line:
+                key, val = line.split(':', 1)
+                cleaned_lines.append(f"{key.strip()}: {val.strip()}")
             else:
-                return f"Error executing mediainfo:\n{result.stderr}"
-            
-        except FileNotFoundError:
-            return "Error: 找不到 mediainfo 命令。请确保它已被加入到系统环境变量，或在设置页配置。"
-        except Exception as e:
-            return f"An error occurred: {str(e)}"
+                cleaned_lines.append(line.strip())
+
+        return "\n".join(cleaned_lines).strip()
+
+        
+
+
+
+        
