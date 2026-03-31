@@ -7,6 +7,7 @@ from qfluentwidgets import FluentIcon as FIF, qconfig, isDarkTheme
 
 from .mediainfo_interface import MediaifInterface
 from .setting_interface import SettingInterface
+from .recode_interface import RecodeInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
 
 class MainWindow(FluentWindow):
@@ -18,6 +19,7 @@ class MainWindow(FluentWindow):
         # 创建子页面实例
         self.mediaInfoInterface = MediaifInterface(self)
         self.settingInterface = SettingInterface(self)
+        self.recodeInterface = RecodeInterface(self)
         self.initNavigation()
         
 
@@ -97,6 +99,7 @@ class MainWindow(FluentWindow):
     def initNavigation(self):
         # 添加子页面到侧边导航栏
         self.addSubInterface(self.mediaInfoInterface, FIF.INFO, 'Media Info')
+        self.addSubInterface(self.recodeInterface, FIF.MEDIA, 'Recode')
 
 
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Setting', NavigationItemPosition.BOTTOM)
