@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+*.ui
+todo.md
+*.svg
+/app/tools
+/tools
+/app/config

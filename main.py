@@ -3,6 +3,8 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+from qfluentwidgets import FluentTranslator
+
 from app.view.main_window import MainWindow
 
 if __name__ == '__main__':
@@ -11,8 +13,10 @@ if __name__ == '__main__':
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     
     app = QApplication(sys.argv)
+
+    translation = FluentTranslator()
+    app.installTranslator(translation)
     
-    # 创建并显示主窗口
     w = MainWindow()
     w.show()
     

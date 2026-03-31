@@ -1,6 +1,8 @@
 from pymediainfo import MediaInfo
 import math
 
+from app.services.tool_service import ToolService
+
 class MediaInfoService:
     """
     处理与 MediaInfo CLI 工具交互的逻辑类
@@ -78,13 +80,15 @@ class MediaInfoService:
         调用 mediainfo CLI 获取媒体信息
         参数:
         file_path: 媒体文件路径
-        返回: 
-        (基础信息字典, 完整长文本信息)
         """
         if getattr(self, "_cache", None) is not None and file_path in self._cache:
             return self._cache[file_path]
 
-        media_info = MediaInfo.parse(file_path)
+        try:
+            mi_path = ToolService.get_tool_path("mediainfo")
+            media_info = MediaInfo.parse(file_path, library_file=mi_path)
+        except:
+            base_info=None
 
         # 获取需要组装的信息参数
         general = media_info.general_tracks[0] if media_info.general_tracks else None
@@ -151,11 +155,10 @@ class MediaInfoService:
             "image": image_info,
         }
         
-        # 尝试使用输出文本格式获取全部信息
         try:
-            full_info = MediaInfo.parse(file_path, output="Text", full=False)
+            full_info = MediaInfo.parse(file_path, output="Text", full=False, library_file=mi_path)
         except:
-            full_info = str(media_info.to_data())
+            full_info=None
 
         if getattr(self, "_cache", None) is not None:
             self._cache[file_path] = (base_info, full_info)
@@ -165,6 +168,8 @@ class MediaInfoService:
     def view_info(self, file_path: str) -> str:
         """组装并返回基础信息的 Markdown 文本输出"""
         base_info, _ = self.get_info(file_path)
+        if base_info is None:
+            return "MediaInfo 解析失败，无法获取媒体信息。"
         
 
         general = base_info.get("general", {})
@@ -232,6 +237,8 @@ class MediaInfoService:
     def full_info(self, file_path: str) -> str:
         """组装并返回完整的原始媒体文本（便于作为完整信息查看）"""
         _, full_text = self.get_info(file_path)
+        if full_text is None:
+            return "MediaInfo 解析失败，无法获取完整媒体信息。"
 
         cleaned_lines = []
         for line in str(full_text).splitlines():
@@ -248,9 +255,3 @@ class MediaInfoService:
                 cleaned_lines.append(line.strip())
 
         return "\n".join(cleaned_lines).strip()
-
-        
-
-
-
-        

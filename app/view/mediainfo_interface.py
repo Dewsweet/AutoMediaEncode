@@ -43,7 +43,8 @@ class MediaifInterface(QWidget):
         # 用 QStackedWidget 来支持页面的切换
         self.vBoxLayout = QVBoxLayout(self)
         self.stackedWidget = QStackedWidget(self)
-        self.vBoxLayout.addWidget(self.stackedWidget) 
+        self.vBoxLayout.addWidget(self.stackedWidget)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self.loadFilesPage()
         self._hearderArea()
@@ -58,6 +59,7 @@ class MediaifInterface(QWidget):
     def _hearderArea(self):
         self.headerBox = QWidget(self)
         self.headerLayout = QVBoxLayout(self.headerBox)
+        self.headerLayout.setContentsMargins(0, 0, 0, 0)
 
         self.buttonHBoxLayout = QHBoxLayout()
 
@@ -95,7 +97,7 @@ class MediaifInterface(QWidget):
         self.mainLayout.addWidget(self.headerBox)
         self.mainLayout.addWidget(self.inputFilesList)
         self.mainLayout.addWidget(self.textEdit)
-        self.mainLayout.setContentsMargins(20, 20, 20, 20)
+        self.mainLayout.setContentsMargins(30, 20, 30, 20)
         
         # 页面放进索引
         self.stackedWidget.addWidget(self.loadPage) # index 0
