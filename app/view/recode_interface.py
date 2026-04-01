@@ -1,4 +1,5 @@
-﻿from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QFileDialog, QApplication
+﻿from pathlib import Path
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QFileDialog, QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QColor
 
@@ -124,13 +125,14 @@ class RecodeInterface(QWidget):
         self.setLayout(self.mainLayout)
 
     def _conect_signal(self):
+        # 展示预览信息
+        self.inputFilesList.fileClicked.connect(lambda file_path: self.fileInfoView.display_view_info(file_path))
+
         self.videoParam.using_preset_switch.checkedChanged.connect(lambda state: self.update_videoParam_layout())
 
         self.reLoad_button.clicked.connect(self.open_file_dialog)
         self.reLoad_button.setContextMenuPolicy(Qt.CustomContextMenu)
         self.reLoad_button.customContextMenuRequested.connect(self.inject_test_files)
-        
-        self.inputFilesList.fileClicked.connect(self.display_mini_info)
         
         # 调试用：绑定组装测试打印到 开始转码 按钮
         self.start_recode_button.clicked.connect(self._test_builder_output)
@@ -279,27 +281,6 @@ class RecodeInterface(QWidget):
                         print(f">> CMD (Video Pass {i+1}): {' '.join(cmd)}")
 
         print("============================\n\n")
-
-    def display_mini_info(self, file_path):
-        self.fileInfoView.update_info("点击文件读取信息...")
-        QApplication.processEvents() # 强制刷新 UI 渲染文字
-        
-        info_text = MediaInfoService.get_info(file_path)
-        self.fileInfoView.update_info(info_text)
-
-        # 尝试提取图片分辨率以支持“原始比例”计算
-        try:
-            raw_data = MediaInfoService.get_probe_data(file_path)
-            tracks = raw_data.get("media", {}).get("track", [])
-            for t in tracks:
-                if t.get("@type") == "Image" or t.get("@type") == "Video":
-                    w = t.get("Width")
-                    h = t.get("Height")
-                    if w and h:
-                        self.imageParam.current_resolution = (int(w), int(h))
-                        break
-        except Exception:
-            pass
 
     def open_file_dialog(self):
         files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", "所有文件 (*)")

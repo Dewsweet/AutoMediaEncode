@@ -31,3 +31,8 @@ class PathService:
     def get_common_dir() -> Path:
         """获取 common 目录的路径"""
         return PathService.get_app_dir() / "common"
+    
+    @staticmethod
+    def get_resource_dir() -> Path:
+        """获取 resource 目录的路径"""
+        return PathService.get_app_dir() / "resource"

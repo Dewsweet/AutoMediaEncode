@@ -1,24 +1,24 @@
-﻿import math
+﻿from pathlib import Path
+import json
+import os
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QApplication, QListWidgetItem, QFrame, QButtonGroup, QGroupBox, QSlider, QFileDialog, QTreeWidgetItem, QTreeWidgetItemIterator
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QButtonGroup, QGroupBox, QFileDialog, QTreeWidgetItem, QTreeWidgetItemIterator
 
 from qfluentwidgets import (HeaderCardWidget, CardWidget, FlowLayout, TableWidget, ListWidget, TreeWidget, 
                             TextEdit, BodyLabel, ComboBox, SwitchButton, RadioButton, PushButton, Slider, StrongBodyLabel, SpinBox, DoubleSpinBox, PrimaryPushButton, CheckBox, EditableComboBox, LineEdit, RoundMenu, Action)
+
 from ..services.hw_detect_service import hw_detect_service
+from ..services.mediainfo_service import MediaInfoService
+from ..common.style_sheet import StyleSheet
 
 class Frame(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
-
         self.setObjectName("frame")
-        self.setStyleSheet("""
-        #frame {   
-            border: 1px solid rgba(0, 0, 0, 15);
-            border-radius: 5px;
-            background-color: transparent;
-                           }""")
+        StyleSheet.RECODE_CARD_INTERFACE.apply(self)
+
     def addWidget(self, widget):
         self.vBoxLayout.addWidget(widget)
 
@@ -34,9 +34,7 @@ class InputFilesCard(HeaderCardWidget):
 
         self.frame = Frame(self)
         self.input_files_fist = TreeWidget()
-        
-        self.input_files_fist.setHeaderHidden(True)  # 隐藏表头
-        
+        self.input_files_fist.setHeaderHidden(True)
         # 允许右键菜单
         self.input_files_fist.setContextMenuPolicy(Qt.CustomContextMenu)
 
@@ -62,8 +60,7 @@ class InputFilesCard(HeaderCardWidget):
         if len(present_types) == 1:
             file_type = present_types[0]
             for file_path in classified_dict[file_type]:
-                import os
-                filename = os.path.basename(file_path)
+                filename = Path(file_path).stem
                 item = QTreeWidgetItem([filename])
                 item.setData(0, Qt.UserRole, file_path) # 存储完整路径留作后用
                 item.setCheckState(0, Qt.Checked)
@@ -76,8 +73,7 @@ class InputFilesCard(HeaderCardWidget):
                     parent_item.setCheckState(0, Qt.Checked)
                     
                     for file_path in classified_dict[t_key]:
-                        import os
-                        filename = os.path.basename(file_path)
+                        filename = Path(file_path).stem
                         child_item = QTreeWidgetItem([filename])
                         child_item.setData(0, Qt.UserRole, file_path)
                         child_item.setCheckState(0, Qt.Checked)
@@ -95,15 +91,15 @@ class InputFilesCard(HeaderCardWidget):
         self.input_files_fist.itemClicked.connect(self.on_item_clicked)
 
     def on_item_clicked(self, item, column):
-        file_path = item.data(0, Qt.UserRole)
+        file_path = item.data(0, Qt.UserRole) 
         if file_path:
             self.fileClicked.emit(file_path)
 
     def get_all_file_paths(self):
         """遍历并返回树中所有有效并被选中的文件路径（叶子节点）"""
         paths = []
-        iterator = QTreeWidgetItemIterator(self.input_files_fist)
-        while iterator.value():
+        iterator = QTreeWidgetItemIterator(self.input_files_fist) 
+        while iterator.value(): 
             item = iterator.value()
             # 只获取勾选的项目
             if item.checkState(0) == Qt.Checked:
@@ -111,11 +107,11 @@ class InputFilesCard(HeaderCardWidget):
                 # data(0, Qt.UserRole) 存储的是完整路径，如果为空通常是父分类节点
                 if file_path:
                     paths.append(file_path)
-            iterator += 1
+            iterator += 1 
         return paths
 
     def show_context_menu(self, pos):
-        # 创建右键菜单
+        """右键菜单"""
         menu = RoundMenu(parent=self)
         
         select_all_action = Action('全选', triggered=self.select_all_items)
@@ -143,7 +139,7 @@ class InputFilesCard(HeaderCardWidget):
         self.input_files_fist.blockSignals(False)
 
     def handle_item_changed(self, item, column):
-        if item.childCount() > 0: # 只有父节点才有子节点
+        if item.childCount() > 0: 
             state = item.checkState(column)
             for i in range(item.childCount()):
                 child = item.child(i)
@@ -155,25 +151,31 @@ class FileInfoViewCard(HeaderCardWidget):
         self.setTitle('信息预览')
 
         self.info_view = TextEdit()
-        
         self.info_view.setReadOnly(True)
-        self.info_view.setText("等待文件载入...")
+        self.info_view.setText("点击文件读取信息...")
 
         self.viewLayout.addWidget(self.info_view)
         self.viewLayout.setContentsMargins(10, 10, 10, 10)
 
-    def update_info(self, text):
-        """传入Markdown文本并更新显示"""
-        self.info_view.setMarkdown(text)
-
+    def display_view_info(self, file_path):
+        file_path = Path(file_path)
+        QApplication.processEvents() # 强制刷新 UI 渲染文字
+        mis = MediaInfoService()
+        
+        try: 
+            if file_path.is_file(): 
+                info_text = mis.view_info(file_path)
+                self.info_view.setMarkdown(info_text)
+            else:
+                self.info_view.setMarkdown("该文件不是一个有效的文件!")
+        except Exception as e:
+            self.info_view.setMarkdown(f"读取文件信息失败: {str(e)}")
 
 class VideoParamCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle('视频编码设置')
 
-        import json
-        import os
         preset_path = os.path.join(os.path.dirname(__file__), '..', 'common', 'custom_preset.json')
         try:
             with open(preset_path, 'r', encoding='utf-8-sig') as f:
@@ -187,7 +189,7 @@ class VideoParamCard(HeaderCardWidget):
         self.area_using_presets()
         self.area_custom_encoder_settings()
 
-        self._initWidgets() 
+        self._initLayout() 
         self._connect_signals()
 
 
@@ -325,7 +327,7 @@ class VideoParamCard(HeaderCardWidget):
         self.custom_options_textEdit.setPlaceholderText("在此输入自定义编码参数，例如:-x264-params \"keyint=250:min-keyint=25\", 填入后前面选项将失效")
 
 
-    def _initWidgets(self):
+    def _initLayout(self):
         # 编码器区域布局
         # area_ecoder_select
         self.encoder_format_hBoxLayout.addWidget(self.container_select_label)
@@ -643,10 +645,10 @@ class AudioParamCard(HeaderCardWidget):
         self.bitrate_control_button_group.addButton(self.quality_rb)
 
         
-        self._initWidgets()
+        self._initLayout()
         self._connect_signals()
 
-    def _initWidgets(self):
+    def _initLayout(self):
         # 创建布局
         self.encoder_format_box = QWidget()
         self.encoder_format_hBoxLayout = QHBoxLayout(self.encoder_format_box)
@@ -874,12 +876,12 @@ class ImageParamCard(HeaderCardWidget):
 
         self._crop_dimension_master = "width"
 
-        self._initWidgets()
+        self._initLayout()
         self._control_state()
         self._connect_signals()
 
 
-    def _initWidgets(self):
+    def _initLayout(self):
         # 创建布局
         self.encoder_format_box = QWidget()
         self.encoder_format_hBoxLayout = QHBoxLayout(self.encoder_format_box)
@@ -1203,10 +1205,10 @@ class OutputCard(HeaderCardWidget):
         self.output_path_lineEdit = LineEdit()
         self.output_browse_button = PrimaryPushButton("浏览")
 
-        self._initWidgets()
+        self._initLayout()
         self._connect_signals()
 
-    def _initWidgets(self):
+    def _initLayout(self):
         self.hBoxLayout1.addWidget(self.custom_output_file_name_checkBox)
         self.hBoxLayout1.addWidget(self.custom_output_file_name_lineEdit)
         self.hBoxLayout1.addStretch(1)

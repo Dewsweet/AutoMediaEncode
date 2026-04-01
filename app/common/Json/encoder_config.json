@@ -1,0 +1,358 @@
+﻿{
+  "Video": {
+    "Copy": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "copy"],
+      "rate_control": {},
+      "options": {}
+    },
+    "FFV1": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "ffv1"],
+      "rate_control": {},
+      "options": {}
+    },
+    "AVC (x264)": {
+      "encoder_name": ["x264"],
+      "base_cmd": ["-c:v", "libx264"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-crf", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass_1":  ["-pass", "1", "null", "NUL"],
+        "2pass_2":  ["-pass", "2"]
+      },
+      "options": {
+        "presets": ["-preset", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": ["-tune", "{tuning_name}"]
+      }
+    },
+    "AVC (NVEnc)": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "h264_nvenc"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-rc", "vbr", "-cq", "{quality_val}", "-b:v", "0" ],
+        "平均码率 (ABR)": ["-rc", "cbr", "-b:v", "{bitrate}k", "-maxrate", "{bitrate}k"],
+        "2pass": ["-multipass", "2"]
+      },
+      "options": {
+        "presets": {
+          "preset_fastest": ["-preset", "p1"],
+          "preset_faster": ["-preset", "p2"],
+          "preset_fast": ["-preset", "p3"],
+          "preset_medium": ["-preset", "p4"],
+          "preset_slow": ["-preset", "p5"],
+          "preset_slower": ["-preset", "p6"],
+          "preset_veryslow": ["-preset", "p7"]
+        },
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level", "{level_val}"],
+        "tune": {}
+      }
+    },
+    "AVC (QSV)": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "h264_qsv"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-global_quality", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass": ["-look_ahead", "1"]
+      },
+      "options": {
+        "presets": ["-preset", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": {}
+      }
+    },
+    "AVC (AMF)": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "h264_amf"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-rc", "cqp", "-qp_i", "{quality_val}", "-qp_p", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass": ["-rc", "vbr_peak"]
+      },
+      "options": {
+        "presets": ["-quality", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": {}
+      }
+    },
+    "HEVC (x265)": {
+      "encoder_name": ["x265"],
+      "base_cmd": ["-c:v", "libx265"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-crf", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass_1":  ["-pass", "1", "null", "NUL"],
+        "2pass_2":  ["-pass", "2"]
+      },
+      "options": {
+        "presets": ["-preset", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": ["-tune", "{tuning_name}"]
+      }
+    },
+    "HEVC (NVEnc)": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "hevc_nvenc"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-rc", "vbr", "-cq", "{quality_val}", "-b:v", "0" ],
+        "平均码率 (ABR)": ["-rc", "cbr", "-b:v", "{bitrate}k", "-maxrate", "{bitrate}k"],
+        "2pass": ["-multipass", "2"]
+      },
+      "options": {
+        "presets": {
+          "preset_fastest": ["-preset", "p1"],
+          "preset_faster": ["-preset", "p2"],
+          "preset_fast": ["-preset", "p3"],
+          "preset_medium": ["-preset", "p4"],
+          "preset_slow": ["-preset", "p5"],
+          "preset_slower": ["-preset", "p6"],
+          "preset_veryslow": ["-preset", "p7"]
+        },
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level", "{level_val}"],
+        "tune": {}
+      }
+    },
+    "HEVC (QSV)": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "hevc_qsv"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-global_quality", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass": ["-look_ahead", "1"]
+      },
+      "options": {
+        "presets": ["preset", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": {}
+      }
+    },
+    "HEVC (AMF)": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "hevc_amf"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-rc", "cqp", "-qp_i", "{quality_val}", "-qp_p", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass": ["-rc", "vbr_peak"]
+      },
+      "options": {
+        "presets": ["-quality", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": {}
+      }
+    },
+    "AV1 (SVT)": {
+      "encoder_name": ["svtav1"],
+      "base_cmd": ["-c:v", "libsvtav1"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-crf", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass_1": ["-pass", "1", "null", "NUL"],
+        "2pass_2": ["-pass", "2"]
+      },
+      "options": {
+        "presets": ["-preset", "{preset_name}"],
+        "profiles": ["-profile:v", "{profile_name}"],
+        "levels": ["-level:v", "{level_val}"],
+        "tune": ["-tune", "{tuning_name}"]
+      }
+    },
+    "VP9": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "libvpx-vp9"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-crf", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass_1": ["-pass", "1", "null", "NUL"],
+        "2pass_2": ["-pass", "2"]
+      },
+      "options": {
+        "presets": ["-preset", "{preset_name}"],
+        "profiles": {},
+        "levels": ["-level:v", "{level_val}"],
+        "tune": ["-tune-content", "{tuning_name}"]
+      }
+    },
+    "MPEG-4": {
+      "encoder_name": ["ffmpeg"],
+      "base_cmd": ["-c:v", "mpeg4"],
+      "rate_control": {
+        "恒定质量 (CRF)": ["-q:v", "{quality_val}"],
+        "平均码率 (ABR)": ["-b:v", "{bitrate}k"],
+        "2pass_1":  ["-pass", "1", "null", "NUL"],
+        "2pass_2":  ["-pass", "2"]
+      },
+      "options": {
+        "presets": {},
+        "profiles": {},
+        "levels": {},
+        "tune": {}
+      }
+    }
+  },
+
+  "Audio": {
+    "Copy": {
+      "container": "",
+      "base_cmd": ["-c:a", "copy"],
+      "rate_control": {}
+    },
+    "WAV": {
+      "container": "wav",
+      "base_cmd": ["-c:a", "pcm_s16le"],
+      "rate_control": {}
+    },
+    "FLAC": {
+      "container": "flac",
+      "base_cmd": ["-c:a", "flac"],
+      "rate_control": {}
+    },
+    "ALAC": {
+      "container": "m4a",
+      "base_cmd": ["-c:a", "alac"],
+      "rate_control": {}
+    },
+    "AAC": {
+      "container": "aac",
+      "base_cmd": ["-c:a", "aac"],
+      "rate_control": {
+        "CBR": {},
+        "ABR": ["-b:a", "{bitrate}k"],
+        "Quality": ["-q:a", "{quality_val}"]
+      }
+    },
+    "MP3": {
+      "container": "mp3",
+      "base_cmd": ["-c:a", "libmp3lame"],
+      "rate_control": {
+        "CBR": ["-b:a", "{bitrate}k"],
+        "ABR": ["-b:a", "{bitrate}k", "-abr", "1"],
+        "Quality": ["-q:a", "{quality_val}"]
+      }
+    },
+    "Opus": {
+      "container": "opus",
+      "base_cmd": ["-c:a", "libopus"],
+      "rate_control": {
+        "CBR": ["-b:a", "{bitrate}k", "-vbr", "off"],
+        "ABR": ["-b:a", "{bitrate}k", "-vbr", "on"],
+        "Quality": {}
+      }
+    },
+    "Vorbis": {
+      "container": "ogg",
+      "base_cmd": ["-c:a", "libvorbis"],
+      "rate_control": {
+        "CBR": {},
+        "ABR": {},
+        "Quality": ["-q:a", "{quality_val}"]
+      }
+    },
+    "AC3": {
+      "container": "ac3",
+      "base_cmd": ["-c:a", "ac3"],
+      "rate_control": {
+        "CBR": ["-b:a", "{bitrate}k"],
+        "ABR": {},
+        "Quality": {}
+      }
+    }
+  },
+
+  "Image": {
+    "PNG": {
+      "container": "png",
+      "base_cmd": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "BMP": {
+      "container": "bmp",
+      "base_cmd": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "TIFF": {
+      "container": "tif",
+      "base_cmd": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "ICO": {
+      "container": "ico",
+      "base_cmd": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "JPEG": {
+      "container": "jpg",
+      "base_cmd": {},
+      "rate_control": {},
+      "quality": ["-q:v", "{quality_val}"]
+    },
+    "WEBP": {
+      "container": "webp",
+      "base_cmd": ["-c:v", "libwebp"],
+      "lossless": ["-lossless", "1"],
+      "quality": ["-q:v", "{quality_val}"]
+    },
+    "AVIF": {
+      "container": "avif",
+      "base_cmd": ["-c:v", "libaom-av1", "-still-picture", "1"],
+      "lossless": ["-crf", "0", "-aom-params", "lossless=1"],
+      "quality": ["-crf", "{quality_val}"]
+    },
+    "JXL": {
+      "container": "jxl",
+      "base_cmd": ["-c:v", "libjxl"],
+      "lossless": ["-distance", "0.0"],
+      "quality": ["-distance", "{quality_val}"]
+    }
+  },
+  "iamge_filters": {
+    "base_cmd": ["-vf"],
+    "rotate": {
+      "顺时针90度": ["transpose=1"],
+      "逆时针90度": ["transpose=2"],
+      "旋转180度": ["transpose=1,transpose=1"],
+      "根据EXIF旋转": ["transpose=0"]
+    },
+    "flip": {
+      "水平镜像": ["hflip"],
+      "垂直镜像": ["vflip"]
+    },
+    "crop_dimension": ["crop={width}:{height}"],
+    "crop_dimension_resize": ["scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"]
+  },
+  "sub_title": {
+      "str": {
+        "container": "srt",
+        "base_cmd": {},
+        "options": {}
+      },
+      "ass": {
+        "container": "ass",
+        "base_cmd": {}, 
+        "options": {}
+      },
+      "lrc": {
+        "container": "lrc",
+        "base_cmd": {}, 
+        "options": {}
+      },
+      "vtt": {
+        "container": "vtt",
+        "base_cmd": {}, 
+        "options": {}
+      }
+  }
+}

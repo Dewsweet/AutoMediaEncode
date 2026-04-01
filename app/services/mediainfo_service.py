@@ -178,7 +178,8 @@ class MediaInfoService:
         image = base_info.get("image", [])
         text = base_info.get("text", [])
 
-        md_lines= ["### 基础信息"]
+        # md_lines= ["### 基础信息"]
+        md_lines = []
         if audio and not video:
             md_lines.append(f"**{general.get('format', '未知格式')}** ; {general.get('fileSize')};  {general.get('duration')}; {general.get('bitRate')}   ")
         elif image and not video and not audio:
