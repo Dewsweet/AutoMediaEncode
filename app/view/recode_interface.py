@@ -1,4 +1,5 @@
-﻿from pathlib import Path
+# coding: utf-8
+from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QFileDialog, QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QColor
@@ -10,6 +11,7 @@ from ..components.recode_card_interface import InputFilesCard, FileInfoViewCard,
 # from ..components.fileload_interface import FileLoadInterface
 from ..common.media_utils import classify_files, get_present_types
 from ..services.mediainfo_service import MediaInfoService
+from ..services.parameter_builder import MediaParameterBuilder
 
 class RecodeInterface(QWidget):
     def __init__(self, parent=None):
@@ -27,8 +29,8 @@ class RecodeInterface(QWidget):
         self._hearderArea()
         self._srollArea()
 
-        self._initWidget()
-        self._conect_signal()
+        self._initLayout()
+        self._connect_signal()
 
 
     def _hearderArea(self):
@@ -87,8 +89,7 @@ class RecodeInterface(QWidget):
 
         self.outputCard = OutputCard(self)
 
-
-    def _initWidget(self):
+    def _initLayout(self):
         # 头部标题和按钮布局
         self.hearderButtonLayout.addWidget(self.reLoad_button, alignment=Qt.AlignRight)
         self.hearderButtonLayout.addWidget(self.start_recode_button, alignment=Qt.AlignRight)
@@ -111,7 +112,6 @@ class RecodeInterface(QWidget):
         self.encoderVAparamVBoxLayout.addLayout(self.encoderVAparamHBoxLayout)
 
 
-        
         self.scrollContainerVBoxLayout.addWidget(self.file_load_box)
         self.scrollContainerVBoxLayout.addWidget(self.encoderVAparamBox)
         self.scrollContainerVBoxLayout.addWidget(self.imageParam)
@@ -124,24 +124,80 @@ class RecodeInterface(QWidget):
         self.mainLayout.addWidget(self.scrollArea)
         self.setLayout(self.mainLayout)
 
-    def _conect_signal(self):
+    def _connect_signal(self):
         # 展示预览信息
-        self.inputFilesList.fileClicked.connect(lambda file_path: self.fileInfoView.display_view_info(file_path))
+        self.inputFilesList.fileClicked.connect(self.display_view_info)
 
         self.videoParam.using_preset_switch.checkedChanged.connect(lambda state: self.update_videoParam_layout())
 
         self.reLoad_button.clicked.connect(self.open_file_dialog)
+        # Debug: 右键点击重载按钮，注入测试文件列表
         self.reLoad_button.setContextMenuPolicy(Qt.CustomContextMenu)
         self.reLoad_button.customContextMenuRequested.connect(self.inject_test_files)
+
+        self.imageParam.enable_image_base_process_switchButton.checkedChanged.connect(lambda state: self.emit_image_size())
+
         
         # 调试用：绑定组装测试打印到 开始转码 按钮
         self.start_recode_button.clicked.connect(self._test_builder_output)
 
-    def _test_builder_output(self):
-        from ..services.parameter_builder import MediaParameterBuilder
-        from pathlib import Path
+
+    def open_file_dialog(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", "所有文件 (*)")
+        if files:
+            self.process_loaded_files(files)
+            self.fileInfoView.clear_info()
+
+    def process_loaded_files(self, files):
+        """对加载的文件进行分类, 更新UI显示, 并调整参数卡片的可见性"""
+        classified_dict = classify_files(files)
+        present_types = get_present_types(classified_dict)
         
-        # 收集用户当前UI状态
+        if not present_types:
+            return
+
+        # 1. 更新树形列表
+        self.inputFilesList.update_files(classified_dict, present_types)
+        
+        # 2. 动态调整下方卡片显示状态
+        self.videoParam.setVisible('video' in present_types)
+        # 只要有音频或者有视频，都显示音频参数卡片
+        self.audioParam.setVisible('audio' in present_types or 'video' in present_types)
+        self.imageParam.setVisible('image' in present_types)
+        self.subtitleParam.setVisible('subtitle' in present_types)
+        
+        self.update_videoParam_layout()
+
+    def display_view_info(self, file_path):
+        """根据传入的文件路径, 使用 MediaInfoService 获取文件基本信息, 并更新 fileInfoView 显示"""
+        file_path = Path(file_path)
+        QApplication.processEvents() # 强制刷新 UI 渲染文字
+        mis = MediaInfoService()
+        try: 
+            if file_path.is_file(): 
+                info_text = mis.view_info(file_path)
+                self.fileInfoView.update_info(info_text)
+            else:
+                self.fileInfoView.update_info("该文件不是一个有效的文件!")
+        except Exception as e:
+            self.fileInfoView.update_info(f"读取文件信息失败: {str(e)}")
+
+    def emit_image_size(self):
+        """当启用图片基础处理时，获取当前载入的第一张图片的尺寸信息，并更新 imageParam 的原始尺寸状态"""
+        files = self.inputFilesList.get_all_file_paths()
+        if not files:
+            print("未检测到文件，无法获取图片尺寸信息。")
+            return
+        mis = MediaInfoService()
+        file = mis.image_size_info(files[0])
+        width = file.get("width")
+        height = file.get("height")
+        if width and height:
+            self.imageParam.set_original_size(width, height)
+        
+
+    def _test_builder_output(self):
+        """Debug: 测试参数装配逻辑, 打印出根据当前UI状态和输入文件生成的命令行参数"""
         video_state = self.videoParam.get_state()
         audio_state = self.audioParam.get_state()
         image_state = self.imageParam.get_state()
@@ -282,13 +338,8 @@ class RecodeInterface(QWidget):
 
         print("============================\n\n")
 
-    def open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", "所有文件 (*)")
-        if files:
-            self.process_loaded_files(files)
-
     def inject_test_files(self, pos):
-        # 模拟一份文件列表拿来测试（右键点击“重载文件”触发）
+        """Debug: 模拟一份文件列表拿来测试（右键点击“重载文件”触发）"""
         test_files = [
             "C:/movies/test_video_1.mp4",
             "C:/movies/test_video_2.mkv",
@@ -298,24 +349,6 @@ class RecodeInterface(QWidget):
         ]
         self.process_loaded_files(test_files)
 
-    def process_loaded_files(self, files):
-        classified_dict = classify_files(files)
-        present_types = get_present_types(classified_dict)
-        
-        if not present_types:
-            return
-
-        # 1. 更新树形列表
-        self.inputFilesList.update_files(classified_dict, present_types)
-        
-        # 2. 动态调整下方卡片显示状态
-        self.videoParam.setVisible('video' in present_types)
-        # 只要有音频或者有视频，都显示音频参数卡片
-        self.audioParam.setVisible('audio' in present_types or 'video' in present_types)
-        self.imageParam.setVisible('image' in present_types)
-        self.subtitleParam.setVisible('subtitle' in present_types)
-        
-        self.update_videoParam_layout()
 
     def update_videoParam_layout(self):
         # 获取当前窗口的宽度

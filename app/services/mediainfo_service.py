@@ -88,7 +88,7 @@ class MediaInfoService:
             mi_path = ToolService.get_tool_path("mediainfo")
             media_info = MediaInfo.parse(file_path, library_file=mi_path)
         except:
-            base_info=None
+            return None, None
 
         # 获取需要组装的信息参数
         general = media_info.general_tracks[0] if media_info.general_tracks else None
@@ -158,7 +158,7 @@ class MediaInfoService:
         try:
             full_info = MediaInfo.parse(file_path, output="Text", full=False, library_file=mi_path)
         except:
-            full_info=None
+            return base_info, None
 
         if getattr(self, "_cache", None) is not None:
             self._cache[file_path] = (base_info, full_info)
@@ -256,3 +256,20 @@ class MediaInfoService:
                 cleaned_lines.append(line.strip())
 
         return "\n".join(cleaned_lines).strip()
+
+    def image_size_info(self, file_path: str) -> dict:
+        base_info, _ = self.get_info(file_path)
+        if base_info is None:
+            return None
+        image = base_info.get("image", [])
+        if not image:
+            return None
+        img = image[0]  
+        width = img.get("width")
+        height = img.get("height")
+
+        info = {
+            "width": width,
+            "height": height,
+        }
+        return info

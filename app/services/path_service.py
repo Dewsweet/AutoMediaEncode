@@ -36,3 +36,8 @@ class PathService:
     def get_resource_dir() -> Path:
         """获取 resource 目录的路径"""
         return PathService.get_app_dir() / "resource"
+    
+    @staticmethod
+    def get_config_dir() -> Path:
+        """获取 config 目录的路径"""
+        return PathService.get_app_dir() / "config"
