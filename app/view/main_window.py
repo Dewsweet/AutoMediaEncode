@@ -8,6 +8,7 @@ from qfluentwidgets import FluentIcon as FIF, qconfig, isDarkTheme
 from .mediainfo_interface import MediaifInterface
 from .setting_interface import SettingInterface
 from .recode_interface import RecodeInterface
+from .task_interface import TaskInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
 
 class MainWindow(FluentWindow):
@@ -20,6 +21,7 @@ class MainWindow(FluentWindow):
         self.mediaInfoInterface = MediaifInterface(self)
         self.settingInterface = SettingInterface(self)
         self.recodeInterface = RecodeInterface(self)
+        self.taskInterface = TaskInterface(self)
         self.initNavigation()
         
 
@@ -101,7 +103,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.mediaInfoInterface, FIF.INFO, 'Media Info')
         self.addSubInterface(self.recodeInterface, FIF.MEDIA, 'Recode')
 
-
+        self.addSubInterface(self.taskInterface, FIF.ADD, 'Task Progress', NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Setting', NavigationItemPosition.BOTTOM)
 
 
