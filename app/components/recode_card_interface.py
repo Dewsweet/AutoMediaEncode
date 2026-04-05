@@ -1115,7 +1115,7 @@ class ImageParamCard(HeaderCardWidget):
         elif format == "AVIF":
             quality_val = int(float(63 - value * 62 / 100))
         elif format == "JXL":
-            quality_val = float(15 - value * 14 / 100)
+            quality_val = round(float(15 - value * 14 / 100), 1)
         elif format == "JPEG":
             quality_val = int(float(31 - value * 29 / 100))
         else:
@@ -1136,8 +1136,11 @@ class ImageParamCard(HeaderCardWidget):
             "encoder_format": self.encoder_format_combobox.currentText(),
             "is_lossless": self.image_lossless_enable_switchButton.isChecked() if hasattr(self, 'image_lossless_enable_switchButton') else False,
             "quality_val": quality_val,
+            "enbale_base_process": self.enable_image_base_process_switchButton.isChecked() if hasattr(self, 'enable_image_base_process_switchButton') else False,
             "rotate": self.image_base_process_rotate_comboBox.currentText() if hasattr(self, 'image_base_process_rotate_comboBox') else "",
             "flip": self.image_base_process_mirror_comboBox.currentText() if hasattr(self, 'image_base_process_mirror_comboBox') else "",
+            "original_w": self._original_width if hasattr(self, "_original_width") else None,
+            "original_h": self._original_height if hasattr(self, "_original_height") else None,
             "crop_w": crop_w if crop_w.isdigit() else None,
             "crop_h": crop_h if crop_h.isdigit() else None
         }

@@ -203,3 +203,94 @@ class FFmpegBuilder:
                     kw[clean_k] = str(v).format_map(format_data)
                     
         return kw, container
+
+    def build_image_kwargs(self, image_state: dict) -> tuple:
+        """
+        基于 UI 状态构造 ffmpeg-python 接受的图片 **kwargs 字典和专用容器格式。
+        """
+        encoder = image_state.get('encoder_format', 'Copy')
+        
+        if encoder == 'Copy' or encoder not in self.config.get("Image", {}):
+            copy_cfg = self.config.get("Image", {}).get("Copy", {})
+            return {"vcodec": "copy"}, copy_cfg.get("container", "")
+            
+        img_config = self.config["Image"][encoder]
+        base_kwargs = img_config.get("base_kwargs", {}).copy()
+        container = img_config.get("container", "")
+        
+        format_data = SafeFormatDict({
+            "quality_val": image_state.get("quality_val", 80),
+            "width": image_state.get("width", 0),
+            "height": image_state.get("height", 0)
+        })
+        
+        kw = {**base_kwargs}
+        
+        # --- 1. 画质与无损模式映射 ---
+        is_lossless = image_state.get("is_lossless", False)
+        if is_lossless and "lossless" in img_config:
+            for k, v in img_config["lossless"].items():
+                kw[k.lstrip('-')] = str(v).format_map(format_data)
+        elif "quality" in img_config:
+            for k, v in img_config["quality"].items():
+                kw[k.lstrip('-')] = str(v).format_map(format_data)
+                
+        # --- 2. 图片尺寸与基础效果滤镜映射 (Image_filters) ---
+        enable_base_process = image_state.get("enbale_base_process", False)
+        if enable_base_process:
+            vf_list = []
+            filters_cfg = self.config.get("Image_filters", {})
+            
+            tgt_width = image_state.get("crop_w")
+            tgt_height = image_state.get("crop_h")
+            orig_width = image_state.get("original_w")
+            orig_height = image_state.get("original_h")
+            
+            # (1) 裁切与缩放控制
+            if tgt_width and tgt_height:
+                try:
+                    t_w = int(tgt_width)
+                    t_h = int(tgt_height)
+                    o_w = int(orig_width) if orig_width else 0
+                    o_h = int(orig_height) if orig_height else 0
+                    
+                    if o_w and o_h and (o_w < t_w or o_h < t_h):
+                        # 分辨率不足需要缩放填充
+                        cmd_list = filters_cfg.get("crop_dimension_resize", [])
+                    else:
+                        # 分辨率足够则直接裁切
+                        cmd_list = filters_cfg.get("crop_dimension", [])
+                        
+                    if cmd_list:
+                        # 这里要注意 format_data 里的键名得能匹配上 json 里的 {width} 和 {height}
+                        # 因此我们临时往 format_data 塞入这两个直观的键
+                        format_data["width"] = t_w
+                        format_data["height"] = t_h
+                        vf_list.append(str(cmd_list[0]).format_map(format_data))
+                except ValueError:
+                    pass
+                    
+            # (2) 旋转控制
+            rotate_val = image_state.get("rotate", "")
+            if rotate_val and rotate_val not in ["无", "None", "", "none"]:
+                if rotate_val in filters_cfg.get("rotate", {}):
+                    vf_list.append(filters_cfg["rotate"][rotate_val])
+                    
+            # (3) 翻转控制
+            flip_val = image_state.get("flip", "")
+            if flip_val and flip_val not in ["无", "None", "", "none"]:
+                if flip_val in filters_cfg.get("flip", {}):
+                    vf_list.append(filters_cfg["flip"][flip_val])
+                    
+            if vf_list:
+                kw["vf"] = ",".join(vf_list)
+                
+        return kw, container
+
+    def build_subtitle_kwargs(self, subtitle_state: dict) -> tuple:
+        """
+        基于 UI 状态构造 ffmpeg-python 接受的字幕 **kwargs 字典和专用容器格式。
+        """
+        encoder = str(subtitle_state.get('encoder_format', '')).lower()
+        container = self.config.get("Subtitle", {}).get(encoder, {}).get("container", "")
+        return {}, container

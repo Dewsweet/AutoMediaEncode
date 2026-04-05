@@ -291,7 +291,7 @@
   },
 
   "Image_filters": {
-    "base_cmd": "-vf",
+    "base_cmd": "vf",
     "rotate": {
       "顺时针90度": "transpose=1",
       "逆时针90度": "transpose=2",
@@ -302,12 +302,13 @@
       "水平镜像": "hflip",
       "垂直镜像": "vflip"
     },
+    "_Note" : "crop_dimension 与 crop_dimension_resize 的区别, 如果载入的图片分辨率小于用户输入的目标分辨率, 则用crop_dimension_resize, 如果大于则用crop_dimension, 在recode_interface中的 emit_image_size 函数就拿到了图片的长度和宽度",
     "crop_dimension": ["crop={width}:{height}"],
     "crop_dimension_resize": ["scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"]
   },
-  
-  "sub_title": {
-      "str": {
+
+  "Subtitle": {
+      "srt": {
         "container": "srt"
       },
       "ass": {

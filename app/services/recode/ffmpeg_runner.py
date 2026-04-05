@@ -1,5 +1,6 @@
 # coding: utf-8
 import os
+import shlex
 import ffmpeg
 from pathlib import Path
 from ...common.media_utils import classify_files
@@ -15,8 +16,8 @@ class FFmpegRunner:
         之后接入正式的线程时，可以在本类下增加 run_command 等方法。
         """
         print("\n\n====== [FFmpeg-Python 参数装配测试] ======")
-        print(f"UI Video State: {video_state}\n")
-        print(f"UI Audio State: {audio_state}\n")
+        # print(f"UI Video State: {video_state}\n")
+        # print(f"UI Audio State: {audio_state}\n")
         
         if not files:
             print("未检测到文件，请先载入文件或右键重载测试文件。")
@@ -30,9 +31,13 @@ class FFmpegRunner:
             classification = classify_files([file_path.as_posix()])
             is_video = bool(classification['video'])
             is_audio = bool(classification['audio']) and not is_video # 独立音频文件
+            is_image = bool(classification['image'])
+            is_subtitle = bool(classification['subtitle'])
             
             # --- 2. 获取当前参数池 ---
             audio_kwargs, audio_container = self.builder.build_audio_kwargs(audio_state)
+            image_kwargs, image_container = self.builder.build_image_kwargs(image_state)
+            subtitle_kwargs, subtitle_container = self.builder.build_subtitle_kwargs(subtitle_state)
 
             # --- 3. 组装输入输出路径 ---
             in_path_str = file_path.as_posix()
@@ -42,6 +47,10 @@ class FFmpegRunner:
                 out_ext = "." + video_state.get('container', 'mp4').lower()
             elif is_audio:
                 out_ext = ("." + audio_container).lower() if audio_container else file_path.suffix
+            elif is_image:
+                out_ext = ("." + image_container).lower() if image_container else file_path.suffix
+            elif is_subtitle:
+                out_ext = ("." + subtitle_container).lower() if subtitle_container else file_path.suffix
             
             out_dir = output_state.get('output_dir', '')
             if output_state.get('use_source_dir', True) or not out_dir:
@@ -79,7 +88,7 @@ class FFmpegRunner:
                         stream = ffmpeg.input(in_path_str)
                         stream = ffmpeg.output(stream, out_path_compile, **merged_kw)
                         cmd_list = ffmpeg.compile(stream, overwrite_output=True)
-                        print(">> 生成的真实命令:", ' '.join(cmd_list))
+                        print(">> 生成的真实命令:", shlex.join(cmd_list))
                     except Exception as e:
                         print(">> FFmpeg-python 编译失败:", str(e))
             
@@ -92,6 +101,26 @@ class FFmpegRunner:
                 try:
                     stream = ffmpeg.input(in_path_str)
                     stream = ffmpeg.output(stream, out_path_str, **merged_kw)
+                    cmd_list = ffmpeg.compile(stream, overwrite_output=True)
+                    print(">> 生成的真实命令:", ' '.join(cmd_list))
+                except Exception as e:
+                    print(">> FFmpeg-python 编译失败:", str(e))
+                    
+            elif is_image:
+                print(f">> [图像处理] Kwargs 详情: {image_kwargs}")
+                try:
+                    stream = ffmpeg.input(in_path_str)
+                    stream = ffmpeg.output(stream, out_path_str, **image_kwargs)
+                    cmd_list = ffmpeg.compile(stream, overwrite_output=True)
+                    print(">> 生成的真实命令:", ' '.join(cmd_list))
+                except Exception as e:
+                    print(">> FFmpeg-python 编译失败:", str(e))
+                    
+            elif is_subtitle:
+                print(f">> [字幕处理] Kwargs 详情: {subtitle_kwargs}")
+                try:
+                    stream = ffmpeg.input(in_path_str)
+                    stream = ffmpeg.output(stream, out_path_str, **subtitle_kwargs)
                     cmd_list = ffmpeg.compile(stream, overwrite_output=True)
                     print(">> 生成的真实命令:", ' '.join(cmd_list))
                 except Exception as e:
