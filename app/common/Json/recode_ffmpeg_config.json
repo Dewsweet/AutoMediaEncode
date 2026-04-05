@@ -169,5 +169,156 @@
         "tune": {}
       }
     }
+  },
+
+  "Audio": {
+    "Copy": {
+      "container": "",
+      "base_kwargs": {"acodec": "copy"},
+      "rate_control": {}
+    },
+    "WAV": {
+      "container": "wav",
+      "base_kwargs": {"acodec": "pcm_s16le"},
+      "rate_control": {}
+    },
+    "FLAC": {
+      "container": "flac",
+      "base_kwargs": {"acodec": "flac"},
+      "rate_control": {}
+    },
+    "ALAC": {
+      "container": "m4a",
+      "base_kwargs": {"acodec": "alac"},
+      "rate_control": {}
+    },
+    "AAC": {
+      "container": "aac",
+      "base_kwargs": {"acodec": "aac"},
+      "rate_control": {
+        "CBR": {},
+        "ABR": {"-b:a":"{bitrate}k"},
+        "Quality": {"-q:a": "{quality_val}"}
+      }
+    },
+    "MP3": {
+      "container": "mp3",
+      "base_kwargs": {"acodec": "libmp3lame"},
+      "rate_control": {
+        "CBR": {"-b:a":"{bitrate}k"},
+        "ABR": {"-b:a":"{bitrate}k", "abr": "1"},
+        "Quality": {"-q:a": "{quality_val}"}
+      }
+    },
+    "Opus": {
+      "container": "opus",
+      "base_kwargs": {"acodec": "libopus"},
+      "rate_control": {
+        "CBR": {"-b:a": "{bitrate}k", "-vbr": "off"},
+        "ABR": {"-b:a":"{bitrate}k", "-vbr": "on"},
+        "Quality": {}
+      }
+    },
+    "Vorbis": {
+      "container": "ogg",
+      "base_kwargs": {"acodec": "libvorbis"},
+      "rate_control": {
+        "CBR": {},
+        "ABR": {},
+        "Quality": {"-q:a": "{quality_val}"}
+      }
+    },
+    "AC3": {
+      "container": "ac3",
+      "base_kwargs": {"acodec": "ac3"},
+      "rate_control": {
+        "CBR": {"-b:a":"{bitrate}k"},
+        "ABR": {},
+        "Quality": {}
+      }
+    }
+  },
+
+  "Image": {
+    "PNG": {
+      "container": "png",
+      "base_kwargs": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "BMP": {
+      "container": "bmp",
+      "base_kwargs": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "TIFF": {
+      "container": "tif",
+      "base_kwargs": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "ICO": {
+      "container": "ico",
+      "base_kwargs": {},
+      "lossless": {},
+      "quality": {}
+    },
+    "JPEG": {
+      "container": "jpg",
+      "base_kwargs": {},
+      "rate_control": {},
+      "quality": {"q:v": "{quality_val}"}
+    },
+    "WEBP": {
+      "container": "webp",
+      "base_kwargs": {"c:v": "libwebp"},
+      "lossless": {"lossless": "1"},
+      "quality": {"q:v": "{quality_val}"}
+    },
+    "AVIF": {
+      "container": "avif",
+      "base_kwargs": {"c:v": "libaom-av1", "still-picture": "1"},
+      "lossless": {"crf": "0", "aom-params": "lossless=1"},
+      "quality": {"crf": "{quality_val}"}
+    },
+    "JXL": {
+      "container": "jxl",
+      "base_kwargs": {"c:v": "libjxl"},
+      "lossless": {"distance": "0.0"},
+      "quality": {"distance": "{quality_val}"}
+    }
+  },
+
+  "Image_filters": {
+    "base_cmd": "-vf",
+    "rotate": {
+      "顺时针90度": "transpose=1",
+      "逆时针90度": "transpose=2",
+      "旋转180度": "transpose=1,transpose=1",
+      "根据EXIF旋转": "transpose=0"
+    },
+    "flip": {
+      "水平镜像": "hflip",
+      "垂直镜像": "vflip"
+    },
+    "crop_dimension": ["crop={width}:{height}"],
+    "crop_dimension_resize": ["scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"]
+  },
+  
+  "sub_title": {
+      "str": {
+        "container": "srt"
+      },
+      "ass": {
+        "container": "ass"
+      },
+      "lrc": {
+        "container": "lrc"
+      },
+      "vtt": {
+        "container": "vtt"
+      }
   }
 }
+

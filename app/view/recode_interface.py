@@ -13,7 +13,7 @@ from ..components.recode_card_interface import InputFilesCard, FileInfoViewCard,
 # from ..components.fileload_interface import FileLoadInterface
 from ..common.media_utils import classify_files, get_present_types
 from ..services.mediainfo_service import MediaInfoService
-from ..services.recode.ffmpeg_builder import FFmpegBuilder
+from ..services.recode.ffmpeg_runner import FFmpegRunner
 
 class RecodeInterface(QWidget):
     def __init__(self, parent=None):
@@ -206,73 +206,19 @@ class RecodeInterface(QWidget):
         subtitle_state = self.subtitleParam.get_state()
         output_state = self.outputCard.get_state()
         
-        # 将状态喂入基于 kwargs 的 FFmpegBuilder
-        builder = FFmpegBuilder()
-        v_kwargs_list = builder.build_video_kwargs(video_state)
-
-        print("\n\n====== [FFmpeg-Python 参数装配测试] ======")
-        print(f"UI Video State: {video_state}\n")
-        
+        # 获取当前列表中的文件
         files = self.inputFilesList.get_all_file_paths()
-        if not files:
-            print("未检测到文件，请先载入文件或右键重载测试文件。")
-            return
-
-        for f_path in files:
-            file_path = Path(f_path)
-            print(f"\n[处理文件]: {file_path.as_posix()}")
-            
-            # --- 1. 确定输出路径 ---
-            classification = classify_files([file_path.as_posix()])
-            is_video = bool(classification['video'])
-            
-            # --- 整理出 in / out 路径字符串 ---
-            in_path_str = file_path.as_posix()
-            
-            # 确定输出后缀 (先默认为原后缀，如果是视频则匹配容器选择)
-            out_ext = file_path.suffix
-            if is_video:
-                out_ext = "." + video_state.get('container', 'mp4').lower()
-            
-            # 确定输出目录
-            out_dir = output_state['output_dir']
-            if output_state['use_source_dir'] or not out_dir:
-                out_dir_path = file_path.parent
-            else:
-                out_dir_path = Path(out_dir)
-            
-            # 确定文件名并附加自定义后缀
-            fname = file_path.stem
-            if output_state.get('use_custom_suffix') and output_state.get('custom_suffix'):
-                fname += output_state['custom_suffix']
-                
-            out_path = out_dir_path / (fname + out_ext)
-            out_path_str = out_path.as_posix()
-
-            if is_video:
-                for i, v_kw in enumerate(v_kwargs_list):
-                    print(f">> [Pass {i+1}] Kwargs 详情: {v_kw}")
-                    
-                    try:
-                        # 真实的 ffmpeg-python compile 测试
-                        stream = ffmpeg.input(in_path_str)
-                        
-                        kw_copy = v_kw.copy()
-                        out_path_compile = out_path_str
-                        
-                        # 针对 1-pass pass=1 的占位输出
-                        if kw_copy.get("pass") == 1 or kw_copy.get("pass") == "1":
-                            kw_copy["f"] = "null"
-                            kw_copy["an"] = None # 去除音频组装
-                            out_path_compile = "NUL" if os.name == 'nt' else "/dev/null"
-                        
-                        stream = ffmpeg.output(stream, out_path_compile, **kw_copy)
-                        cmd_list = ffmpeg.compile(stream, overwrite_output=True)
-                        print(">> FFmpeg-Python 真实编译出的命令:", ' '.join(cmd_list))
-                    except Exception as e:
-                        print(">> FFmpeg-python 编译失败:", str(e))
-                        
-        print("============================\n\n")
+        
+        # 将收集的状态转移到专门的 Runner 执行类进行打印测试
+        runner = FFmpegRunner()
+        runner.test_build_commands(
+            files=files,
+            video_state=video_state, 
+            audio_state=audio_state, 
+            image_state=image_state, 
+            subtitle_state=subtitle_state, 
+            output_state=output_state
+        )
 
     def inject_test_files(self, pos):
         """Debug: 模拟一份文件列表拿来测试（右键点击“重载文件”触发）"""

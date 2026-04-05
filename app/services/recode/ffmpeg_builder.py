@@ -118,20 +118,20 @@ class FFmpegBuilder:
             ui_val = None
             if encoder in ["AVC (NVEnc)", "HEVC (NVEnc)"] and key == "presets":
                 ui_val = video_state.get("preset_val")
-            if key == "presets": ui_val = video_state.get("preset_name")
+            elif key == "presets": ui_val = video_state.get("preset_name")
             elif key == "profiles": ui_val = video_state.get("profile_name")
             elif key == "levels": ui_val = video_state.get("level_val")
             elif key == "tune": ui_val = video_state.get("tuning_name")
             
-            if ui_val and ui_val.lower() not in ["none", "auto"]:
+            if ui_val is not None and str(ui_val).lower() not in ["none", "auto", ""]:
                 for k, v in map_pattern.items(): 
                     options_kwargs[k] = str(v).format_map(format_data)
 
         # --- 4. 2-pass / 1-pass 流转 ---
         if is_2pass:
             if "2pass_1" in rc_config and "2pass_2" in rc_config:
-                pass1_kwargs = {**base_kwargs, **options_kwargs, **custom_options_dict}
-                pass2_kwargs = {**base_kwargs, **options_kwargs, **custom_options_dict}
+                pass1_kwargs = {**base_kwargs, **options_kwargs}
+                pass2_kwargs = {**base_kwargs, **options_kwargs}
                 if rc_mode in rc_config:
                     for k, v in rc_config[rc_mode].items():
                         pass1_kwargs[k] = str(v).format_map(format_data)
@@ -145,7 +145,7 @@ class FFmpegBuilder:
                 return [pass1_kwargs, pass2_kwargs]
             elif "2pass" in rc_config:
                 # 例如 NVEnc 的 -multipass 2
-                kw = {**base_kwargs, **options_kwargs, **custom_options_dict}
+                kw = {**base_kwargs, **options_kwargs}
                 if rc_mode in rc_config:
                     for k, v in rc_config[rc_mode].items():
                         kw[k] = str(v).format_map(format_data)
@@ -154,9 +154,52 @@ class FFmpegBuilder:
                 return [kw]
 
         # 1-pass
-        kw = {**base_kwargs, **options_kwargs, **custom_options_dict}
+        kw = {**base_kwargs, **options_kwargs}
         if rc_mode in rc_config:
             for k, v in rc_config[rc_mode].items():
                 kw[k] = str(v).format_map(format_data)
                 
         return [kw]
+
+    def build_audio_kwargs(self, audio_state: dict) -> tuple:
+        """
+        基于 UI 状态构造 ffmpeg-python 接受的音频 **kwargs 字典和专用容器格式。
+        返回: (kwargs_dict, container_str)
+        """
+        encoder = audio_state.get('encoder_format', 'Copy')
+        
+        if encoder == 'Copy' or encoder not in self.config.get("Audio", {}):
+            # 获取 Copy 对应的字典配置，如果没有就默认空
+            copy_cfg = self.config.get("Audio", {}).get("Copy", {})
+            return {"acodec": "copy"}, copy_cfg.get("container", "")
+            
+        audio_config = self.config["Audio"][encoder]
+        base_kwargs = audio_config.get("base_kwargs", {}).copy()
+        container = audio_config.get("container", "")
+        
+        # --- 1. 参数与常规选项映射 ---
+        rc_mode = audio_state.get('rc_mode', '')
+        rc_config = audio_config.get("rate_control", {})
+        
+        format_data = SafeFormatDict({
+            "bitrate": audio_state.get("bitrate", 128),
+            "quality_val": audio_state.get("quality_val", 2),
+            "sample_rate": audio_state.get("sample_rate", "44100"),
+            "channels": audio_state.get("channels", "2")
+        })
+        
+        kw = {**base_kwargs}
+        if rc_mode in rc_config:
+            for k, v in rc_config[rc_mode].items():
+                # 兼容 json 中的 "-b:a" 这类带横杠的写法，ffmpeg-python kwargs不需要横杠
+                clean_k = k.lstrip('-')
+                kw[clean_k] = str(v).format_map(format_data)
+                
+        for key, map_pattern in audio_config.get("options", {}).items():
+            ui_val = audio_state.get(key)
+            if ui_val and str(ui_val).lower() not in ["none", "auto", "original", "原轨", "自动"]:
+                for k, v in map_pattern.items():
+                    clean_k = k.lstrip('-')
+                    kw[clean_k] = str(v).format_map(format_data)
+                    
+        return kw, container
