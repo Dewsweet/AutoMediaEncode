@@ -566,7 +566,8 @@ class VideoParamCard(HeaderCardWidget):
             "bitrate": self.abr_value_pinBox.value(),
             "is_2pass": self.bitrate_control_2pass_checkBox.isChecked(),
             # 高级选项
-            "preset_val": self.encoder_preset_value_label.text().split(" ")[0].strip().lower(),
+            "preset_name": self.encoder_preset_value_label.text().split(" ")[0].strip().lower(),
+            "preset_val": self.encoder_preset_value_slider.value() + 1, 
             "profile_name": self.encoder_profile_cBox.currentText().lower() if self.encoder_profile_cBox.currentText() != "" else None, 
             "level_val": self.encoder_level_cBox.currentText().lower() if self.encoder_level_cBox.currentText() != "" else None,
             "tuning_name": self.encoder_tune_cBox.currentText().lower() if self.encoder_tune_cBox.currentText() != "" else None,

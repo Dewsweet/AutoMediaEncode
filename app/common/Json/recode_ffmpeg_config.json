@@ -1,0 +1,173 @@
+{
+  "Video": {
+    "Copy": {
+      "base_kwargs": {"vcodec": "copy"},
+      "rate_control": {},
+      "options": {}
+    },
+    "FFV1": {
+      "base_kwargs": {"vcodec": "ffv1"},
+      "rate_control": {},
+      "options": {}
+    },
+    "AVC (x264)": {
+      "base_kwargs": {"vcodec": "libx264"},
+      "rate_control": {
+        "恒定质量 (CRF)": {"crf": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass_1":  {"pass": 1, "f": "null"},
+        "2pass_2":  {"pass": 2}
+      },
+      "options": {
+        "presets": {"preset": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {"tune": "{tuning_name}"}
+      }
+    },
+    "AVC (NVEnc)": {
+      "base_kwargs": {"vcodec": "h264_nvenc"},
+      "rate_control": {
+        "恒定质量 (CQ)": {"rc": "vbr", "cq": "{quality_val}", "b:v": "0"},
+        "平均码率 (ABR)": {"rc": "cbr", "b:v": "{bitrate}k", "maxrate": "{bitrate}k"},
+        "2pass": {"multipass": "2"}
+      },
+      "options": {
+        "presets": {"preset": "p{preset_val}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level": "{level_val}"},
+        "tune": {}
+      }
+    },
+    "AVC (QSV)": {
+      "base_kwargs": {"vcodec": "h264_qsv"},
+      "rate_control": {
+        "恒定质量 (ICQ)": {"global_quality": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass": {"look_ahead": "1"}
+      },
+      "options": {
+        "presets": {"preset": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {}
+      }
+    },
+    "AVC (AMF)": {
+      "base_kwargs": {"vcodec": "h264_amf"},
+      "rate_control": {
+        "恒定质量 (CQP)": {"rc": "cqp", "qp_i": "{quality_val}", "qp_p": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass": {"rc": "vbr_peak"}
+      },
+      "options": {
+        "presets": {"quality": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {}
+      }
+    },
+    "HEVC (x265)": {
+      "base_kwargs": {"vcodec": "libx265"},
+      "rate_control": {
+        "恒定质量 (CRF)": {"crf": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass_1":  {"pass": 1, "f": "null"},
+        "2pass_2":  {"pass": 2}
+      },
+      "options": {
+        "presets": {"preset": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {"tune": "{tuning_name}"}
+      }
+    },
+    "HEVC (NVEnc)": {
+      "base_kwargs": {"vcodec": "hevc_nvenc"},
+      "rate_control": {
+        "恒定质量 (CQ)": {"rc": "vbr", "cq": "{quality_val}", "b:v": "0"},
+        "平均码率 (ABR)": {"rc": "cbr", "b:v": "{bitrate}k", "maxrate": "{bitrate}k"},
+        "2pass": {"multipass": "2"}
+      },
+      "options": {
+        "presets": {"preset": "p{preset_val}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level": "{level_val}"},
+        "tune": {}
+      }
+    },
+    "HEVC (QSV)": {
+      "base_kwargs": {"vcodec": "hevc_qsv"},
+      "rate_control": {
+        "恒定质量 (ICQ)": {"global_quality": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass": {"look_ahead": "1"}
+      },
+      "options": {
+        "presets": {"preset": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {}
+      }
+    },
+    "HEVC (AMF)": {
+      "base_kwargs": {"vcodec": "hevc_amf"},
+      "rate_control": {
+        "恒定质量 (CQP)": {"rc": "cqp", "qp_i": "{quality_val}", "qp_p": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass": {"rc": "vbr_peak"}
+      },
+      "options": {
+        "presets": {"quality": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {}
+      }
+    },
+    "AV1 (SVT)": {
+      "base_kwargs": {"vcodec": "libsvtav1"},
+      "rate_control": {
+        "恒定质量 (CQ)": {"crf": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass_1": {"pass": 1, "f": "null"},
+        "2pass_2": {"pass": 2}
+      },
+      "options": {
+        "presets": {"preset": "{preset_name}"},
+        "profiles": {"profile:v": "{profile_name}"},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {"tune": "{tuning_name}"}
+      }
+    },
+    "VP9": {
+      "base_kwargs": {"vcodec": "libvpx-vp9"},
+      "rate_control": {
+        "恒定质量 (CRF)": {"crf": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass_1": {"pass": 1, "f": "null"},
+        "2pass_2": {"pass": 2}
+      },
+      "options": {
+        "presets": {"preset": "{preset_name}"},
+        "profiles": {},
+        "levels": {"level:v": "{level_val}"},
+        "tune": {"tune-content": "{tuning_name}"}
+      }
+    },
+    "MPEG-4": {
+      "base_kwargs": {"vcodec": "mpeg4"},
+      "rate_control": {
+        "恒定质量 (CRF)": {"q:v": "{quality_val}"},
+        "平均码率 (ABR)": {"b:v": "{bitrate}k"},
+        "2pass_1":  {"pass": 1, "f": "null"},
+        "2pass_2":  {"pass": 2}
+      },
+      "options": {
+        "presets": {},
+        "profiles": {},
+        "levels": {},
+        "tune": {}
+      }
+    }
+  }
+}

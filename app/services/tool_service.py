@@ -64,8 +64,8 @@ class ToolService:
             "is_costom": False
         },
         {
-            "key": "vspipe", 
             "tool_name": "vspipe", 
+            "folder": "",
             "type": ".exe",
             "title": "VapourSynth", 
             "desc": "强大的视频处理框架", 

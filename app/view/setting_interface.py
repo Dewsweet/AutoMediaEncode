@@ -16,7 +16,7 @@ from app.components.template_card import MediaToolsCardTemplate
 from app.services.preset_service import preset_service
 from app.services.tool_service import ToolService
 from app.services.path_service import PathService
-from app.common.config import cfg
+from app.common.config import cfg, VERSION, AUTHOR, YEAR
 
 
 class SettingInterface(QWidget):
@@ -188,8 +188,8 @@ class SettingInterface(QWidget):
             self.tr('检查更新'),
             FIF.INFO,
             self.tr('关于'),
-            '© ' + self.tr('Copyright') + " 2026, Dewsweet. " +
-            self.tr('Version') + " " + "0.1",
+            '© ' + self.tr('Copyright') + " " + str(YEAR) + ", " + AUTHOR + ". " +
+            self.tr('Version') + " " + VERSION,
             self.aboutCardGroup
         )
 

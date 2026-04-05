@@ -1,3 +1,4 @@
+# coding: utf-8
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea
 from PySide6.QtCore import Qt
 
