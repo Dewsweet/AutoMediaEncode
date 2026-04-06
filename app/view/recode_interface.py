@@ -209,15 +209,36 @@ class RecodeInterface(QWidget):
         # 获取当前列表中的文件
         files = self.inputFilesList.get_all_file_paths()
         
-        # 将收集的状态转移到专门的 Runner 执行类进行打印测试
-        runner = FFmpegRunner()
-        runner.test_build_commands(
-            files=files,
-            video_state=video_state, 
-            audio_state=audio_state, 
-            image_state=image_state, 
-            subtitle_state=subtitle_state, 
-            output_state=output_state
+        from ..common.signal_bus import signalBus
+        import time
+
+        task_id = f"task_{int(time.time()*1000)}"
+
+        payload = {
+            "task_id": task_id,
+            "type": "Recondeing",
+            "files": files,
+            "states": {
+                "video_state": video_state,
+                "audio_state": audio_state,
+                "image_state": image_state,
+                "subtitle_state": subtitle_state,
+                "output_state": output_state
+            }
+        }
+        
+        signalBus.taskAdded.emit(payload)
+        
+        # 抛出信息提示用户
+        from qfluentwidgets import InfoBar, InfoBarPosition
+        InfoBar.success(
+            title='任务已添加',
+            content=f'已成功添加 {len(files)} 个文件进入重编码任务队列',
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=3000,
+            parent=self
         )
 
     def inject_test_files(self, pos):

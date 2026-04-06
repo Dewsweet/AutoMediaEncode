@@ -61,7 +61,7 @@ class InputFilesCard(HeaderCardWidget):
         if len(present_types) == 1:
             file_type = present_types[0]
             for file_path in classified_dict[file_type]:
-                filename = Path(file_path).stem
+                filename = Path(file_path).name
                 item = QTreeWidgetItem([filename])
                 item.setData(0, Qt.UserRole, file_path) # 存储完整路径留作后用
                 item.setCheckState(0, Qt.Checked)
@@ -74,7 +74,7 @@ class InputFilesCard(HeaderCardWidget):
                     parent_item.setCheckState(0, Qt.Checked)
                     
                     for file_path in classified_dict[t_key]:
-                        filename = Path(file_path).stem
+                        filename = Path(file_path).name
                         child_item = QTreeWidgetItem([filename])
                         child_item.setData(0, Qt.UserRole, file_path)
                         child_item.setCheckState(0, Qt.Checked)
