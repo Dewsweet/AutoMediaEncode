@@ -1,61 +1,10 @@
 # coding: utf-8
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 from qfluentwidgets import ExpandGroupSettingCard, SimpleExpandGroupSettingCard, ToolButton, ProgressBar, PushButton, BodyLabel, StrongBodyLabel, ScrollArea, TitleLabel, ToolTipFilter, CaptionLabel
 from qfluentwidgets import FluentIcon as FIF
 
-class SimpleProgressBarCard(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumHeight(90)
-
-        self.cardLayout = QVBoxLayout(self)
-        self.cardLayout.setContentsMargins(45, 10, 55, 10)
-        
-        self.processFileHLayout = QHBoxLayout()
-        self.processBarHLayout = QHBoxLayout()
-        self.processInfoHLayout = QHBoxLayout()
-
-        self.fileTextLabel = BodyLabel('正在处理: ', self)
-        self.fileNameLabel = BodyLabel('占位1.mp4', self)
-
-        self.barTextLabel = BodyLabel('当前进度: ', self)
-        self.progress_bar = ProgressBar(self)
-        self.progress_bar.setRange(0, 100)
-
-        self.processTextLabel = CaptionLabel('任务进度: ', self)
-        self.processingLabel = CaptionLabel('1 / 占位', self)
-
-        self._initLayout()
-
-    def _initLayout(self):
-        self.processFileHLayout.addWidget(self.fileTextLabel)
-        self.processFileHLayout.addWidget(self.fileNameLabel)
-        self.processFileHLayout.addStretch(1)
-
-        self.processBarHLayout.addWidget(self.barTextLabel)
-        self.processBarHLayout.addWidget(self.progress_bar)
-
-        self.processInfoHLayout.addWidget(self.processTextLabel)
-        self.processInfoHLayout.addWidget(self.processingLabel)
-        self.processInfoHLayout.addStretch(1)
-
-
-        self.cardLayout.addLayout(self.processFileHLayout)
-        self.cardLayout.addLayout(self.processBarHLayout)
-        self.cardLayout.addLayout(self.processInfoHLayout)
-        self.cardLayout.addStretch(1)
-
-        self.setLayout(self.cardLayout)
-
-    def update_progress(self, current_idx: int, total_files: int, filename: str, percent: float):
-        self.processingLabel.setText(f'{current_idx} / {total_files}')
-        self.fileNameLabel.setText(filename)
-        self.progress_bar.setValue(int(percent))
-
-class logCard(QWidget):
-    pass
 class ProgressBarCard(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -120,6 +69,10 @@ class ProgressBarCard(QWidget):
     def update_time(self, time_str: str):
         self.TimeLabel.setText(time_str)
 
+    def hide_time_labels(self):
+        """隐藏剩余时间相关属性"""
+        self.TimeTextLabel.hide()
+        self.TimeLabel.hide()
 
 class TaskCardTemplate(ExpandGroupSettingCard):
     def __init__(self, ico, title: str, parent=None):
@@ -154,11 +107,13 @@ class TaskCardTemplate(ExpandGroupSettingCard):
         self.taskGroup = ProgressBarCard(self)
         self.addGroupWidget(self.taskGroup)
 
-
 class TaskCard(QWidget):
+    """每个任务对应的卡片UI组件, 包含一个 TaskCardTemplate 和一个后台 Worker 线程的引用"""
+    stopTask = Signal()
+    openFolder = Signal()
+
     def __init__(self, functionName: str, fileList: list, parent=None):
         super().__init__(parent)
-
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
@@ -170,12 +125,22 @@ class TaskCard(QWidget):
             self.task_card = TaskCardTemplate(FIF.MEDIA, '媒体封装', self)
         elif functionName == 'AutoEncoding':
             self.task_card = TaskCardTemplate(FIF.TRAIN, 'AME', self)
-
+        # feature 未知类型任务的卡片 和 不处理逻辑
 
         self.total_files = len(fileList)
+        self.is_finished = False
+
+        # 绑定按钮事件到信号
+        self.task_card.title_stop_btn.clicked.connect(self.stopTask.emit)
+        self.task_card.title_path_btn.clicked.connect(self.openFolder.emit)
 
         self.layout.addWidget(self.task_card)
         self.setLayout(self.layout)
+
+    def hide_time_labels(self):
+        """外部调用以隐藏进度卡上的预测时间Label"""
+        if hasattr(self.task_card.taskGroup, 'hide_time_labels'):
+            self.task_card.taskGroup.hide_time_labels()
 
     def update_task_progress(self, current_idx: int, filename: str, percent: float, time_left: str = "00:00:00"):
         """
@@ -198,27 +163,25 @@ class TaskCard(QWidget):
 
         # 如果文件处理完了更新 Processing 的文本为 "任务完成"
         if current_idx >= self.total_files and percent >= 100:
-            self.task_card.progessStateLabel.setText('任务完成: 100.0%') 
-        else:
-            pass
+            self.is_finished = True
+            self.task_card.progessStateLabel.setText('任务完成: 100.0%')
+            self.task_card.title_stop_btn.setEnabled(False)
 
     def mark_as_error(self, error_msg: str):
         """任务出错强制终止UI样式更改"""
+        self.is_finished = True
         self.task_card.progessStateLabel.setText('运行错误')
         self.task_card.progessStateLabel.setStyleSheet("color: red;")
+        self.task_card.title_stop_btn.setEnabled(False)
         if hasattr(self.task_card.taskGroup, 'update_time'):
-            self.task_card.taskGroup.update_time("中止")
-        self.task_card.taskGroup.processingLabel.setText('已中止')
+            self.task_card.taskGroup.update_time("失败")
+        self.task_card.taskGroup.processingLabel.setText('已失败')
 
-if __name__ == "__main__":
-    from PySide6.QtWidgets import QApplication
-    import sys
-
-    app = QApplication(sys.argv)
-    demo_files = ['video1.mp4', 'video2.mp4', 'video3.mp4']
-    demo_card = TaskCard('Recondeing', demo_files)
-    demo_card.show()
-    sys.exit(app.exec())
-
-
-
+    def mark_as_cancelled(self):
+        """任务手动中止的样式更改"""
+        self.is_finished = True
+        self.task_card.progessStateLabel.setText('已中止')
+        self.task_card.title_stop_btn.setEnabled(False)
+        if hasattr(self.task_card.taskGroup, 'update_time'):
+            self.task_card.taskGroup.update_time("已中止")
+        self.task_card.taskGroup.processingLabel.setText('已取消')

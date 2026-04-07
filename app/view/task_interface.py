@@ -1,13 +1,18 @@
 # coding: utf-8
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea
+import os
+from pathlib import Path
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QApplication
 from PySide6.QtCore import Qt
 
-from qfluentwidgets import ExpandGroupSettingCard, SimpleExpandGroupSettingCard, ToolButton, ProgressBar, PushButton, BodyLabel, StrongBodyLabel, ScrollArea, TitleLabel
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import PushButton, ScrollArea, TitleLabel, FluentIcon as FIF
+from qfluentwidgets import InfoBar, InfoBarPosition
 
-from ..components.task_card_interface import TaskCard
 from ..common.signal_bus import signalBus
+from ..common.media_utils import classify_files
+from ..common.style_sheet import StyleSheet
+from ..components.task_card_interface import TaskCard
 from ..services.recode.recode_worker import RecodeWorker
+
 
 class TaskInterface(QWidget):
     def __init__(self, parent=None):
@@ -38,16 +43,15 @@ class TaskInterface(QWidget):
 
     def _progressArea(self):
         self.progressBox = QWidget(self)
-        self.progressBox.setStyleSheet("""background: transparent;""")
+        self.progressBox.setObjectName('ProgressBox')
         self.progressLayout = QVBoxLayout(self.progressBox)
         self.progressLayout.setContentsMargins(0, 0, 0, 0)
 
         self.progressArea = ScrollArea(self)
         self.progressArea.setWidget(self.progressBox)
         self.progressArea.setWidgetResizable(True)
-        self.progressArea.setStyleSheet("""QScrollArea { border: none; background: transparent; }""")
+        StyleSheet.TASK_INTERFACE.apply(self)
 
-        # 为了保证任务卡片都在上方而不会自动平分撑开间距，添加一个弹簧在布局底部
         self.progressLayout.addStretch(1)
 
     def _initLayout(self):
@@ -69,19 +73,36 @@ class TaskInterface(QWidget):
         signalBus.taskProgressUpdated.connect(self.on_task_progress_updated)
         signalBus.taskCompleted.connect(self.on_task_completed)
         signalBus.taskError.connect(self.on_task_error)
+        signalBus.taskCancelled.connect(self.on_task_cancelled)
+        
+        self.clearTaskBtn.clicked.connect(self.clear_finished_tasks)
+
+    def clear_finished_tasks(self):
+        """清除已完成或抛错的废弃任务卡片, 避免挤占UI资源"""
+        for task_id, card in list(self.task_cards.items()):
+            if getattr(card, 'is_finished', False):
+                # 从布局和视图树中卸载卡片并清空字典
+                self.progressLayout.removeWidget(card)
+                card.deleteLater()
+                del self.task_cards[task_id]
 
     def on_task_added(self, payload: dict):
         """ 收到新任务包后实例化新的任务卡片 """
         task_id = payload.get("task_id")
-        task_type = payload.get("type", "Recondeing")
+        task_type = payload.get("type", "")
         files = payload.get("files", [])
 
-        # 创建新任务卡片并记录引用
         new_task_card = TaskCard(task_type, files, self)
-        self.task_cards[task_id] = new_task_card
+        if files:
+            file_category = classify_files([files[0]])
+            if not file_category['video'] and not file_category['audio']:
+                new_task_card.hide_time_labels()
 
-        # 插入到布局的最上方 (index=0), 将下面原有的卡片及底部占位弹簧往下挤
-        self.progressLayout.insertWidget(0, new_task_card)
+        new_task_card.stopTask.connect(lambda t_id=task_id: self.stop_running_task(t_id))
+        new_task_card.openFolder.connect(lambda p=payload: self.open_output_folder(p))
+
+        self.task_cards[task_id] = new_task_card # 先保管到字典里以便后续更新UI
+        self.progressLayout.insertWidget(0, new_task_card) # 插入到最前面
 
         # 实例化后台任务线程 Worker，并将其保管，防止被垃圾回收
         # 注意：此处未来可做队列控制以限制同时并行的任务数，暂时直接 start 并行执行
@@ -91,7 +112,45 @@ class TaskInterface(QWidget):
         worker.finished.connect(lambda t_id=task_id: self.on_worker_finished(t_id))
         
         self.workers[task_id] = worker
-        worker.start()
+        worker.start() # start 后线程会执行 run() 方法，run() 内部会发出进度更新等信号被上面绑定的槽捕获并更新UI
+
+    def stop_running_task(self, task_id: str):
+        """中止具体后台进程"""
+        if task_id in self.workers:
+            self.workers[task_id].stop()
+            # 用户选择立刻终止任务
+            self.on_task_cancelled(task_id)
+
+    def on_task_cancelled(self, task_id: str):
+        if task_id in self.task_cards:
+            self.task_cards[task_id].mark_as_cancelled()
+        
+        InfoBar.warning(
+            title='任务中止',
+            content='手动终止了正在执行的任务进程。',
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=3000,
+            parent=QApplication.activeWindow()
+        )
+
+    def open_output_folder(self, payload: dict):
+        """调用原生资源管理器打开设定的输出文件夹"""
+        output_dir = payload.get("states", {}).get("output_state", {}).get("output_dir", "")
+        files = payload.get("files", [])
+        
+        # 兜底：如果设置了“保存在源目录”未指定输出路径，解析第一个文件的目录
+        try:
+            if not output_dir and files:
+                output_dir = str(Path(files[0]).parent)
+            
+            if output_dir and os.path.exists(output_dir):
+                os.startfile(output_dir)
+            else:
+                InfoBar.warning('文件路径不存在', f'找不到输出路径: {output_dir}', parent=self.window())
+        except Exception as e:
+            print(f"打开文件夹失败: {e}")
 
     def on_worker_finished(self, task_id: str):
         """ 线程结束时自动回收其在内存中的资源 """
@@ -112,13 +171,26 @@ class TaskInterface(QWidget):
         if task_id in self.task_cards:
             self.task_cards[task_id].mark_as_error(error_msg)
         
-        from qfluentwidgets import InfoBar, InfoBarPosition
+        # 将完整的报错信息呈现。使用 QApplication.activeWindow() 获取当前焦点所在窗口，确保任何页面都能弹。
         InfoBar.error(
-            title='转换任务出错',
+            title='执行失败',
             content=error_msg,
             orient=Qt.Horizontal,
             isClosable=True,
-            position=InfoBarPosition.TOP_RIGHT,
-            duration=-1,  # 错误信息不要自动消失，-1 代表除非手动关闭
-            parent=self
+            position=InfoBarPosition.TOP,
+            duration=-1, 
+            parent=QApplication.activeWindow() 
         )
+        
+        # 如果是点击了开始转码后一秒内立即失败（如配置错误、FFmpeg不支持参数等），UI上直接清理掉这个错的任务卡片
+        if task_id in self.task_cards:
+            card = self.task_cards[task_id]
+            # 这里检查如果并未跑完（抛错通常都是没跑完），将其从列表抹去
+            if not card.is_finished:
+                self.progressLayout.removeWidget(card)
+                card.deleteLater()
+                del self.task_cards[task_id]
+                
+        # 强制清理挂掉的 Worker 以阻断排队文件
+        if task_id in self.workers:
+            self.workers[task_id].stop()

@@ -1,0 +1,7 @@
+progressBox, #progressBox {
+    background: transparent;
+}
+progressArea, ScrollArea {
+    border: none;
+    background: transparent;
+}

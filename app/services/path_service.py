@@ -13,6 +13,13 @@ class PathService:
             return Path(__file__).resolve().parent.parent.parent
         
     @staticmethod
+    def get_log_dir() -> Path:
+        """获取 logs 目录的路径"""
+        log_dir = PathService.get_base_dir() / "logs"
+        log_dir.mkdir(exist_ok=True)
+        return log_dir
+
+    @staticmethod
     def get_tools_dir() -> Path:
         """获取 tools 文件夹的路径"""
         return PathService.get_base_dir() / "tools" 

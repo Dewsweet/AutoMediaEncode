@@ -1,0 +1,8 @@
+scrollContainer, #scrollContainer {
+    background-color: transparent;
+}
+
+scrollArea, QScrollArea {
+    background-color: transparent;
+    border: none;
+}

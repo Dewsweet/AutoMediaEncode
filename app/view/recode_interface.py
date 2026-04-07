@@ -1,19 +1,18 @@
 # coding: utf-8
-import os
-import ffmpeg
+import time
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QFileDialog, QApplication
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QColor
 
-from qfluentwidgets import ScrollArea, FlowLayout, TitleLabel, CaptionLabel, PushButton, PrimaryPushButton, qrouter
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import ScrollArea, TitleLabel, CaptionLabel, PushButton, PrimaryPushButton, qrouter
+from qfluentwidgets import InfoBar, InfoBarPosition, FluentIcon as FIF
 
 from ..components.recode_card_interface import InputFilesCard, FileInfoViewCard, VideoParamCard, AudioParamCard, ImageParamCard, SubtitleParamCard, OutputCard
 # from ..components.fileload_interface import FileLoadInterface
-from ..common.media_utils import classify_files, get_present_types
+from ..common.media_utils import classify_files, get_present_types, VIDEO_EXTS, AUDIO_EXTS, IMAGE_EXTS, SUBTITLE_EXTS
+from ..common.signal_bus import signalBus
+from ..common.style_sheet import StyleSheet
 from ..services.mediainfo_service import MediaInfoService
-from ..services.recode.ffmpeg_runner import FFmpegRunner
 
 class RecodeInterface(QWidget):
     def __init__(self, parent=None):
@@ -39,12 +38,12 @@ class RecodeInterface(QWidget):
         # 添加布局
         self.hearderBox = QWidget()
         self.hearderVLayout = QVBoxLayout(self.hearderBox)
-        self.hearderVLayout.setContentsMargins(0, 0, 20, 10)
+        self.hearderVLayout.setContentsMargins(0, 0, 25, 10)
         self.hearderVLayout.setSpacing(0)
 
         self.hearderButtonBox = QWidget()
         self.hearderButtonLayout = QHBoxLayout(self.hearderButtonBox)
-        self.hearderButtonLayout.setContentsMargins(0, 0, 0, 0)
+        self.hearderButtonLayout.setContentsMargins(0, 20, 0, 0)
         self.hearderButtonLayout.setSpacing(10)
 
         # 添加控件
@@ -57,14 +56,14 @@ class RecodeInterface(QWidget):
     def _srollArea(self):
         # 添加布局
         self.scrollContainer = QWidget()
-        self.scrollContainer.setStyleSheet("background: transparent;")
+        self.scrollContainer.setObjectName("scrollContainer")
         self.scrollContainerVBoxLayout = QVBoxLayout(self.scrollContainer)
-        self.scrollContainerVBoxLayout.setContentsMargins(0, 0, 20, 0)
+        self.scrollContainerVBoxLayout.setContentsMargins(0, 0, 25, 0)
 
         self.scrollArea = ScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollContainer)
-        self.scrollArea.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        StyleSheet.RECODE_INTERFACE.apply(self)
 
 
         self.file_load_box = QWidget()
@@ -133,19 +132,20 @@ class RecodeInterface(QWidget):
         self.videoParam.using_preset_switch.checkedChanged.connect(lambda state: self.update_videoParam_layout())
 
         self.reLoad_button.clicked.connect(self.open_file_dialog)
-        # Debug: 右键点击重载按钮，注入测试文件列表
-        self.reLoad_button.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.reLoad_button.customContextMenuRequested.connect(self.inject_test_files)
 
         self.imageParam.enable_image_base_process_switchButton.checkedChanged.connect(lambda state: self.emit_image_size())
 
-        
         # 调试用：绑定组装测试打印到 开始转码 按钮
-        self.start_recode_button.clicked.connect(self._test_builder_output)
+        self.start_recode_button.clicked.connect(self.emit_builder_output)
 
 
     def open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", "所有文件 (*)")
+        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
+        a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
+        i_ext = "图片文件 (" + " ".join(f"*{ext}" for ext in IMAGE_EXTS) + ")"
+        s_ext = "字幕文件 (" + " ".join(f"*{ext}" for ext in SUBTITLE_EXTS) + ")"
+        all_ext = "所有文件 (*)"
+        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}")
         if files:
             self.process_loaded_files(files)
             self.fileInfoView.clear_info()
@@ -197,8 +197,7 @@ class RecodeInterface(QWidget):
         if width and height:
             self.imageParam.set_original_size(width, height)
         
-
-    def _test_builder_output(self):
+    def emit_builder_output(self):
         """Debug: 测试参数装配逻辑, 打印出根据当前UI状态和输入文件生成的命令行参数"""
         video_state = self.videoParam.get_state()
         audio_state = self.audioParam.get_state()
@@ -209,11 +208,65 @@ class RecodeInterface(QWidget):
         # 获取当前列表中的文件
         files = self.inputFilesList.get_all_file_paths()
         
-        from ..common.signal_bus import signalBus
-        import time
+        # 空文件列表检查
+        if not files:
+            InfoBar.error(
+                title='运行错误',
+                content='文件列表为空, 请检查输入文件',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+            return
+        
+        # 文件存在性和有效性检查
+        for f in files:
+            if not Path(f).exists() or not Path(f).is_file():
+                InfoBar.error(
+                    title='运行错误',
+                    content=f'文件不存在或已被删除:\n{f}',
+                    orient=Qt.Horizontal,
+                    isClosable=False,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=3000,
+                    parent=self
+                )
+                return
+        
+        # 文件格式冲突检查
+        for file in files:
+            # 获取扩展名并去到"."，进行简单的格式冲突检查
+            f = Path(file).suffix.strip(".").lower()
 
+            if f in [video_state.get('container', '').lower(), audio_state.get('encoder_format', '').lower(), image_state.get('encoder_format', '').lower(), subtitle_state.get('encoder_format', '').lower()] and not output_state.get('custom_suffix'):
+                InfoBar.warning(
+                    title='注意',
+                    content=f'输入文件容器与输出容器设置冲突: {f}\n请检查或者启用输出自定义后缀设置',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=-1,
+                    parent=self
+                )
+                return
+        
+        # 输出目录设置检查
+        if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
+            InfoBar.error(
+                title='运行错误',
+                content='输出目录未设置, 请检查输出设置',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+            return
+        
+        # 通过基础检查后，组装任务负载并发出信号，通知后台开始处理
         task_id = f"task_{int(time.time()*1000)}"
-
         payload = {
             "task_id": task_id,
             "type": "Recondeing",
@@ -226,35 +279,11 @@ class RecodeInterface(QWidget):
                 "output_state": output_state
             }
         }
-        
         signalBus.taskAdded.emit(payload)
         
-        # 抛出信息提示用户
-        from qfluentwidgets import InfoBar, InfoBarPosition
-        InfoBar.success(
-            title='任务已添加',
-            content=f'已成功添加 {len(files)} 个文件进入重编码任务队列',
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=3000,
-            parent=self
-        )
-
-    def inject_test_files(self, pos):
-        """Debug: 模拟一份文件列表拿来测试（右键点击“重载文件”触发）"""
-        test_files = [
-            "C:/movies/test_video_1.mp4",
-            "C:/movies/test_video_2.mkv",
-            "D:/music/song_1.mp3",
-            "D:/images/pic_1.jpg",
-            "D:/subs/subtitle.srt"
-        ]
-        self.process_loaded_files(test_files)
-
 
     def update_videoParam_layout(self):
-        # 获取当前窗口的宽度
+        """根据当前窗口宽度和预设开关状态，动态调整 videoParam 和 audioParam 的布局方式"""
         window_width = self.width()
         threshold = 850
 
