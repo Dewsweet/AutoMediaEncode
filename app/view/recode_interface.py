@@ -2,7 +2,7 @@
 import time
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QFileDialog, QApplication
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 
 from qfluentwidgets import ScrollArea, TitleLabel, CaptionLabel, PushButton, PrimaryPushButton, qrouter
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentIcon as FIF
@@ -126,6 +126,9 @@ class RecodeInterface(QWidget):
         self.setLayout(self.mainLayout)
 
     def _connect_signal(self):
+        # 接收全局任务错误捕获信号弹窗
+        signalBus.taskError.connect(self.on_task_error)
+
         # 展示预览信息
         self.inputFilesList.fileClicked.connect(self.display_view_info)
 
@@ -198,7 +201,7 @@ class RecodeInterface(QWidget):
             self.imageParam.set_original_size(width, height)
         
     def emit_builder_output(self):
-        """Debug: 测试参数装配逻辑, 打印出根据当前UI状态和输入文件生成的命令行参数"""
+        """组装当前的任务负载并发出全局信号，通知后台开始处理"""
         video_state = self.videoParam.get_state()
         audio_state = self.audioParam.get_state()
         image_state = self.imageParam.get_state()
@@ -279,8 +282,42 @@ class RecodeInterface(QWidget):
                 "output_state": output_state
             }
         }
+        
+        self._current_checking_task_id = task_id
+        self._current_task_has_error = False
+        
         signalBus.taskAdded.emit(payload)
         
+        # 延时 800 毫秒后判定后端程序是否闪崩报错
+        QTimer.singleShot(800, lambda t=task_id: self._check_task_start_success(t))
+
+    def _check_task_start_success(self, task_id: str):
+        if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False):
+            InfoBar.success(
+                title='任务执行成功',
+                content='进入「任务进度」可查看详情',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+
+        
+    def on_task_error(self, task_id: str, error_msg: str):
+        """将转码任务发生错误时的弹窗集中放置在 RecodeInterface 进行提醒"""
+        if getattr(self, '_current_checking_task_id', '') == task_id:
+            self._current_task_has_error = True
+            
+        InfoBar.error(
+            title='执行失败',
+            content=error_msg,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=-1, 
+            parent=QApplication.activeWindow() 
+        )
 
     def update_videoParam_layout(self):
         """根据当前窗口宽度和预设开关状态，动态调整 videoParam 和 audioParam 的布局方式"""

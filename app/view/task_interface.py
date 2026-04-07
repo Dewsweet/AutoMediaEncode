@@ -164,23 +164,28 @@ class TaskInterface(QWidget):
 
     def on_task_completed(self, task_id: str):
         """ 任务完成后续处理 """
-        pass
+        if task_id in self.task_cards:
+            card = self.task_cards[task_id]
+            # 更新为 100% 并在UI展现完成状态
+            # 修复 TypeError: current_idx 参数必须为 int，不能为 None
+            card.update_task_progress(card.total_files, "全部完成", 100.0, "00:00:00")
+            
+        InfoBar.success(
+            title='任务处理完成',
+            content='你添加的转码任务已全部执行完毕！',
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=-1,
+            parent=QApplication.activeWindow()
+        )
 
     def on_task_error(self, task_id: str, error_msg: str):
         """ 收到特定任务的异常报错 """
         if task_id in self.task_cards:
             self.task_cards[task_id].mark_as_error(error_msg)
         
-        # 将完整的报错信息呈现。使用 QApplication.activeWindow() 获取当前焦点所在窗口，确保任何页面都能弹。
-        InfoBar.error(
-            title='执行失败',
-            content=error_msg,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=-1, 
-            parent=QApplication.activeWindow() 
-        )
+        # 移除原先在此地的 InfoBar 弹窗逻辑，已统一交由 RecodeInterface 弹窗提醒。
         
         # 如果是点击了开始转码后一秒内立即失败（如配置错误、FFmpeg不支持参数等），UI上直接清理掉这个错的任务卡片
         if task_id in self.task_cards:
