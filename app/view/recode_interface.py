@@ -128,6 +128,8 @@ class RecodeInterface(QWidget):
     def _connect_signal(self):
         # 接收全局任务错误捕获信号弹窗
         signalBus.taskError.connect(self.on_task_error)
+        signalBus.taskCompleted.connect(self.on_task_finished)
+        signalBus.taskCancelled.connect(self.on_task_finished)
 
         # 展示预览信息
         self.inputFilesList.fileClicked.connect(self.display_view_info)
@@ -285,14 +287,19 @@ class RecodeInterface(QWidget):
         
         self._current_checking_task_id = task_id
         self._current_task_has_error = False
+        self._current_task_is_finished = False
         
+        # 禁用转码按钮并修改文本，等待任务完成重置
+        self.start_recode_button.setText('正在执行中...')
+        self.start_recode_button.setEnabled(False)
+
         signalBus.taskAdded.emit(payload)
         
         # 延时 800 毫秒后判定后端程序是否闪崩报错
         QTimer.singleShot(800, lambda t=task_id: self._check_task_start_success(t))
 
     def _check_task_start_success(self, task_id: str):
-        if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False):
+        if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):
             InfoBar.success(
                 title='任务执行成功',
                 content='进入「任务进度」可查看详情',
@@ -304,8 +311,17 @@ class RecodeInterface(QWidget):
             )
 
         
+    def on_task_finished(self, task_id: str = ""):
+        """任务结束(成功/取消)时恢复按钮状态"""
+        if getattr(self, '_current_checking_task_id', '') == task_id:
+            self._current_task_is_finished = True
+        self.start_recode_button.setText('开始转码')
+        self.start_recode_button.setEnabled(True)
+
     def on_task_error(self, task_id: str, error_msg: str):
         """将转码任务发生错误时的弹窗集中放置在 RecodeInterface 进行提醒"""
+        self.on_task_finished(task_id)  # 发生错误也恢复按钮状态
+
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_has_error = True
             
@@ -316,7 +332,7 @@ class RecodeInterface(QWidget):
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=-1, 
-            parent=QApplication.activeWindow() 
+            parent=self.window() 
         )
 
     def update_videoParam_layout(self):

@@ -13,6 +13,7 @@ from ...common.media_utils import classify_files
 from .ffmpeg_builder import FFmpegBuilder
 from ...common.signal_bus import signalBus
 from ...common.logger import logger
+from ...services.tool_service import ToolService
 
 class RecodeWorker(QThread):
     def __init__(self, payload: dict, parent=None):
@@ -92,6 +93,15 @@ class RecodeWorker(QThread):
             
         out_path = out_dir_path / (fname + out_ext)
         out_path_str = out_path.as_posix()
+        
+        passlogfile_base_name = f"{fname}_passlog_{task_id}"
+        passlogfile_path_str = (out_dir_path / passlogfile_base_name).as_posix()
+
+        # 统一从 ToolService 获取 ffmpeg 路径
+        ffmpeg_bin_path = ToolService.get_tool_path('ffmpeg')
+        if not ffmpeg_bin_path:
+            ffmpeg_bin_path = 'ffmpeg' # fallback
+            logger.warning("未在配置或Path中找到ffmpeg对应的程序文件, 回退使用系统指令'ffmpeg'")
 
         try:
             if is_video:
@@ -102,6 +112,9 @@ class RecodeWorker(QThread):
                         break
                         
                     merged_kw = v_kw.copy()
+                    if total_passes > 1:
+                        merged_kw["passlogfile"] = passlogfile_path_str
+                        
                     if merged_kw.get("pass") == 1 or merged_kw.get("pass") == "1":
                         merged_kw["an"] = None
                         out_path_compile = "NUL" if os.name == 'nt' else "/dev/null"
@@ -113,6 +126,8 @@ class RecodeWorker(QThread):
                     stream = ffmpeg.input(in_path_str)
                     stream = ffmpeg.output(stream, out_path_compile, **merged_kw)
                     cmd_list = ffmpeg.compile(stream, overwrite_output=True)
+                    if cmd_list:
+                        cmd_list[0] = ffmpeg_bin_path
                     
                     logger.info(f"[Task {task_id}] [Pass {pass_num}/{total_passes}] FFmpeg command:\n" + shlex.join(cmd_list))
                     self._run_long_task_with_progress(task_id, idx, total_files, file_path.name, cmd_list, pass_num, total_passes)
@@ -123,6 +138,8 @@ class RecodeWorker(QThread):
                 stream = ffmpeg.input(in_path_str)
                 stream = ffmpeg.output(stream, out_path_str, **merged_kw)
                 cmd_list = ffmpeg.compile(stream, overwrite_output=True)
+                if cmd_list:
+                    cmd_list[0] = ffmpeg_bin_path
                 
                 logger.info(f"[Task {task_id}] FFmpeg command:\n" + shlex.join(cmd_list))
                 self._run_long_task_with_progress(task_id, idx, total_files, file_path.name, cmd_list)
@@ -132,6 +149,8 @@ class RecodeWorker(QThread):
                 stream = ffmpeg.input(in_path_str)
                 stream = ffmpeg.output(stream, out_path_str, **kw)
                 cmd_list = ffmpeg.compile(stream, overwrite_output=True)
+                if cmd_list:
+                    cmd_list[0] = ffmpeg_bin_path
                 
                 logger.info(f"[Task {task_id}] Subprocess FFmpeg:\n" + shlex.join(cmd_list))
                 
@@ -157,6 +176,14 @@ class RecodeWorker(QThread):
             logger.error(f"[Task {task_id}] Processing file failed: {traceback.format_exc()}")
             signalBus.taskError.emit(task_id, f"未能成功打包成FFmpeg命令，可能是界面参数导致异常:\n{str(e)}")
             self.stop()
+        finally:
+            if is_video and 'v_kwargs_list' in locals() and len(v_kwargs_list) > 1:
+                # 清除当前文件生成的临时 2-pass log 文件
+                for pf in out_dir_path.glob(f"{passlogfile_base_name}*"):
+                    try:
+                        pf.unlink()
+                    except Exception as e:
+                        logger.error(f"清理临时日志文件失败 {pf}: {e}")
 
     def _handle_ffmpeg_error(self, task_id, filename, stderr_msg):
         lines = [line.strip() for line in stderr_msg.splitlines() if line.strip()]

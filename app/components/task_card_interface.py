@@ -8,7 +8,7 @@ from qfluentwidgets import FluentIcon as FIF
 class ProgressBarCard(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumHeight(90)
+        # self.setMinimumHeight(80)
 
         self.cardLayout = QVBoxLayout(self)
         self.cardLayout.setContentsMargins(45, 10, 55, 10)
@@ -57,7 +57,7 @@ class ProgressBarCard(QWidget):
         self.cardLayout.addLayout(self.processBarHLayout)
         self.cardLayout.addLayout(self.processInfoHLayout)
         self.cardLayout.addStretch(1)
-        self.cardLayout.setSpacing(5)
+        self.cardLayout.setSpacing(0)
 
         self.setLayout(self.cardLayout)
 
@@ -69,10 +69,12 @@ class ProgressBarCard(QWidget):
     def update_time(self, time_str: str):
         self.TimeLabel.setText(time_str)
 
-    def hide_time_labels(self):
-        """隐藏剩余时间相关属性"""
+    def hide_fast_task_elements(self):
+        """隐藏快速处理任务（如图片/字幕）无需展示的细粒度UI元素"""
         self.TimeTextLabel.hide()
         self.TimeLabel.hide()
+        self.barTextLabel.hide()
+        self.progress_bar.hide()
 
 class TaskCardTemplate(ExpandGroupSettingCard):
     def __init__(self, ico, title: str, parent=None):
@@ -137,10 +139,10 @@ class TaskCard(QWidget):
         self.layout.addWidget(self.task_card)
         self.setLayout(self.layout)
 
-    def hide_time_labels(self):
-        """外部调用以隐藏进度卡上的预测时间Label"""
-        if hasattr(self.task_card.taskGroup, 'hide_time_labels'):
-            self.task_card.taskGroup.hide_time_labels()
+    def hide_fast_task_elements(self):
+        """外部调用以隐藏无需细粒度进度的 UI 元素"""
+        if hasattr(self.task_card.taskGroup, 'hide_fast_task_elements'):
+            self.task_card.taskGroup.hide_fast_task_elements()
 
     def update_task_progress(self, current_idx: int, filename: str, percent: float, time_left: str = "00:00:00"):
         """

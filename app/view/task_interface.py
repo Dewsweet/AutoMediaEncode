@@ -96,7 +96,7 @@ class TaskInterface(QWidget):
         if files:
             file_category = classify_files([files[0]])
             if not file_category['video'] and not file_category['audio']:
-                new_task_card.hide_time_labels()
+                new_task_card.hide_fast_task_elements()
 
         new_task_card.stopTask.connect(lambda t_id=task_id: self.stop_running_task(t_id))
         new_task_card.openFolder.connect(lambda p=payload: self.open_output_folder(p))
@@ -118,8 +118,8 @@ class TaskInterface(QWidget):
         """中止具体后台进程"""
         if task_id in self.workers:
             self.workers[task_id].stop()
-            # 用户选择立刻终止任务
-            self.on_task_cancelled(task_id)
+            # 用户选择立刻终止任务，发出全局中止信号
+            signalBus.taskCancelled.emit(task_id)
 
     def on_task_cancelled(self, task_id: str):
         if task_id in self.task_cards:
@@ -132,7 +132,7 @@ class TaskInterface(QWidget):
             isClosable=True,
             position=InfoBarPosition.TOP_RIGHT,
             duration=3000,
-            parent=QApplication.activeWindow()
+            parent=self.window()
         )
 
     def open_output_folder(self, payload: dict):
@@ -177,7 +177,7 @@ class TaskInterface(QWidget):
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=-1,
-            parent=QApplication.activeWindow()
+            parent=self.window()
         )
 
     def on_task_error(self, task_id: str, error_msg: str):
@@ -186,15 +186,6 @@ class TaskInterface(QWidget):
             self.task_cards[task_id].mark_as_error(error_msg)
         
         # 移除原先在此地的 InfoBar 弹窗逻辑，已统一交由 RecodeInterface 弹窗提醒。
-        
-        # 如果是点击了开始转码后一秒内立即失败（如配置错误、FFmpeg不支持参数等），UI上直接清理掉这个错的任务卡片
-        if task_id in self.task_cards:
-            card = self.task_cards[task_id]
-            # 这里检查如果并未跑完（抛错通常都是没跑完），将其从列表抹去
-            if not card.is_finished:
-                self.progressLayout.removeWidget(card)
-                card.deleteLater()
-                del self.task_cards[task_id]
                 
         # 强制清理挂掉的 Worker 以阻断排队文件
         if task_id in self.workers:

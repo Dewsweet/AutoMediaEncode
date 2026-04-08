@@ -259,7 +259,7 @@ class FFmpegBuilder:
                         cmd_list = filters_cfg.get("crop_dimension_resize", [])
                     else:
                         # 分辨率足够则直接裁切
-                        cmd_list = filters_cfg.get("crop_dimension", [])
+                        cmd_list = filters_cfg.get("crop_dimension_resize", [])
                         
                     if cmd_list:
                         # 这里要注意 format_data 里的键名得能匹配上 json 里的 {width} 和 {height}
