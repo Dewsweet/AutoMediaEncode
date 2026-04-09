@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, Any
 
-from .path_service import PathService
+from ..path_service import PathService
 
 class PresetService:
     def __init__(self):

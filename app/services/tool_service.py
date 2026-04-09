@@ -68,7 +68,7 @@ class ToolService:
             "folder": "",
             "type": ".exe",
             "title": "VapourSynth", 
-            "desc": "强大的视频处理框架", 
+            "desc": "强大的视频处理框架; 不影响软件的基本功能, 有需要请自行指定位置", 
             "url": "https://github.com/vapoursynth/vapoursynth", 
             "is_costom": True},
     ]

@@ -11,6 +11,7 @@ class StyleSheet(StyleSheetBase, Enum):
     RECODE_CARD_INTERFACE = "recode_card_interface"
     RECODE_INTERFACE = "recode_interface"
     TASK_INTERFACE = "task_interface"
+    SETTING_INTERFACE = "setting_interface"
 
     def path(self, theme=Theme.AUTO):
         theme = qconfig.theme if theme == Theme.AUTO else theme 

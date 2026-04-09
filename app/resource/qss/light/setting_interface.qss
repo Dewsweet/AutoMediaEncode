@@ -1,0 +1,7 @@
+scrollBox, #scrollBox{
+    background-color: transparent;
+}  
+scrollArea, ScrollArea{
+    background-color: transparent;
+    border: none;
+}

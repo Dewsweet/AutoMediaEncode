@@ -5,7 +5,7 @@ from qfluentwidgets import (MessageBoxBase, SubtitleLabel, BodyLabel, LineEdit, 
                             PushButton, PrimaryPushButton, Action, ToolButton, FluentIcon as FIF,
                             ScrollArea)
 
-from app.services.preset_service import preset_service
+from app.services.setting.preset_service import preset_service
 
 class PresetItemCard(CardWidget):
     """预设卡片中, 每一条预设对应的单行卡片, 控件仅有预设名和删改按钮"""

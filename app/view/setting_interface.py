@@ -2,34 +2,32 @@
 import os
 import shutil
 from pathlib import Path
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QToolTip
-
 from PySide6.QtCore import Qt
-from qfluentwidgets import (ScrollArea, SettingCardGroup, ExpandGroupSettingCard, OptionsSettingCard, CustomColorSettingCard, PrimaryPushSettingCard, ToolTipFilter, qconfig, setTheme, setThemeColor,
-                            TitleLabel, CaptionLabel, BodyLabel, ToolButton, LineEdit, ComboBoxSettingCard, PushSettingCard, InfoBar, InfoBarPosition)
+from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
+
+from qfluentwidgets import (ScrollArea, SettingCardGroup, ExpandGroupSettingCard, OptionsSettingCard, CustomColorSettingCard, PrimaryPushSettingCard, ComboBoxSettingCard, PushSettingCard, 
+                            qconfig, setTheme, setThemeColor, 
+                            TitleLabel, CaptionLabel, BodyLabel, ToolButton, InfoBar, InfoBarPosition, ToolTipFilter)
 
 from qfluentwidgets import FluentIcon as FIF
 
 from app.components.preset_dialog import PresetManagerDialog
-from app.components.template_card import MediaToolsCardTemplate
-from app.services.preset_service import preset_service
+from app.components.tools_template_card import MediaToolsCardTemplate
+from app.services.setting.preset_service import preset_service
 from app.services.tool_service import ToolService
 from app.services.path_service import PathService
 from app.common.config import cfg, VERSION, AUTHOR, YEAR
+from app.common.style_sheet import StyleSheet
 
 
 class SettingInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setObjectName("SettingInterface")
-        
-        # 保证背景透明，以显露出主界面的自定义图片
-        # self.setStyleSheet("#SettingInterface { background-color: transparent; }")
 
         self.mainPage = QWidget()
         self.mainPage.setObjectName("SettingMainPage")
-        # self.mainPage.setStyleSheet("#SettingMainPage { background-color: transparent; }")
         self.mainLayout = QVBoxLayout(self.mainPage)
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
@@ -38,28 +36,32 @@ class SettingInterface(QWidget):
         self.headerAreaVLayout.setContentsMargins(30, 30, 30, 20)
 
         self.scrollBox = QWidget()
-        self.scrollBox.setStyleSheet("background-color: transparent;") 
+        self.scrollBox.setObjectName("scrollBox")
         self.scrollBoxVLayout = QVBoxLayout(self.scrollBox)
         self.scrollBoxVLayout.setContentsMargins(30, 20, 30, 20)
         self.scrollArea = ScrollArea(self)
-        self.scrollArea.setStyleSheet("background-color: transparent; border: none;")
-        self.scrollArea.setWidget(self.scrollBox)
+        self.scrollArea.setWidget(self.scrollBox) 
         self.scrollArea.setWidgetResizable(True)
+        StyleSheet.SETTING_INTERFACE.apply(self)
 
 
         self.titleLabel = TitleLabel("设置")
 
         self._toolsCardArea()
-        self._CustomCardArea()
+        self._customCardArea()
         self._aboutCardArea()
         self._initLayout()
-        self.__connectSignalToSlot()
+        self._connectSignalToSlot()
 
     def _toolsCardArea(self):
         self.toolsCardGroup = SettingCardGroup(self.tr("工具选项"), self.scrollBox)
 
         # 媒体工具检查卡片
-        self.toolsCheckCard = ExpandGroupSettingCard(FIF.MEDIA, "媒体工具", "所用到的基本媒体处理程序, vspipe 请自行填写位置", self.toolsCardGroup)
+        self.toolsCheckCard = ExpandGroupSettingCard(FIF.MEDIA, "媒体工具", "本软件所用到的基本媒体处理工具", self.toolsCardGroup)
+
+        self.toolsCheckCardFuncBtnBox = QWidget()
+        self.toolsCheckCardFuncBtnBoxLayout = QHBoxLayout(self.toolsCheckCardFuncBtnBox)
+        self.toolsCheckCardFuncBtnBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self.download_Tools_Button = ToolButton(FIF.DOWNLOAD, self.toolsCheckCard)
         self.download_Tools_Button.setToolTip("下载工具")
@@ -68,8 +70,11 @@ class SettingInterface(QWidget):
         self.open_tools_folder_button.setToolTip("打开工具文件夹")
         self.open_tools_folder_button.installEventFilter(ToolTipFilter(self.open_tools_folder_button))
 
-        self.toolsCheckCard.addWidget(self.download_Tools_Button)
-        self.toolsCheckCard.addWidget(self.open_tools_folder_button)
+        self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.download_Tools_Button)
+        self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.open_tools_folder_button)
+        self.toolsCheckCardFuncBtnBoxLayout.setSpacing(10)
+
+        self.toolsCheckCard.addWidget(self.toolsCheckCardFuncBtnBox)
 
         self.tool_widgets = {}
         for tool in ToolService.TOOLS_METADATA:
@@ -80,7 +85,6 @@ class SettingInterface(QWidget):
 
             if tool["is_costom"]:
                 card.addVSpipe(True)
-                # 读取 config.py 中的用户自定义 vspipe 路径
                 custom_path = qconfig.get(cfg.vspipe_path)
                 state = ToolService.check_tool_exists(tool["tool_name"], custom_path)
                 
@@ -98,21 +102,20 @@ class SettingInterface(QWidget):
             self.tool_widgets[tool["tool_name"]] = card
             
         # 编码器预设卡片
-        self.encoderPresetCard = ExpandGroupSettingCard(FIF.SETTING, "编码器预设", "展开卡片编写编码器相关参数为预设", self.toolsCardGroup)
+        self.encoderPresetCard = ExpandGroupSettingCard(FIF.SETTING, "编码器预设", "基础编码器相关参数的预设", self.toolsCardGroup)
 
         # 导出预设选项的全局按钮 (放在预设卡片右上方)
         self.exportPresetBtn = ToolButton(FIF.SAVE, self.encoderPresetCard)
         self.exportPresetBtn.setToolTip("导出所有预设")
         self.exportPresetBtn.installEventFilter(ToolTipFilter(self.exportPresetBtn))
         self.encoderPresetCard.addWidget(self.exportPresetBtn)
-        self.exportPresetBtn.clicked.connect(self._on_export_presets_clicked)
 
         self.x264PresetButton = ToolButton(FIF.EDIT, self.encoderPresetCard)
-        self.x264PresetButton.setFixedWidth(30)
+        self.x264PresetButton.setFixedSize(30, 30)
         self.x265PresetButton = ToolButton(FIF.EDIT, self.encoderPresetCard)
-        self.x265PresetButton.setFixedWidth(30)
+        self.x265PresetButton.setFixedSize(30, 30)
         self.svtav1PresetButton = ToolButton(FIF.EDIT, self.encoderPresetCard)
-        self.svtav1PresetButton.setFixedWidth(30)
+        self.svtav1PresetButton.setFixedSize(30, 30)
 
         self.encoderPresetCard.viewLayout.setContentsMargins(0, 0, 10, 0)
         self.encoderPresetCard.viewLayout.setSpacing(0)
@@ -121,7 +124,7 @@ class SettingInterface(QWidget):
         self.encoderPresetCard.addGroup(QIcon(), "x265", self.tr("H.265/HEVC 编码器"), self.x265PresetButton)
         self.encoderPresetCard.addGroup(QIcon(), "SVTAV1", self.tr("SVT-AV1 编码器"), self.svtav1PresetButton)
             
-    def _CustomCardArea(self):
+    def _customCardArea(self):
         self.customCardGroup = SettingCardGroup(self.tr("个性化"), self.scrollBox)
 
         self.languageCard = ComboBoxSettingCard(
@@ -154,10 +157,9 @@ class SettingInterface(QWidget):
             self.tr("选择图片"),
             FIF.PHOTO,
             self.tr("自定义背景图片"),
-            self.tr("跟随窗口拉伸，并自动适配明暗主题的滤镜") + (f" (当前: {Path(qconfig.get(cfg.bg_image_path)).name})" if qconfig.get(cfg.bg_image_path) else ""),
+            self.tr("让程序界面更加花里胡哨😋") + (f" (当前: {Path(qconfig.get(cfg.bg_image_path)).name})" if qconfig.get(cfg.bg_image_path) else ""),
             parent=self.customCardGroup
         )
-        
         self.clearBgButton = ToolButton(FIF.DELETE, self.bgImageCard)
         self.clearBgButton.setToolTip("清除背景图片")
         self.clearBgButton.installEventFilter(ToolTipFilter(self.clearBgButton))
@@ -219,13 +221,16 @@ class SettingInterface(QWidget):
         self.mainLayout.addWidget(self.scrollArea)
         self.setLayout(self.mainLayout)
 
-    def __connectSignalToSlot(self):
+    def _connectSignalToSlot(self):
         qconfig.themeChanged.connect(setTheme)
         self.themeColorCard.colorChanged.connect(lambda c: setThemeColor(c))
 
-        # 绑定工具目录按钮事件
+        # 绑定工具目录按钮
         self.open_tools_folder_button.clicked.connect(self._on_open_tools_folder_clicked)
         self.download_Tools_Button.clicked.connect(self._on_download_tools_clicked)
+
+        # 绑定导出预设按钮
+        self.exportPresetBtn.clicked.connect(self._on_export_presets_clicked)
 
         # 绑定编码器预设按钮
         self.x264PresetButton.clicked.connect(lambda: self._show_preset_dialog("x264"))
@@ -235,6 +240,9 @@ class SettingInterface(QWidget):
         # 绑定背景图片按钮
         self.bgImageCard.clicked.connect(self._on_choose_bg_image_clicked)
         self.clearBgButton.clicked.connect(self._on_clear_bg_image_clicked)
+
+        # 检查更新按钮
+        self.aboutCard.clicked.connect(self._check_for_updates)
 
 
     def _on_open_tools_folder_clicked(self):
@@ -270,15 +278,13 @@ class SettingInterface(QWidget):
                     card.checkState(state)
             else:
                 if card:
-                    card.setSubtitle("错误: 选定的文件不是 vspipe 程序")
+                    card.setSubtitle("错误: 选定的文件不是 vspipe 程序, 请检查文件名")
                     card.checkState(False)
-        
-    def _on_clear_bg_image_clicked(self):
-        """恢复无图片状态"""
-        qconfig.set(cfg.bg_image_path, "")
-        self.bgImageCard.setContent(self.tr("跟随窗口拉伸，并自动适配明暗主题的滤镜") + " (当前: 纯色背景)")
-        if self.window():
-            self.window().update()
+
+    def _show_preset_dialog(self, encoder_name):
+        """展示编码器预设管理弹窗"""
+        dialog = PresetManagerDialog(encoder_name, self.window())
+        dialog.exec()        
 
     def _on_export_presets_clicked(self):
         """将内置的 custom_preset.json 导出给用户"""
@@ -308,6 +314,13 @@ class SettingInterface(QWidget):
                     parent=self
                 )
 
+    def _on_clear_bg_image_clicked(self):
+        """恢复无图片状态"""
+        qconfig.set(cfg.bg_image_path, "")
+        self.bgImageCard.setContent(self.tr("让程序界面更加花里胡哨😋") + " (当前: 默认纯色)")
+        if self.window():
+            self.window().update()
+
     def _on_choose_bg_image_clicked(self):
         """选择自定义背景图片"""
         path, _ = QFileDialog.getOpenFileName(
@@ -315,15 +328,14 @@ class SettingInterface(QWidget):
         )
         if path:
             qconfig.set(cfg.bg_image_path, path)
-            self.bgImageCard.setContent(self.tr("跟随窗口拉伸，并自动适配明暗主题的滤镜") + f" (当前: {Path(path).name})")
+            self.bgImageCard.setContent(self.tr("让程序界面更加花里胡哨😋") + f" (当前: {Path(path).name})")
             # 发送更新信号给主窗口
             if self.window():
                 self.window().update()
 
-    def _show_preset_dialog(self, encoder_name):
-        """展示编码器预设管理弹窗"""
-        dialog = PresetManagerDialog(encoder_name, self.window())
-        dialog.exec()
+    def _check_for_updates(self):
+        """检查更新 (暂时用Github页面链接)"""
+        QDesktopServices.openUrl("https://github.com/Dewsweet/AutoMediaEncode")
 
     def update_tools_state(self):
         """重新检测所有普通工具的状态，不需要重启软件就能刷新状态"""
