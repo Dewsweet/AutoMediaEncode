@@ -23,7 +23,7 @@ class PresetService:
         """
         if not self.preset_file_path.exists():
             # 获取代码目录里的初始模板
-            template_path = PathService.get_common_dir() / "Json" / "custom_preset.json"
+            template_path = PathService.get_common_dir() / "json" / "custom_preset.json"
             if template_path.exists():
                 shutil.copy2(template_path, self.preset_file_path)
             else:
@@ -71,7 +71,7 @@ class PresetService:
 
     def get_default_presets_by_encoder(self, encoder_name: str) -> Dict[str, str]:
         """获取指定编码器的出厂默认预设"""
-        template_path = PathService.get_common_dir() / "Json" / "custom_preset.json"
+        template_path = PathService.get_common_dir() / "json" / "custom_preset.json"
         
         if template_path.exists():
             try:

@@ -12,11 +12,11 @@ class SafeFormatDict(dict):
 
 class FFmpegBuilder:
     def __init__(self):
-        config_path = PathService.get_common_dir() / 'Json' / 'recode_ffmpeg_config.json'
+        config_path = PathService.get_common_dir() / 'json' / 'recode_ffmpeg_config.json'
         
         preset_path = PathService.get_config_dir() / 'custom_preset.json'
         if not preset_path.exists():
-            preset_path = PathService.get_common_dir() / 'Json' / 'custom_preset.json'
+            preset_path = PathService.get_common_dir() / 'json' / 'custom_preset.json'
             
         with open(config_path, 'r', encoding='utf-8-sig') as f:
             self.config = json.load(f)

@@ -8,7 +8,7 @@ from qfluentwidgets import ScrollArea, TitleLabel, CaptionLabel, PushButton, Pri
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentIcon as FIF
 
 from ..components.recode_card_interface import InputFilesCard, FileInfoViewCard, VideoParamCard, AudioParamCard, ImageParamCard, SubtitleParamCard, OutputCard
-# from ..components.fileload_interface import FileLoadInterface
+from ..components.fileload_interface import FileLoadInterface
 from ..common.media_utils import classify_files, get_present_types, VIDEO_EXTS, AUDIO_EXTS, IMAGE_EXTS, SUBTITLE_EXTS
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
@@ -24,11 +24,17 @@ class RecodeInterface(QWidget):
         self.mainLayout.setContentsMargins(20, 20, 0, 10)
         self.mainLayout.setSpacing(0)
 
+        self.vBoxLayout = QVBoxLayout(self)
+        self.stackedWidget = QStackedWidget(self)
+        self.vBoxLayout.addWidget(self.stackedWidget)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+
 
         self._videoParam_is_horizontal = True
 
         self._hearderArea()
         self._srollArea()
+        self.loadFilesPage()
 
         self._initLayout()
         self._connect_signal()
@@ -90,6 +96,23 @@ class RecodeInterface(QWidget):
 
         self.outputCard = OutputCard(self)
 
+    def loadFilesPage(self):
+        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
+        a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
+        i_ext = "图片文件 (" + " ".join(f"*{ext}" for ext in IMAGE_EXTS) + ")"
+        s_ext = "字幕文件 (" + " ".join(f"*{ext}" for ext in SUBTITLE_EXTS) + ")"
+        all_ext = "所有文件 (*)"
+        file_filter = f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}"
+
+
+        self.loadPage = QWidget()
+        self.loadPage.setObjectName("loadPage")
+        self.loadLayout = QVBoxLayout(self.loadPage)
+
+        self.fileLoadWidget = FileLoadInterface(file_filter, title="📌 点击 or 拖放载入文件😇", parent=self.loadPage)
+        self.fileLoadWidget.setFixedSize(360, 200)
+        self.loadLayout.addWidget(self.fileLoadWidget, 0, Qt.AlignCenter)
+
     def _initLayout(self):
         # 头部标题和按钮布局
         self.hearderButtonLayout.addWidget(self.reLoad_button, alignment=Qt.AlignRight)
@@ -123,13 +146,21 @@ class RecodeInterface(QWidget):
         # 总体布局
         self.mainLayout.addWidget(self.hearderBox)
         self.mainLayout.addWidget(self.scrollArea)
-        self.setLayout(self.mainLayout)
+
+        self.stackedWidget.addWidget(self.loadPage)
+        self.stackedWidget.addWidget(self.mainPage)
+
+        qrouter.setDefaultRouteKey(self.stackedWidget, self.loadPage.objectName())
+        self.stackedWidget.setCurrentIndex(0)
 
     def _connect_signal(self):
         # 接收全局任务错误捕获信号弹窗
         signalBus.taskError.connect(self.on_task_error)
         signalBus.taskCompleted.connect(self.on_task_finished)
         signalBus.taskCancelled.connect(self.on_task_finished)
+
+        # 接受文件
+        self.fileLoadWidget.filesReady.connect(self.on_files_loaded)
 
         # 展示预览信息
         self.inputFilesList.fileClicked.connect(self.display_view_info)
@@ -140,9 +171,18 @@ class RecodeInterface(QWidget):
 
         self.imageParam.enable_image_base_process_switchButton.checkedChanged.connect(lambda state: self.emit_image_size())
 
-        # 调试用：绑定组装测试打印到 开始转码 按钮
+        # 发出全局信号通知后台开始处理
         self.start_recode_button.clicked.connect(self.emit_builder_output)
 
+    def on_files_loaded(self, files: list):
+        if not files:
+            return
+
+        self.process_loaded_files(files)
+
+        if self.stackedWidget.currentIndex() != 1:
+            qrouter.push(self.stackedWidget, self.mainPage.objectName())
+            self.stackedWidget.setCurrentIndex(1)
 
     def open_file_dialog(self):
         v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"

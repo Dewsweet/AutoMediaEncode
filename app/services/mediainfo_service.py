@@ -38,21 +38,20 @@ class MediaInfoService:
             return f"{bps} b/s"
 
     @staticmethod
-    def format_duration(sec): 
-        if not sec: return "未知"
+    def format_duration(msec): 
+        # 将持续时间从毫秒转换为 h:mm:ss 格式
+        if not msec: return "未知"
         try:
-            sec = float(sec)
-            h = int(sec // 3600)
-            m = int((sec % 3600) // 60)
-            s = int(sec % 60)
+            seconds = int(msec) // 1000
+            h = seconds // 3600
+            m = (seconds % 3600) // 60
+            s = seconds % 60
             if h > 0:
-                return f"{h}h {m}m {s}s"
-            elif m > 0:
-                return f"{m}m {s}s"
+                return f"{h}h {m:02d}m {s:02d}s"
             else:
-                return f"{s}s"
+                return f"{m}m {s:02d}s"
         except:
-            return f"{sec}s"
+            return f"{msec} ms"
         
     @staticmethod
     def format_displayAspectRatio(dar): 
