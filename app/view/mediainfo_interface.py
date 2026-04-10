@@ -63,13 +63,13 @@ class MediaifInterface(QWidget):
 
         self.buttonHBoxLayout = QHBoxLayout()
 
-        self.titleLabel = TitleLabel('Media Info', self)
-        self.subTitleLabel = CaptionLabel('调用mediainfo查询媒体信息', self)
+        self.titleLabel = TitleLabel('媒体信息', self)
+        self.subTitleLabel = CaptionLabel('调用 MediaInfo 查询媒体信息', self)
         self.subTitleLabel.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
 
-        self.reLoadButton = PushButton('重新载入文件', self, FIF.ADD)
+        self.reLoadButton = PushButton('重新载入文件', self)
         self.reLoadButton.setToolTip('直接拖入文本框也行✨')
-        self.reLoadButton.installEventFilter(ToolTipFilter(self.reLoadButton)) # 
+        self.reLoadButton.installEventFilter(ToolTipFilter(self.reLoadButton))
         self.switchButton = ToggleButton('查看详细信息', self)
         self.switchButton.setChecked(True) 
 
@@ -86,6 +86,7 @@ class MediaifInterface(QWidget):
     def _initWidgets(self):
         self.buttonHBoxLayout.addStretch(1)
         self.buttonHBoxLayout.addWidget(self.reLoadButton, alignment=Qt.AlignRight)
+        self.buttonHBoxLayout.addSpacing(10)
         self.buttonHBoxLayout.addWidget(self.switchButton, alignment=Qt.AlignRight)
         self.buttonHBoxLayout.setAlignment(Qt.AlignVCenter | Qt.AlignRight) 
 
@@ -97,7 +98,7 @@ class MediaifInterface(QWidget):
         self.mainLayout.addWidget(self.headerBox)
         self.mainLayout.addWidget(self.inputFilesList)
         self.mainLayout.addWidget(self.textEdit)
-        self.mainLayout.setContentsMargins(30, 20, 30, 20)
+        self.mainLayout.setContentsMargins(20, 20, 20, 10)
         
         # 页面放进索引
         self.stackedWidget.addWidget(self.loadPage) # index 0

@@ -1,4 +1,4 @@
-progressBox, #progressBox {
+progressBox, #ProgressBox {
     background: transparent;
 }
 progressArea, ScrollArea {

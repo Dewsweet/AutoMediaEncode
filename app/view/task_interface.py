@@ -21,7 +21,7 @@ class TaskInterface(QWidget):
 
         self.mainPage = QWidget()
         self.mainLayout = QVBoxLayout(self.mainPage)
-        self.mainLayout.setContentsMargins(20, 20, 20, 10)
+        self.mainLayout.setContentsMargins(30, 30, 30, 20)
         self.mainLayout.setSpacing(0)
 
         self.task_cards = {}  # 存放所有任务卡片的字典 {task_id: TaskCard}
@@ -127,9 +127,9 @@ class TaskInterface(QWidget):
         
         InfoBar.warning(
             title='任务中止',
-            content='手动终止了正在执行的任务进程。',
+            content='你手动终止了正在执行的任务进程。',
             orient=Qt.Horizontal,
-            isClosable=True,
+            isClosable=False,
             position=InfoBarPosition.TOP_RIGHT,
             duration=3000,
             parent=self.window()
@@ -171,8 +171,8 @@ class TaskInterface(QWidget):
             card.update_task_progress(card.total_files, "全部完成", 100.0, "00:00:00")
             
         InfoBar.success(
-            title='任务处理完成',
-            content='你添加的转码任务已全部执行完毕！',
+            title='任务完成',
+            content='你添加的任务已全部执行完毕！',
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,

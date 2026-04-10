@@ -17,32 +17,22 @@ class FileLoadInterface(SimpleCardWidget):
         super().__init__(parent)
         self.file_filter = file_filter
         # 设置组件属性
-        self.setAcceptDrops(True)
-        self.setMinimumSize(300, 300)
+        self.setAcceptDrops(True) # 允许拖放
+        self.setMinimumSize(360, 200)
         self.setCursor(Qt.PointingHandCursor)
-        # self.setStyleSheet("FileLoadWidget { background-color: rgb(120, 120, 120); border-radius: 8px; border: none;}")
 
         
         #主要布局
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setAlignment(Qt.AlignCenter)
         
+        # 使用图标
         # self.iconWidget = IconWidget(icon, self)
         # self.iconWidget.setFixedSize(80, 80) # 稍微调大一点更有识别度
 
+        # 使用主题按钮
         self.inputButton = PrimaryPushButton('选择文件', self, FluentIcon.FOLDER_ADD)
         self.inputButton.setMinimumSize(120, 40)
-        # self.inputButton.setStyleSheet("""
-        #     PushButton {
-        #         background-color: rgb(100, 100, 100);
-        #         color: white;
-        #         border: none;
-        #         border-radius: 5px;
-        #     }
-        #     PushButton:hover {
-        #         background-color: rgb(140, 140, 140);
-        #     }
-        # """)
 
         self.inputButton.clicked.connect(self._open_file_dialog) 
         
@@ -51,7 +41,7 @@ class FileLoadInterface(SimpleCardWidget):
         
         # 添加布局
         self.vBoxLayout.addStretch(1)
-        #s elf.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignCenter)
+        #self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignCenter)
 
         self.vBoxLayout.addWidget(self.label, 0, Qt.AlignCenter)
         self.vBoxLayout.addSpacing(20)

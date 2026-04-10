@@ -10,10 +10,10 @@ from PySide6.QtCore import QThread
 from ffmpeg_progress_yield import FfmpegProgress
 
 from ...common.media_utils import classify_files
-from .ffmpeg_builder import FFmpegBuilder
 from ...common.signal_bus import signalBus
 from ...common.logger import logger
-from ...services.tool_service import ToolService
+from ..tool_service import ToolService
+from .ffmpeg_builder import FFmpegBuilder
 
 class RecodeWorker(QThread):
     def __init__(self, payload: dict, parent=None):

@@ -20,15 +20,21 @@ class RecodeInterface(QWidget):
         self.setObjectName("RecodeInterface")
 
         self.mainPage = QWidget()
+        self.mainPage.setObjectName("mainPage")
         self.mainLayout = QVBoxLayout(self.mainPage)
-        self.mainLayout.setContentsMargins(20, 20, 0, 10)
-        self.mainLayout.setSpacing(0)
 
         self.vBoxLayout = QVBoxLayout(self)
         self.stackedWidget = QStackedWidget(self)
         self.vBoxLayout.addWidget(self.stackedWidget)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
+
+        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
+        a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
+        i_ext = "图片文件 (" + " ".join(f"*{ext}" for ext in IMAGE_EXTS) + ")"
+        s_ext = "字幕文件 (" + " ".join(f"*{ext}" for ext in SUBTITLE_EXTS) + ")"
+        all_ext = "所有文件 (*)"
+        self.file_filter = f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}"
 
         self._videoParam_is_horizontal = True
 
@@ -97,21 +103,13 @@ class RecodeInterface(QWidget):
         self.outputCard = OutputCard(self)
 
     def loadFilesPage(self):
-        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
-        a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
-        i_ext = "图片文件 (" + " ".join(f"*{ext}" for ext in IMAGE_EXTS) + ")"
-        s_ext = "字幕文件 (" + " ".join(f"*{ext}" for ext in SUBTITLE_EXTS) + ")"
-        all_ext = "所有文件 (*)"
-        file_filter = f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}"
-
-
         self.loadPage = QWidget()
         self.loadPage.setObjectName("loadPage")
         self.loadLayout = QVBoxLayout(self.loadPage)
 
-        self.fileLoadWidget = FileLoadInterface(file_filter, title="📌 点击 or 拖放载入文件😇", parent=self.loadPage)
-        self.fileLoadWidget.setFixedSize(360, 200)
-        self.loadLayout.addWidget(self.fileLoadWidget, 0, Qt.AlignCenter)
+        self.loaderComponent = FileLoadInterface(self.file_filter, title="📌 点击 or 拖放载入文件😇", parent=self.loadPage)
+        self.loaderComponent.setFixedSize(360, 200)
+        self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
     def _initLayout(self):
         # 头部标题和按钮布局
@@ -146,6 +144,8 @@ class RecodeInterface(QWidget):
         # 总体布局
         self.mainLayout.addWidget(self.hearderBox)
         self.mainLayout.addWidget(self.scrollArea)
+        self.mainLayout.setContentsMargins(20, 20, 0, 10)
+        self.mainLayout.setSpacing(0)
 
         self.stackedWidget.addWidget(self.loadPage)
         self.stackedWidget.addWidget(self.mainPage)
@@ -159,16 +159,17 @@ class RecodeInterface(QWidget):
         signalBus.taskCompleted.connect(self.on_task_finished)
         signalBus.taskCancelled.connect(self.on_task_finished)
 
-        # 接受文件
-        self.fileLoadWidget.filesReady.connect(self.on_files_loaded)
+        # 接收文件
+        self.loaderComponent.filesReady.connect(self.on_files_loaded)
+        self.reLoad_button.clicked.connect(self.open_file_dialog)
 
         # 展示预览信息
         self.inputFilesList.fileClicked.connect(self.display_view_info)
 
+        # 根据预设开关状态和窗口宽度动态调整 videoParam 和 audioParam 的布局方式
         self.videoParam.using_preset_switch.checkedChanged.connect(lambda state: self.update_videoParam_layout())
 
-        self.reLoad_button.clicked.connect(self.open_file_dialog)
-
+        # 获取 图像尺寸
         self.imageParam.enable_image_base_process_switchButton.checkedChanged.connect(lambda state: self.emit_image_size())
 
         # 发出全局信号通知后台开始处理
@@ -185,12 +186,7 @@ class RecodeInterface(QWidget):
             self.stackedWidget.setCurrentIndex(1)
 
     def open_file_dialog(self):
-        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
-        a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
-        i_ext = "图片文件 (" + " ".join(f"*{ext}" for ext in IMAGE_EXTS) + ")"
-        s_ext = "字幕文件 (" + " ".join(f"*{ext}" for ext in SUBTITLE_EXTS) + ")"
-        all_ext = "所有文件 (*)"
-        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}")
+        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", self.file_filter)
         if files:
             self.process_loaded_files(files)
             self.fileInfoView.clear_info()
@@ -284,7 +280,6 @@ class RecodeInterface(QWidget):
         for file in files:
             # 获取扩展名并去到"."，进行简单的格式冲突检查
             f = Path(file).suffix.strip(".").lower()
-
             if f in [video_state.get('container', '').lower(), audio_state.get('encoder_format', '').lower(), image_state.get('encoder_format', '').lower(), subtitle_state.get('encoder_format', '').lower()] and not output_state.get('custom_suffix'):
                 InfoBar.warning(
                     title='注意',
