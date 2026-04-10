@@ -2,6 +2,7 @@
 import os
 import subprocess
 import time
+import json
 import ffmpeg
 import shlex
 import traceback
@@ -38,15 +39,27 @@ class RecodeWorker(QThread):
         task_id = self.payload.get("task_id")
         files = self.payload.get("files", [])
         total_files = len(files)
+        task_start_time = time.time()
         
+        # 任务之间增加明显的分隔空白符
+        logger.info(f"\n\n\n{'='*20} 任务开始编排: {task_id} {'='*20}")
+        logger.info(f"包含文件数: {total_files}")
+        
+        # 将紧凑的字典转化为漂亮易读的 JSON 结构
+        formatted_payload = json.dumps(self.payload, indent=4, ensure_ascii=False)
+        logger.debug(f"Payload 详情:\n{formatted_payload}")
+
         # 针对图片类没有持续进度的数据，用计次模式
         for idx, f_path in enumerate(files, start=1):
             if self._is_cancelled:
+                logger.info(f"已中止任务: {task_id}")
                 break
                 
             self._process_single_file(task_id, f_path, idx, total_files)
 
         if not self._is_cancelled:
+            run_duration = time.time() - task_start_time
+            logger.info(f"{'='*20} 任务全部完成: {task_id}, 总耗时: {run_duration:.2f}s {'='*20}\n")
             signalBus.taskCompleted.emit(task_id)
 
 
@@ -163,6 +176,7 @@ class RecodeWorker(QThread):
                         return
                     error_out = e.stderr if e.stderr else str(e)
                     logger.error(f"[Task {task_id}] Subprocess execution failed: {error_out}")
+                    logger.exception("发生异常时 Subprocess 的完整追踪信息:")  # 魔法方法:自动提取并优雅排版 traceback
                     # 如果 stderr 是完整的多行，我们挑最后包含 Error 或者不被认为是不重要信息的行来提示，或者原样抛出
                     self._handle_ffmpeg_error(task_id, file_path.name, error_out)
                     self.stop()
@@ -173,7 +187,7 @@ class RecodeWorker(QThread):
         except Exception as e:
             if self._is_cancelled:
                 return
-            logger.error(f"[Task {task_id}] Processing file failed: {traceback.format_exc()}")
+            logger.exception(f"[Task {task_id}] Processing file failed:") # 替代原有的 traceback.format_exc()
             signalBus.taskError.emit(task_id, f"未能成功打包成FFmpeg命令，可能是界面参数导致异常:\n{str(e)}")
             self.stop()
         finally:
@@ -282,7 +296,7 @@ class RecodeWorker(QThread):
 
             # ffmpeg-progress-yield 出错时往往会抛出 RuntimeError 其内部带有完整的日志 
             err_msg = str(e)
-            logger.error(f"[Task {task_id}] FfmpegProgress execution failed:\n" + traceback.format_exc())
+            logger.exception(f"[Task {task_id}] FfmpegProgress execution failed:") 
             self._handle_ffmpeg_error(task_id, filename, err_msg)
             self.stop()
         finally:
