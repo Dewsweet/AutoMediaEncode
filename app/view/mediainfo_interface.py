@@ -93,7 +93,7 @@ class MediaifInterface(QWidget):
         self.headerLayout.addWidget(self.titleLabel)
         self.headerLayout.addWidget(self.subTitleLabel)
         self.headerLayout.addLayout(self.buttonHBoxLayout)
-        self.headerLayout.setAlignment(Qt.AlignTop) 
+        self.headerLayout.setSpacing(0)
 
         self.mainLayout.addWidget(self.headerBox)
         self.mainLayout.addWidget(self.inputFilesList)

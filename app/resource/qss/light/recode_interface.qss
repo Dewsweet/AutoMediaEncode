@@ -6,7 +6,3 @@ scrollArea, QScrollArea {
     background-color: transparent;
     border: none;
 }
-
-RecodeInterface > CaptionLabel {
-    color: rgb(96, 96, 96);
-}

@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget, QFileDialog, QApplication
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QColor
 
 from qfluentwidgets import ScrollArea, TitleLabel, CaptionLabel, PushButton, PrimaryPushButton, qrouter
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentIcon as FIF
@@ -12,6 +13,7 @@ from ..components.fileload_interface import FileLoadInterface
 from ..common.media_utils import classify_files, get_present_types, VIDEO_EXTS, AUDIO_EXTS, IMAGE_EXTS, SUBTITLE_EXTS
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
+from ..common.task_types import RecodePayload
 from ..services.mediainfo_service import MediaInfoService
 
 class RecodeInterface(QWidget):
@@ -37,6 +39,7 @@ class RecodeInterface(QWidget):
         self.file_filter = f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}"
 
         self._videoParam_is_horizontal = True
+        StyleSheet.RECODE_INTERFACE.apply(self)
 
         self._hearderArea()
         self._srollArea()
@@ -61,6 +64,8 @@ class RecodeInterface(QWidget):
         # 添加控件
         self.title_label = TitleLabel('媒体重编码', self)
         self.subtitle_label = CaptionLabel('调用 ffmpeg 对媒体文件进行简单的重编码', self)
+        self.subtitle_label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
+
 
         self.reLoad_button = PushButton('重载文件', self, FIF.ADD)
         self.start_recode_button = PrimaryPushButton('开始转码', self, FIF.PLAY)
@@ -75,7 +80,7 @@ class RecodeInterface(QWidget):
         self.scrollArea = ScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollContainer)
-        StyleSheet.RECODE_INTERFACE.apply(self)
+
 
 
         self.file_load_box = QWidget()
@@ -307,9 +312,9 @@ class RecodeInterface(QWidget):
         
         # 通过基础检查后，组装任务负载并发出信号，通知后台开始处理
         task_id = f"task_{int(time.time()*1000)}"
-        payload = {
+        payload: RecodePayload = {
             "task_id": task_id,
-            "type": "Recondeing",
+            "type": "Recode",
             "files": files,
             "states": {
                 "video_state": video_state,

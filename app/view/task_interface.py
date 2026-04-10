@@ -11,7 +11,6 @@ from ..common.signal_bus import signalBus
 from ..common.media_utils import classify_files
 from ..common.style_sheet import StyleSheet
 from ..components.task_card_interface import TaskCard
-from ..services.recode.recode_worker import RecodeWorker
 
 
 class TaskInterface(QWidget):
@@ -25,7 +24,6 @@ class TaskInterface(QWidget):
         self.mainLayout.setSpacing(0)
 
         self.task_cards = {}  # 存放所有任务卡片的字典 {task_id: TaskCard}
-        self.workers = {}     # 保存后台工作线程 {task_id: RecodeWorker}
 
         self._hearderArea()
         self._progressArea()
@@ -104,22 +102,11 @@ class TaskInterface(QWidget):
         self.task_cards[task_id] = new_task_card # 先保管到字典里以便后续更新UI
         self.progressLayout.insertWidget(0, new_task_card) # 插入到最前面
 
-        # 实例化后台任务线程 Worker，并将其保管，防止被垃圾回收
-        # 注意：此处未来可做队列控制以限制同时并行的任务数，暂时直接 start 并行执行
-        worker = RecodeWorker(payload, self)
-        
-        # 绑定的结束槽用于清理废弃资源
-        worker.finished.connect(lambda t_id=task_id: self.on_worker_finished(t_id))
-        
-        self.workers[task_id] = worker
-        worker.start() # start 后线程会执行 run() 方法，run() 内部会发出进度更新等信号被上面绑定的槽捕获并更新UI
+        # 注意：此处任务将被后台全局的 TaskManager 接管并启动，TaskInterface 只需要关心显示
 
     def stop_running_task(self, task_id: str):
-        """中止具体后台进程"""
-        if task_id in self.workers:
-            self.workers[task_id].stop()
-            # 用户选择立刻终止任务，发出全局中止信号
-            signalBus.taskCancelled.emit(task_id)
+        """发送取消请求给后台进程"""
+        signalBus.taskStopRequested.emit(task_id)
 
     def on_task_cancelled(self, task_id: str):
         if task_id in self.task_cards:
@@ -130,9 +117,9 @@ class TaskInterface(QWidget):
             content='你手动终止了正在执行的任务进程。',
             orient=Qt.Horizontal,
             isClosable=False,
-            position=InfoBarPosition.TOP_RIGHT,
+            position=InfoBarPosition.TOP,
             duration=3000,
-            parent=self.window()
+            parent=self
         )
 
     def open_output_folder(self, payload: dict):
@@ -151,11 +138,6 @@ class TaskInterface(QWidget):
                 InfoBar.warning('文件路径不存在', f'找不到输出路径: {output_dir}', parent=self.window())
         except Exception as e:
             print(f"打开文件夹失败: {e}")
-
-    def on_worker_finished(self, task_id: str):
-        """ 线程结束时自动回收其在内存中的资源 """
-        if task_id in self.workers:
-            del self.workers[task_id]
 
     def on_task_progress_updated(self, task_id: str, current_idx: int, total_files: int, filename: str, percent: float, time_left: str):
         """ 收到特定任务的进度更新并刷新对应卡片UI """
@@ -187,6 +169,5 @@ class TaskInterface(QWidget):
         
         # 移除原先在此地的 InfoBar 弹窗逻辑，已统一交由 RecodeInterface 弹窗提醒。
                 
-        # 强制清理挂掉的 Worker 以阻断排队文件
-        if task_id in self.workers:
-            self.workers[task_id].stop()
+        # 注意: 挂掉的任务由 TaskManager 清理
+

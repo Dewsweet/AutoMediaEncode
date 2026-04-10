@@ -119,7 +119,7 @@ class TaskCard(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        if functionName == 'Recondeing':
+        if functionName == 'Recode':
             self.task_card = TaskCardTemplate(FIF.VIDEO, '媒体重编码', self)
         elif functionName == 'Demuxing':
             self.task_card = TaskCardTemplate(FIF.MOVIE, '媒体抽流', self)

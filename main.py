@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator
 
 from app.view.main_window import MainWindow
+from app.services.task_manager import taskManager  # 导入并常驻后台
 
 if __name__ == '__main__':
     # 启用高 DPI 缩放支持

@@ -24,6 +24,9 @@ class SignalBus(QObject):
     # 任务取消/中止信号：task_id
     taskCancelled = Signal(str)
 
+    # 任务请求停止信号：task_id (由UI发出给Manager)
+    taskStopRequested = Signal(str)
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(SignalBus, cls).__new__(cls, *args, **kwargs)

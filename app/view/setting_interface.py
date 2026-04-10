@@ -347,7 +347,7 @@ class SettingInterface(QWidget):
         for t in ToolService.TOOLS_METADATA:
             if t["is_costom"]:
                 continue
-            card = self.tool_widgets.get(t["key"])
+            card = self.tool_widgets.get(t["tool_name"])
             if card:
                 state = ToolService.check_tool_exists(t["tool_name"])
                 card.checkState(state)
