@@ -6,10 +6,12 @@ class PathService:
     @staticmethod
     def get_base_dir() -> Path:
         """获取项目的根目录，兼容开发环境和打包后的环境"""
-        if getattr(sys, 'frozen', False):
-            return Path(sys.executable).parent
+        if "__compiled__" in globals():
+            return Path(sys.argv[0]).resolve().parent
+        elif getattr(sys, 'frozen', False):
+            # 兼容一下 PyInstaller
+            return Path(sys.executable).resolve().parent
         else:
-            # 目前 tools 文件夹位于 main.py 同目录下
             return Path(__file__).resolve().parent.parent.parent
         
     @staticmethod

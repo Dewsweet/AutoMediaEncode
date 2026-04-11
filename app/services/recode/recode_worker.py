@@ -170,7 +170,7 @@ class RecodeWorker(QThread):
                 # 图片字幕任务极快，直接使用 subprocess 丢后台
                 creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
                 try:
-                    subprocess.run(cmd_list, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=creation_flags, text=True)
+                    subprocess.run(cmd_list, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=creation_flags, text=True, encoding='utf-8', errors='replace')
                 except subprocess.CalledProcessError as e:
                     if self._is_cancelled:
                         return
@@ -261,11 +261,17 @@ class RecodeWorker(QThread):
 
     def _run_long_task_with_progress(self, task_id, idx, total_files, filename, cmd_list, pass_num=1, total_passes=1):
         """处理带时长的任务 (借助 ffmpeg-progress-yield)"""
+
         self._current_ff_process = FfmpegProgress(cmd_list)
         start_time = time.time()
         
         try:
-            for progress in self._current_ff_process.run_command_with_progress(): 
+            popen_kwargs = {}
+            if os.name == 'nt':
+                popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                popen_kwargs['stdin'] = subprocess.DEVNULL
+                
+            for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=popen_kwargs): 
                 if self._is_cancelled:
                     self._current_ff_process.quit()
                     break

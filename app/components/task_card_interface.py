@@ -21,14 +21,14 @@ class ProgressBarCard(QWidget):
 
 
         self.fileTextLabel = BodyLabel('正在处理: ', self)
-        self.fileNameLabel = BodyLabel('占位1.mp4', self)
+        self.fileNameLabel = BodyLabel('等待任务开始...', self)
 
         self.barTextLabel = BodyLabel('当前进度: ', self)
         self.progress_bar = ProgressBar(self)
         self.progress_bar.setRange(0, 100)
 
         self.processTextLabel = CaptionLabel('任务进度: ', self)
-        self.processingLabel = CaptionLabel('1 / 占位', self)
+        self.processingLabel = CaptionLabel('准备中...', self)
         self.TimeTextLabel = CaptionLabel('预计剩余时间: ', self)
         self.TimeLabel = CaptionLabel('00:00:00', self)
 
