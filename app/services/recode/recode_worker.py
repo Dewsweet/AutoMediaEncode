@@ -170,7 +170,7 @@ class RecodeWorker(QThread):
                 # 图片字幕任务极快，直接使用 subprocess 丢后台
                 creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
                 try:
-                    subprocess.run(cmd_list, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=creation_flags, text=True, encoding='utf-8', errors='replace')
+                    subprocess.run(cmd_list, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL, creationflags=creation_flags, text=True, encoding='utf-8', errors='replace')
                 except subprocess.CalledProcessError as e:
                     if self._is_cancelled:
                         return
