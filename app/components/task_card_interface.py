@@ -125,7 +125,7 @@ class TaskCard(QWidget):
             self.task_card = TaskCardTemplate(FIF.MOVIE, '媒体抽流', self)
         elif functionName == 'Muxing':
             self.task_card = TaskCardTemplate(FIF.MEDIA, '媒体封装', self)
-        elif functionName == 'AutoEncoding':
+        elif functionName == 'AutoEncode':
             self.task_card = TaskCardTemplate(FIF.TRAIN, 'AME', self)
         # feature 未知类型任务的卡片 和 不处理逻辑
 

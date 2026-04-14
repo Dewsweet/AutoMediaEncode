@@ -9,6 +9,7 @@ from .mediainfo_interface import MediaifInterface
 from .setting_interface import SettingInterface
 from .recode_interface import RecodeInterface
 from .task_interface import TaskInterface
+from .demuxing_interface import DemuxingInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
 
 class MainWindow(FluentWindow):
@@ -22,6 +23,7 @@ class MainWindow(FluentWindow):
         self.settingInterface = SettingInterface(self)
         self.recodeInterface = RecodeInterface(self)
         self.taskInterface = TaskInterface(self)
+        self.demuxingInterface = DemuxingInterface(self)
         self.initNavigation()
         
 
@@ -102,6 +104,7 @@ class MainWindow(FluentWindow):
         # 添加子页面到侧边导航栏
         self.addSubInterface(self.mediaInfoInterface, FIF.INFO, 'Media Info')
         self.addSubInterface(self.recodeInterface, FIF.VIDEO, 'Recode')
+        self.addSubInterface(self.demuxingInterface, FIF.MOVIE, 'Demuxing')
 
         self.addSubInterface(self.taskInterface, FIF.MESSAGE, 'Task Progress', NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Setting', NavigationItemPosition.BOTTOM)

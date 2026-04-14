@@ -10,6 +10,7 @@ from qfluentwidgets import InfoBar, InfoBarPosition, FluentIcon as FIF
 
 from ..components.recode_card_interface import InputFilesCard, FileInfoViewCard, VideoParamCard, AudioParamCard, ImageParamCard, SubtitleParamCard, OutputCard
 from ..components.fileload_interface import FileLoadInterface
+from ..components.hearder_widget import HeaderWidget
 from ..common.media_utils import classify_files, get_present_types, VIDEO_EXTS, AUDIO_EXTS, IMAGE_EXTS, SUBTITLE_EXTS
 from ..common.signal_bus import signalBus
 from ..common.style_sheet import StyleSheet
@@ -30,6 +31,9 @@ class RecodeInterface(QWidget):
         self.vBoxLayout.addWidget(self.stackedWidget)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
+        self.hearder = HeaderWidget('媒体重编码', '调用 ffmpeg 对媒体文件进行简单的重编码', '开始转码', self)
+        self.hearder.mainLayout.setContentsMargins(0, 0, 25, 0)
+
 
         v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
         a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
@@ -41,34 +45,11 @@ class RecodeInterface(QWidget):
         self._videoParam_is_horizontal = True
         StyleSheet.RECODE_INTERFACE.apply(self)
 
-        self._hearderArea()
         self._srollArea()
         self.loadFilesPage()
 
         self._initLayout()
         self._connect_signal()
-
-
-    def _hearderArea(self):
-        # 添加布局
-        self.hearderBox = QWidget()
-        self.hearderVLayout = QVBoxLayout(self.hearderBox)
-        self.hearderVLayout.setContentsMargins(0, 0, 25, 10)
-        self.hearderVLayout.setSpacing(0)
-
-        self.hearderButtonBox = QWidget()
-        self.hearderButtonLayout = QHBoxLayout(self.hearderButtonBox)
-        self.hearderButtonLayout.setContentsMargins(0, 20, 0, 0)
-        self.hearderButtonLayout.setSpacing(10)
-
-        # 添加控件
-        self.title_label = TitleLabel('媒体重编码', self)
-        self.subtitle_label = CaptionLabel('调用 ffmpeg 对媒体文件进行简单的重编码', self)
-        self.subtitle_label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
-
-
-        self.reLoad_button = PushButton('重载文件', self, FIF.ADD)
-        self.start_recode_button = PrimaryPushButton('开始转码', self, FIF.PLAY)
 
     def _srollArea(self):
         # 添加布局
@@ -117,17 +98,6 @@ class RecodeInterface(QWidget):
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
     def _initLayout(self):
-        # 头部标题和按钮布局
-        self.hearderButtonLayout.addWidget(self.reLoad_button, alignment=Qt.AlignRight)
-        self.hearderButtonLayout.addWidget(self.start_recode_button, alignment=Qt.AlignRight)
-
-        self.hearderVLayout.addWidget(self.title_label)
-        self.hearderVLayout.addWidget(self.subtitle_label)
-        self.hearderVLayout.addWidget(self.hearderButtonBox, alignment=Qt.AlignRight)
-        self.hearderVLayout.setAlignment(Qt.AlignTop)
-
-
-        # 滚动区域内容布局
         # 文件加载区域
         self.file_load_hBoxLayout.addWidget(self.inputFilesList, 2)
         self.file_load_hBoxLayout.addWidget(self.fileInfoView, 1)
@@ -147,10 +117,10 @@ class RecodeInterface(QWidget):
         self.scrollContainerVBoxLayout.addStretch(1)
 
         # 总体布局
-        self.mainLayout.addWidget(self.hearderBox)
+        self.mainLayout.addWidget(self.hearder)
         self.mainLayout.addWidget(self.scrollArea)
         self.mainLayout.setContentsMargins(20, 20, 0, 10)
-        self.mainLayout.setSpacing(0)
+
 
         self.stackedWidget.addWidget(self.loadPage)
         self.stackedWidget.addWidget(self.mainPage)
@@ -166,7 +136,7 @@ class RecodeInterface(QWidget):
 
         # 接收文件
         self.loaderComponent.filesReady.connect(self.on_files_loaded)
-        self.reLoad_button.clicked.connect(self.open_file_dialog)
+        self.hearder.reload_button.clicked.connect(self.open_file_dialog)
 
         # 展示预览信息
         self.inputFilesList.fileClicked.connect(self.display_view_info)
@@ -178,7 +148,7 @@ class RecodeInterface(QWidget):
         self.imageParam.enable_image_base_process_switchButton.checkedChanged.connect(lambda state: self.emit_image_size())
 
         # 发出全局信号通知后台开始处理
-        self.start_recode_button.clicked.connect(self.emit_builder_output)
+        self.hearder.start_button.clicked.connect(self.emit_builder_output)
 
     def on_files_loaded(self, files: list):
         if not files:
@@ -330,8 +300,8 @@ class RecodeInterface(QWidget):
         self._current_task_is_finished = False
         
         # 禁用转码按钮并修改文本，等待任务完成重置
-        self.start_recode_button.setText('正在执行中...')
-        self.start_recode_button.setEnabled(False)
+        self.hearder.start_button.setText('正在执行中...')
+        self.hearder.start_button.setEnabled(False)
 
         signalBus.taskAdded.emit(payload)
         
@@ -355,8 +325,8 @@ class RecodeInterface(QWidget):
         """任务结束(成功/取消)时恢复按钮状态"""
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_is_finished = True
-        self.start_recode_button.setText('开始转码')
-        self.start_recode_button.setEnabled(True)
+        self.hearder.start_button.setText('开始转码')
+        self.hearder.start_button.setEnabled(True)
 
     def on_task_error(self, task_id: str, error_msg: str):
         """将转码任务发生错误时的弹窗集中放置在 RecodeInterface 进行提醒"""
