@@ -1,12 +1,16 @@
+from pathlib import Path
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidgetItem
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidgetItem, QApplication
 
 from qfluentwidgets import CardWidget, HeaderCardWidget, TreeWidget, RoundMenu, Action, BodyLabel, ComboBox, CheckBox, LineEdit, PushButton, PrimaryPushButton, FluentIcon as FIF
+
+from ..services.demuxing.demux_probe_service import DemuxProbeService
 
 class InputFilesCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle('输入文件')
+        self.probe_service = DemuxProbeService()
 
         self.mianBox = QWidget(self)
         self.mainLayout = QVBoxLayout(self.mianBox)
@@ -20,42 +24,76 @@ class InputFilesCard(HeaderCardWidget):
         self.viewLayout.addWidget(self.mianBox)
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.testItem()
         self._connect_signals()
-
-    def testItem(self):
-        item1 = QTreeWidgetItem(['占位文件1.mp4'])
-        item2 = QTreeWidgetItem(['占位文件2.mkv'])
-
-        item11 = [QTreeWidgetItem(['轨道 1 Video: hevc (Main 10), 1920x1080, 23.98 fps(default) ']),
-            QTreeWidgetItem(['轨道 2 Audio: aac (LC), 2ch, 44100Hz '])]
-
-        for i in item11:
-            i.setCheckState(0, Qt.Unchecked)
-            item1.addChild(i)
-
-        item22 = [
-            QTreeWidgetItem(['轨道 1 Video: h264 (High), 1280x720, 30 fps ']),
-            QTreeWidgetItem(['轨道 2 Audio: ac3 (AC-3), 6ch, 48000Hz ']),
-            QTreeWidgetItem(['轨道 3 Subtitle: ass ']),
-            QTreeWidgetItem(['附件 1 font: xxxxxxxx.ttf']),
-            QTreeWidgetItem(['附件 2 ……']),
-            QTreeWidgetItem(['章节 n 个条目'])
-        ]
-
-        for i in item22:
-            i.setCheckState(0, Qt.Unchecked)
-            item2.addChild(i)
-            
-        self.inputFilesTree.addTopLevelItem(item1)
-        self.inputFilesTree.addTopLevelItem(item2)
-        self.inputFilesTree.expandAll()
 
     def _connect_signals(self):
         self.inputFilesTree.customContextMenuRequested.connect(self.show_context_mune)
 
-    def updata_fiels(self, files, track_info):
-        pass
+    def update_files(self, files: list):
+        self.inputFilesTree.clear()
+        QApplication.processEvents()
+
+        for file_path in files:
+            path_obj = Path(file_path)
+            top_item = QTreeWidgetItem([path_obj.name])
+            
+            probe_data = self.probe_service.probe_file(file_path)
+            if "error" in probe_data:
+                err_item = QTreeWidgetItem([f"解析失败: {probe_data['error']}"])
+                top_item.addChild(err_item)
+                self.inputFilesTree.addTopLevelItem(top_item)
+                continue
+
+            track_number = 1
+            
+            # Video Tracks
+            for stream in probe_data.get('video', []):
+                track_text = self.probe_service.format_track_for_ui(stream, track_number)
+                child = QTreeWidgetItem([track_text])
+                child.setCheckState(0, Qt.Unchecked)
+                child.setData(0, Qt.UserRole, {"type": "video", "id": stream['id']})
+                top_item.addChild(child)
+                track_number += 1
+                
+            # Audio Tracks
+            for stream in probe_data.get('audio', []):
+                track_text = self.probe_service.format_track_for_ui(stream, track_number)
+                child = QTreeWidgetItem([track_text])
+                child.setCheckState(0, Qt.Unchecked)
+                child.setData(0, Qt.UserRole, {"type": "audio", "id": stream['id']})
+                top_item.addChild(child)
+                track_number += 1
+
+            # Subtitle Tracks
+            for stream in probe_data.get('subtitle', []):
+                track_text = self.probe_service.format_track_for_ui(stream, track_number)
+                child = QTreeWidgetItem([track_text])
+                child.setCheckState(0, Qt.Unchecked)
+                child.setData(0, Qt.UserRole, {"type": "subtitle", "id": stream['id']})
+                top_item.addChild(child)
+                track_number += 1
+
+            # Attachments (Start numbering from 1 independently)
+            attachment_number = 1
+            for stream in probe_data.get('attachment', []):
+                track_text = self.probe_service.format_track_for_ui(stream, attachment_number)
+                child = QTreeWidgetItem([track_text])
+                child.setCheckState(0, Qt.Unchecked)
+                child.setData(0, Qt.UserRole, {"type": "attachment", "id": stream['id']})
+                top_item.addChild(child)
+                attachment_number += 1
+
+            # Chapters
+            chapters_count = probe_data.get('chapters', 0)
+            if chapters_count > 0:
+                child = QTreeWidgetItem([f"章节: {chapters_count} 个条目"])
+                child.setCheckState(0, Qt.Unchecked)
+                child.setData(0, Qt.UserRole, {"type": "chapter"})
+                top_item.addChild(child)
+
+            self.inputFilesTree.addTopLevelItem(top_item)
+
+        self.inputFilesTree.expandAll()
 
     def show_context_mune(self, pos):
         mune = RoundMenu(parent=self)

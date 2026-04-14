@@ -1,11 +1,12 @@
 from pathlib import Path
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
 from qfluentwidgets import FluentIcon as FIF
 
 from ..components.hearder_widget import HeaderWidget
 from ..components.demuxing_card_interface import InputFilesCard, MuxingOptionCard, OutputCard
+from ..common.media_utils import VIDEO_EXTS
 
 class DemuxingInterface(QWidget):
     def __init__(self, parent=None):
@@ -30,6 +31,24 @@ class DemuxingInterface(QWidget):
         self.mainLayout.addWidget(self.header, alignment=Qt.AlignTop)
         self.mainLayout.addWidget(self.Hbox)
         self.mainLayout.addWidget(self.outputCard, alignment=Qt.AlignBottom)
+
+        self._init_file_filter()
+        self._connect_signals()
+
+    def _init_file_filter(self):
+        EXTRA_EXTS = {'mka', 'mks', 'mpls'}
+        EXTS = EXTRA_EXTS | VIDEO_EXTS
+        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in EXTS) + ")"
+        all_ext = "所有文件 (*)"
+        self.file_filter = f"{v_ext};;{all_ext}"
+
+    def _connect_signals(self):
+        self.header.reload_button.clicked.connect(self.open_file_dialog)
+
+    def open_file_dialog(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "选择抽流文件", "", self.file_filter)
+        if files:
+            self.inputFilesCard.update_files(files)
 
 
 
