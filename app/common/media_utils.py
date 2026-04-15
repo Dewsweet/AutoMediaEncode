@@ -1,11 +1,11 @@
-import os
+from pathlib import Path
 
-VIDEO_EXTS = {'.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.ts', 'mpg', '.mpeg', '.m4v', 'm2ts', '.rmvb', '.vob', '.divx', '.xvid'}
+VIDEO_EXTS = {'.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.ts', '.mpg', '.mpeg', '.m4v', '.m2ts', '.rmvb', '.vob', '.divx', '.xvid'}
 AUDIO_EXTS = {'.mp3', '.aac', '.wav', '.flac', '.ogg', '.m4a', '.wma', '.opus', '.alac', '.pcm', '.mka', '.tta', '.tak', '.wv', '.ape'}
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.webp', '.heif', '.avif', '.j2k', '.jp2', '.jpx', '.j2c', '.jxl'}
 SUBTITLE_EXTS = {'.srt', '.ass', '.ssa', '.vtt', '.sub'}
 
-DEMUXING_EXTS = VIDEO_EXTS | {'mka', 'mks', 'mpls'}
+DEMUXING_EXTS = VIDEO_EXTS | {'.mka', '.mks'}
 
 def classify_files(file_paths):
     """
@@ -20,7 +20,7 @@ def classify_files(file_paths):
         'unknown': []
     }
     for path in file_paths:
-        ext = os.path.splitext(path)[1].lower()
+        ext = Path(path).suffix.lower()
         if ext in VIDEO_EXTS:
             result['video'].append(path)
         elif ext in AUDIO_EXTS:

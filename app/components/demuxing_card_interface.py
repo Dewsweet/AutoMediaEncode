@@ -228,7 +228,7 @@ class MuxingOptionCard(HeaderCardWidget):
 
         self.sub_departition_ckeackbox = CheckBox('字幕去子集化')
 
-        self.turehd_decore_ckeackbox = CheckBox('TrueHD 去核心')
+        # self.turehd_decore_ckeackbox = CheckBox('提取有损 Core')
 
         self.contextHLayout1.addWidget(self.chapter_suffix_label)
         self.contextHLayout1.addWidget(self.chapter_suffix_cb)
@@ -236,11 +236,23 @@ class MuxingOptionCard(HeaderCardWidget):
 
         self.mainLayout.addLayout(self.contextHLayout1)
         self.mainLayout.addWidget(self.sub_departition_ckeackbox)
-        self.mainLayout.addWidget(self.turehd_decore_ckeackbox)
+        # self.mainLayout.addWidget(self.turehd_decore_ckeackbox)
         self.mainLayout.addStretch(1)
 
         self.viewLayout.addWidget(self.mainBox)
         self.viewLayout.setContentsMargins(20, 10, 10, 10)
+
+    def get_state(self) -> dict:
+        """获取当前选项卡的状态"""
+        return {
+            "chapter_suffix": self.chapter_suffix_cb.currentText(),
+            "sub_departition": self.sub_departition_ckeackbox.isChecked()
+        }
+
+    def set_options_enabled(self, is_mkv: bool):
+        """根据是否包含MKV文件来启用或禁用选项"""
+        self.chapter_suffix_cb.setEnabled(is_mkv)
+        self.sub_departition_ckeackbox.setEnabled(is_mkv)
 
 class OutputCard(HeaderCardWidget):
     def __init__(self, parent=None):
@@ -256,7 +268,7 @@ class OutputCard(HeaderCardWidget):
         self.output_path_label = BodyLabel('输出路径: ')
         self.output_path_lineEdit = LineEdit()
 
-        self.using_source_dir_checkbox = CheckBox('源目录')
+        self.using_source_dir_checkbox = CheckBox('使用源目录')
         self.output_path_view_button = PrimaryPushButton('浏览')
 
         self.OutputPathLayout.addWidget(self.output_path_label)
