@@ -5,6 +5,8 @@ AUDIO_EXTS = {'.mp3', '.aac', '.wav', '.flac', '.ogg', '.m4a', '.wma', '.opus', 
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.webp', '.heif', '.avif', '.j2k', '.jp2', '.jpx', '.j2c', '.jxl'}
 SUBTITLE_EXTS = {'.srt', '.ass', '.ssa', '.vtt', '.sub'}
 
+DEMUXING_EXTS = VIDEO_EXTS | {'mka', 'mks', 'mpls'}
+
 def classify_files(file_paths):
     """
     根据文件后缀对文件进行分类
