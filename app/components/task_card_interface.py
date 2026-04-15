@@ -121,9 +121,9 @@ class TaskCard(QWidget):
 
         if functionName == 'Recode':
             self.task_card = TaskCardTemplate(FIF.VIDEO, '媒体重编码', self)
-        elif functionName == 'Demuxing':
+        elif functionName == 'Demux':
             self.task_card = TaskCardTemplate(FIF.MOVIE, '媒体抽流', self)
-        elif functionName == 'Muxing':
+        elif functionName == 'Mux':
             self.task_card = TaskCardTemplate(FIF.MEDIA, '媒体封装', self)
         elif functionName == 'AutoEncode':
             self.task_card = TaskCardTemplate(FIF.TRAIN, 'AME', self)

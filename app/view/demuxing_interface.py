@@ -1,12 +1,15 @@
 from pathlib import Path
+import time
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import FluentIcon as FIF, InfoBar, InfoBarPosition
 
 from ..components.hearder_widget import HeaderWidget
 from ..components.demuxing_card_interface import InputFilesCard, MuxingOptionCard, OutputCard
 from ..common.media_utils import DEMUXING_EXTS
+from ..common.signal_bus import signalBus
+from ..common.task_types import DemuxPayload
 
 class DemuxingInterface(QWidget):
     def __init__(self, parent=None):
@@ -43,6 +46,68 @@ class DemuxingInterface(QWidget):
     def _connect_signals(self):
         self.header.reload_button.clicked.connect(self.open_file_dialog)
         self.inputFilesCard.load_files_requested.connect(self.open_file_dialog)
+        self.header.start_button.clicked.connect(self.emit_builder_output)
+
+        # 当用户点击输出路径的浏览按钮
+        self.outputCard.output_path_view_button.clicked.connect(self.choose_output_dir)
+
+    def choose_output_dir(self):
+        folder = QFileDialog.getExistingDirectory(self, "选择输出文件夹")
+        if folder:
+            self.outputCard.output_path_lineEdit.setText(folder)
+
+    def emit_builder_output(self):
+        """组装抽流任务负载并发出全局信号"""
+        tracks_state = self.inputFilesCard.get_selected_tracks()
+        option_state = self.optionCard.get_state()
+        output_state = self.outputCard.get_state()
+        
+        files = list(tracks_state.keys())
+        
+        if not files:
+            InfoBar.error(
+                title='无法开始',
+                content='文件列表为空，或未选择任何需要抽取的轨道！',
+                orient=Qt.Horizontal,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+            return
+
+        if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
+            InfoBar.error(
+                title='无法开始',
+                content='未设置输出目录，请选择输出路径或勾选"使用源目录"！',
+                orient=Qt.Horizontal,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+            return
+
+        task_id = f"task_{int(time.time()*1000)}"
+        payload = DemuxPayload(
+            task_id=task_id,
+            type="Demux",
+            files=files,
+            states={
+                "tracks_state": tracks_state,
+                "option_state": option_state,
+                "output_state": output_state
+            }
+        )
+
+        signalBus.taskAdded.emit(payload)
+        
+        InfoBar.success(
+            title='已添加到任务队列',
+            content='抽流任务已开始执行',
+            orient=Qt.Horizontal,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=2000,
+            parent=self
+        )
 
     def open_file_dialog(self):
         files, _ = QFileDialog.getOpenFileNames(self, "选择抽流文件", "", self.file_filter)

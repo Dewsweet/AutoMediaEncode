@@ -99,28 +99,29 @@ class InputFilesCard(HeaderCardWidget):
         track_number = 1
             
         # Video Tracks
-        for stream in probe_data.get('video', []):
+        for idx, stream in enumerate(probe_data.get('video', [])):
             track_text = self.probe_service.format_track_for_ui(stream, track_number)
             child = QTreeWidgetItem([track_text])
             child.setCheckState(0, Qt.Unchecked)
-            child.setData(0, Qt.UserRole, {"type": "video", "id": stream['id']})
+            child.setData(0, Qt.UserRole, {"type": "video", "id": stream['id'], "idx": idx, "codec": stream.get("codec", "")})
             top_item.addChild(child)
             track_number += 1
             
         # Audio Tracks
-        for stream in probe_data.get('audio', []):
+        for idx, stream in enumerate(probe_data.get('audio', [])):
             track_text = self.probe_service.format_track_for_ui(stream, track_number)
             child = QTreeWidgetItem([track_text])
             child.setCheckState(0, Qt.Unchecked)
-            child.setData(0, Qt.UserRole, {"type": "audio", "id": stream['id']})
+            child.setData(0, Qt.UserRole, {"type": "audio", "id": stream['id'], "idx": idx, "codec": stream.get("codec", "")})
             top_item.addChild(child)
             track_number += 1
+            
         # Subtitle Tracks
-        for stream in probe_data.get('subtitle', []):
+        for idx, stream in enumerate(probe_data.get('subtitle', [])):
             track_text = self.probe_service.format_track_for_ui(stream, track_number)
             child = QTreeWidgetItem([track_text])
             child.setCheckState(0, Qt.Unchecked)
-            child.setData(0, Qt.UserRole, {"type": "subtitle", "id": stream['id']})
+            child.setData(0, Qt.UserRole, {"type": "subtitle", "id": stream['id'], "idx": idx, "codec": stream.get("codec", "")})
             top_item.addChild(child)
             track_number += 1
         # Attachments
@@ -129,7 +130,7 @@ class InputFilesCard(HeaderCardWidget):
             track_text = self.probe_service.format_track_for_ui(stream, attachment_number)
             child = QTreeWidgetItem([track_text])
             child.setCheckState(0, Qt.Unchecked)
-            child.setData(0, Qt.UserRole, {"type": "attachment", "id": stream['id']})
+            child.setData(0, Qt.UserRole, {"type": "attachment", "id": stream['id'], "filename": stream.get("filename", "")})
             top_item.addChild(child)
             attachment_number += 1
         # Chapters
@@ -209,6 +210,29 @@ class InputFilesCard(HeaderCardWidget):
             index = self.inputFilesTree.indexOfTopLevelItem(item)
             self.inputFilesTree.takeTopLevelItem(index)
 
+    def get_selected_tracks(self) -> dict:
+        """
+        获取所有文件的选中轨道信息
+        返回字典: { 'file_path': [ {'type': 'video', 'id': '0', ...}, ... ] }
+        """
+        selected_data = {}
+        for i in range(self.inputFilesTree.topLevelItemCount()):
+            top_item = self.inputFilesTree.topLevelItem(i)
+            file_path = top_item.data(0, Qt.UserRole).get("file_path")
+            tracks = []
+            
+            for j in range(top_item.childCount()):
+                child = top_item.child(j)
+                if child.checkState(0) == Qt.Checked:
+                    track_data = child.data(0, Qt.UserRole)
+                    if track_data:
+                        tracks.append(track_data)
+            
+            if tracks:
+                selected_data[file_path] = tracks
+                
+        return selected_data
+
 class MuxingOptionCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -281,6 +305,13 @@ class OutputCard(HeaderCardWidget):
 
         self.viewLayout.addWidget(self.mainBox)
         self.viewLayout.setContentsMargins(10, 10, 10, 10)
+
+    def get_state(self) -> dict:
+        """获取当前选项卡的状态"""
+        return {
+            "output_dir": self.output_path_lineEdit.text().strip(),
+            "use_source_dir": self.using_source_dir_checkbox.isChecked()
+        }
 
 
         

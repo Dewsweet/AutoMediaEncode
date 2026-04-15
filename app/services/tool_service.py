@@ -126,6 +126,9 @@ class ToolService:
                 tool_name = tool["tool_name"] + tool["type"]
                 folder = tool["folder"]
                 break
+            
+        if tool_name in ["mkvextract", "mkvmerge"]:
+            folder = "mkvtoolnix"
         
         local_path = PathService.get_tools_dir() / folder / tool_name
         if local_path.is_file():

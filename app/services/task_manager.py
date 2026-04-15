@@ -3,6 +3,7 @@ from PySide6.QtCore import QObject
 
 from ..common.signal_bus import signalBus
 from ..services.recode.recode_worker import RecodeWorker
+from ..services.demuxing.demux_worker import DemuxWorker
 
 class TaskManager(QObject):
     """
@@ -43,7 +44,11 @@ class TaskManager(QObject):
             self.workers[task_id] = worker
             # 这里暂时维持和之前一样的“收到就立即启动”策略，如果日后需要做串行或限制并发数量，就在这里用队列进行阻塞或分配
             worker.start()
-        # elif task_type == "Demux": ...
+        elif task_type == "Demux":
+            worker = DemuxWorker(payload=payload, parent=self)
+            worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
+            self.workers[task_id] = worker
+            worker.start()
         else:
             pass
 
