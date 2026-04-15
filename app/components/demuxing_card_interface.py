@@ -126,11 +126,11 @@ class InputFilesCard(HeaderCardWidget):
             track_number += 1
         # Attachments
         attachment_number = 1
-        for stream in probe_data.get('attachment', []):
+        for idx, stream in enumerate(probe_data.get('attachment', []), start=1):
             track_text = self.probe_service.format_track_for_ui(stream, attachment_number)
             child = QTreeWidgetItem([track_text])
             child.setCheckState(0, Qt.Unchecked)
-            child.setData(0, Qt.UserRole, {"type": "attachment", "id": stream['id'], "filename": stream.get("filename", "")})
+            child.setData(0, Qt.UserRole, {"type": "attachment", "id": stream['id'], "idx": idx, "filename": stream.get("filename", "")})
             top_item.addChild(child)
             attachment_number += 1
         # Chapters
@@ -248,7 +248,7 @@ class MuxingOptionCard(HeaderCardWidget):
 
         self.chapter_suffix_label = BodyLabel('章节后缀: ')
         self.chapter_suffix_cb = ComboBox()
-        self.chapter_suffix_cb.addItems(['XML', 'OGM', 'CUE', 'TXT'])
+        self.chapter_suffix_cb.addItems(['XML', 'TXT'])
 
         self.sub_departition_ckeackbox = CheckBox('字幕去子集化')
 

@@ -93,24 +93,40 @@ class DemuxWorker(QThread):
             "ass": ".ass", "subrip": ".srt", "pgs": ".sup"
         }
         
-        tracks_cmd = [mkvextract_path, file_path.as_posix(), "tracks"]
-        generated_ass_files = []
-        has_tracks = False
+        cmd_list = [mkvextract_path, file_path.as_posix()]
         
-        chapter_cmd = None
+        tracks_args = []
+        attachments_args = []
+        chapter_args = []
+        
+        generated_ass_files = []
 
+        # 针对附件模式的 AID，由于UI中并没有将完整的附件索引暴露过来（只暴露了选中的），
+        # 用户说明 attachments 模型的 AID 是根据附件顺序排序。我们在遍历UI给过来的已选列表时，
+        # 需要利用 idx 参数。UI 的 attachments 从 `start=1` 构建并传入 "idx"。
         for track in tracks:
             t_type = track.get("type")
             
             # 独立处理章节抽取
             if t_type == "chapter":
-                ch_ext = "." + option_state.get("chapter_suffix", "XML").lower()
+                ch_format = option_state.get("chapter_suffix", "XML").lower()
+                ch_ext = f".{ch_format}"
                 ch_out = out_dir_path / f"{fname}_chapters{ch_ext}"
-                chapter_cmd = [mkvextract_path, file_path.as_posix(), "chapters", ch_out.as_posix()]
+                if ch_format in ["txt", "ogm"]:
+                    chapter_args.extend(["-s", ch_out.as_posix()])
+                else:
+                    chapter_args.append(ch_out.as_posix())
+                continue
+                
+            if t_type == "attachment":
+                a_idx = track.get("idx", 1)  # attachment 本身的 1-based index
+                a_name = track.get("filename", f"attachment_{a_idx}")
+                out_file = out_dir_path / f"{a_name}"
+                attachments_args.append(f"{a_idx}:{out_file.as_posix()}")
                 continue
                 
             t_id = track.get("id", "")
-            if t_id == "":
+            if str(t_id) == "":
                 continue
                 
             t_codec = track.get("codec", "").lower()
@@ -121,29 +137,36 @@ class DemuxWorker(QThread):
                 elif t_type == "subtitle": out_ext = ".ass"
                 else: continue
                 
-            # mkvextract 需要对应的实际流 ID
             out_file = out_dir_path / f"{fname}_track_{t_type}_{t_id}{out_ext}"
             out_posix = out_file.as_posix()
             
-            tracks_cmd.append(f"{t_id}:{out_posix}")
-            has_tracks = True
+            tracks_args.append(f"{t_id}:{out_posix}")
             
             if t_type == "subtitle" and option_state.get("sub_departition"):
                 generated_ass_files.append(out_posix)
 
-        # 1. 抽取轨道
-        if has_tracks:
-            logger.info(f"[Task {task_id}] mkvextract command:\n" + shlex.join(tracks_cmd))
-            self._run_cli_with_progress(task_id, idx, total_files, file_path.name, tracks_cmd, "mkvextract")
-
-        # 2. 抽取章节
-        if chapter_cmd and not self._is_cancelled:
-            logger.info(f"[Task {task_id}] mkvextract chapters command:\n" + shlex.join(chapter_cmd))
-            # 章节抽取极快，没必要再专门解析进度栏
-            import subprocess
-            subprocess.run(chapter_cmd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        # 组装最终命令 (mkvextract {source} tracks [...] attachments [...] chapters [...])
+        has_content = False
+        if tracks_args:
+            cmd_list.append("tracks")
+            cmd_list.extend(tracks_args)
+            has_content = True
             
-        # 3. 后处理字幕
+        if attachments_args:
+            cmd_list.append("attachments")
+            cmd_list.extend(attachments_args)
+            has_content = True
+            
+        if chapter_args:
+            cmd_list.append("chapters")
+            cmd_list.extend(chapter_args)
+            has_content = True
+
+        if has_content:
+            logger.info(f"[Task {task_id}] mkvextract command:\n" + shlex.join(cmd_list))
+            self._run_cli_with_progress(task_id, idx, total_files, file_path.name, cmd_list, "mkvextract")
+            
+        # 后处理字幕
         self._post_process_subtitles(generated_ass_files)
 
     def _extract_with_ffmpeg(self, task_id: str, file_path: Path, fname: str, out_dir_path: Path, tracks: list, option_state: dict, idx: int, total_files: int):

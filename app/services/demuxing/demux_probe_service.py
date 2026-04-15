@@ -36,10 +36,25 @@ class DemuxProbeService:
             "chapters": 0
         }
 
+        def get_track_id(track):
+            # 兼容 mkvextract 需要的 0-based 全局 Track ID
+            # MediaInfo 的 streamorder 就是这个 0-based 顺序
+            order = getattr(track, "streamorder", None)
+            if order is not None:
+                return str(order)
+            # 如果没有 streamorder，则优先取 stream_identifier，失败则取 track_id
+            sid = getattr(track, "stream_identifier", "")
+            if sid != "": return str(sid)
+            tid = getattr(track, "track_id", "")
+            # 对于 MKV，内部 track_id 一般是 1开始的，如果是纯整数我们可以试着 - 1
+            if str(tid).isdigit():
+                return str(int(tid) - 1)
+            return str(tid)
+
         # 视频轨道
         for track in media_info.video_tracks:
             result["video"].append({
-                "id": getattr(track, "stream_identifier", getattr(track, "track_id", "")),
+                "id": get_track_id(track),
                 "lang": getattr(track, "language", "und"),
                 "type": "video",
                 "codec": getattr(track, "format", "Unknown"),
@@ -54,7 +69,7 @@ class DemuxProbeService:
             hz = getattr(track, "sampling_rate", "?")
             ch = getattr(track, "channel_s", getattr(track, "channels", "?"))
             result["audio"].append({
-                "id": getattr(track, "stream_identifier", getattr(track, "track_id", "")),
+                "id": get_track_id(track),
                 "lang": getattr(track, "language", "und"),
                 "type": "audio",
                 "codec": getattr(track, "format", "Unknown"),
@@ -67,7 +82,7 @@ class DemuxProbeService:
         # 字幕轨道
         for track in media_info.text_tracks:
             result["subtitle"].append({
-                "id": getattr(track, "stream_identifier", getattr(track, "track_id", "")),
+                "id": get_track_id(track),
                 "lang": getattr(track, "language", "und"),
                 "type": "subtitle",
                 "codec": getattr(track, "format", "Unknown"),
