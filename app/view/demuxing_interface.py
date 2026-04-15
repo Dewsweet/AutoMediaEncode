@@ -50,6 +50,11 @@ class DemuxingInterface(QWidget):
 
         # 当用户点击输出路径的浏览按钮
         self.outputCard.output_path_view_button.clicked.connect(self.choose_output_dir)
+        
+        # 挂载任务状态侦听信号
+        signalBus.taskCompleted.connect(self.on_task_finished)
+        signalBus.taskCancelled.connect(self.on_task_finished)
+        signalBus.taskError.connect(self.on_task_error)
 
     def choose_output_dir(self):
         folder = QFileDialog.getExistingDirectory(self, "选择输出文件夹")
@@ -97,17 +102,53 @@ class DemuxingInterface(QWidget):
                 "output_state": output_state
             }
         )
+        
+        self._current_checking_task_id = task_id
+        self._current_task_has_error = False
+        self._current_task_is_finished = False
+
+        self.header.start_button.setText('正在执行中...')
+        self.header.start_button.setEnabled(False)
 
         signalBus.taskAdded.emit(payload)
         
-        InfoBar.success(
-            title='已添加到任务队列',
-            content='抽流任务已开始执行',
-            orient=Qt.Horizontal,
-            position=InfoBarPosition.TOP_RIGHT,
-            duration=2000,
-            parent=self
-        )
+        # 延时 800 毫秒后判定后端程序是否闪崩报错或者是秒完成
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(800, lambda t=task_id: self._check_task_start_success(t))
+
+    def _check_task_start_success(self, task_id: str):
+        if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):
+            InfoBar.success(
+                title='任务执行成功',
+                content='抽流任务已开始执行，进入「任务进度」可查看详情',
+                orient=Qt.Horizontal,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=2000,
+                parent=self
+            )
+
+    def on_task_finished(self, task_id: str):
+        """侦听任务完成信号"""
+        if getattr(self, '_current_checking_task_id', '') == task_id:
+            self._current_task_is_finished = True
+            self.header.start_button.setText('开始抽流')
+            self.header.start_button.setEnabled(True)
+
+    def on_task_error(self, task_id: str, error_msg: str):
+        """侦听任务异常信号"""
+        if getattr(self, '_current_checking_task_id', '') == task_id:
+            self._current_task_has_error = True
+            self.header.start_button.setText('开始抽流')
+            self.header.start_button.setEnabled(True)
+            InfoBar.error(
+                title='运行错误',
+                content=f'执行任务期间发生错误:\n{error_msg}',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=-1,
+                parent=self
+            )
 
     def open_file_dialog(self):
         files, _ = QFileDialog.getOpenFileNames(self, "选择抽流文件", "", self.file_filter)
