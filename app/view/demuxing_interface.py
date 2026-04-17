@@ -74,6 +74,7 @@ class DemuxingInterface(QWidget):
                 title='无法开始',
                 content='文件列表为空，或未选择任何需要抽取的轨道！',
                 orient=Qt.Horizontal,
+                isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=3000,
                 parent=self
@@ -83,13 +84,14 @@ class DemuxingInterface(QWidget):
         if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
             InfoBar.error(
                 title='无法开始',
-                content='未设置输出目录，请选择输出路径或勾选"使用源目录"！',
+                content='未设置输出目录，请选择输出路径或勾选"使用源目录"!',
                 orient=Qt.Horizontal,
+                isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=3000,
                 parent=self
             )
-            return
+            return 
 
         task_id = f"task_{int(time.time()*1000)}"
         payload = DemuxPayload(
@@ -114,7 +116,7 @@ class DemuxingInterface(QWidget):
         
         # 延时 800 毫秒后判定后端程序是否闪崩报错或者是秒完成
         from PySide6.QtCore import QTimer
-        QTimer.singleShot(800, lambda t=task_id: self._check_task_start_success(t))
+        QTimer.singleShot(1000, lambda t=task_id: self._check_task_start_success(t))
 
     def _check_task_start_success(self, task_id: str):
         if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):

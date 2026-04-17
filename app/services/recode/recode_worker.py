@@ -14,6 +14,7 @@ from ...common.media_utils import classify_files
 from ...common.signal_bus import signalBus
 from ...common.logger import logger
 from ..tool_service import ToolService
+from ..ffmpeg_error_service import FfmpegErrorService
 from .ffmpeg_builder import FFmpegBuilder
 
 class RecodeWorker(QThread):
@@ -176,9 +177,11 @@ class RecodeWorker(QThread):
                         return
                     error_out = e.stderr if e.stderr else str(e)
                     logger.error(f"[Task {task_id}] Subprocess execution failed: {error_out}")
-                    logger.exception("发生异常时 Subprocess 的完整追踪信息:")  # 魔法方法:自动提取并优雅排版 traceback
-                    # 如果 stderr 是完整的多行，我们挑最后包含 Error 或者不被认为是不重要信息的行来提示，或者原样抛出
-                    self._handle_ffmpeg_error(task_id, file_path.name, error_out)
+                    logger.exception("发生异常时 Subprocess 的完整追踪信息:")
+
+                    main_error = FfmpegErrorService.handle_error(error_out)
+                    error_msg = f"文件 [{file_path.name}] 处理失败\n[可能因为]: {main_error}"
+                    signalBus.taskError.emit(task_id, error_msg)
                     self.stop()
                     return
                 # 瞬间跑完则抛出100%完成
@@ -198,65 +201,6 @@ class RecodeWorker(QThread):
                         pf.unlink()
                     except Exception as e:
                         logger.error(f"清理临时日志文件失败 {pf}: {e}")
-
-    def _handle_ffmpeg_error(self, task_id, filename, stderr_msg):
-        lines = [line.strip() for line in stderr_msg.splitlines() if line.strip()]
-        
-        # 过滤FFmpeg级联崩溃产生的"通用"废话错误，这样就能暴露出最前面的真实原因
-        generic_errors = [
-            "Error while opening encoder",
-            "Generic error in an external library",
-            "Task finished with error code",
-            "Terminating thread with return code",
-            "Could not open encoder before EOF",
-            "Nothing was written into output file",
-            "Error sending frames to consumers",
-            "Invalid argument",
-            "Conversion failed!"
-        ]
-        
-        core_errors = []
-        for line in lines:
-            # 过滤掉统计信息行
-            if "Qavg:" in line or "frame=" in line or "fps=" in line:
-                continue
-            
-            # 排查是否属于级联崩溃废话
-            if not any(g_err in line for g_err in generic_errors):
-                # FFmpeg典型的日志格式 [模块名 @ 地址] 实际信息
-                if line.startswith("[") and ("@" in line) and ("]" in line):
-                    clean_msg = line.split("]", 1)[-1].strip()
-                    if clean_msg:
-                        core_errors.append(clean_msg)
-        
-        # 提取真正的核心报错（通常取最后过滤剩下的1~2条）
-        if core_errors:
-            short_err = "\n".join(core_errors[-2:])
-        else:
-            # 兜底查找
-            fallback = [l for l in lines if any(k in l.lower() for k in ["error", "failed", "unrecognized", "invalid"])]
-            if fallback:
-                short_err = "\n".join(fallback[-2:])
-            else:
-                short_err = lines[-1] if lines else "发生未知错误"
-        
-        hint = ""
-        if "10 bit encode not supported" in short_err:
-            hint = "所选视频编码器不支持 10 bit, 请检查! "
-        elif "Could not write header (incorrect codec parameters ?)" in short_err:
-            hint = "参数配置错误, 更换编码器 或者 容器再次尝试! "
-        elif "No capable devices found" in short_err:
-            hint = "未找到可用的硬件加速设备! "
-        elif "No such file or directory" in short_err:
-            hint = "系统找不到输入文件或预设路径! "
-        elif "Unrecognized option" in short_err:
-            hint = "自定义FFmpeg命令中有未知的参数选项, 请检查拼写。"
-        elif "Unknown encoder" in short_err or "Invalid encoder" in short_err:
-            hint = "当前 FFmpeg 版本不支持该编码器。"
-            
-        # final_msg = f"文件 [{filename}] 处理失败\n{hint}\n[出错原因]: {short_err}" if hint else f"文件 [{filename}] 处理失败\n[出错原因]: {short_err}"
-        final_msg = f"文件 [{filename}] 处理失败\n{hint}" if hint else f"文件 [{filename}] 处理失败\n[可能因为]: {short_err}"
-        signalBus.taskError.emit(task_id, final_msg)
 
 
     def _run_long_task_with_progress(self, task_id, idx, total_files, filename, cmd_list, pass_num=1, total_passes=1):
@@ -303,7 +247,9 @@ class RecodeWorker(QThread):
             # ffmpeg-progress-yield 出错时往往会抛出 RuntimeError 其内部带有完整的日志 
             err_msg = str(e)
             logger.exception(f"[Task {task_id}] FfmpegProgress execution failed:") 
-            self._handle_ffmpeg_error(task_id, filename, err_msg)
+            main_error = FfmpegErrorService.handle_error(err_msg)
+            error_msg = f"文件 [{filename}] 处理失败\n[可能因为]: {main_error}"
+            signalBus.taskError.emit(task_id, error_msg)
             self.stop()
         finally:
             self._current_ff_process = None

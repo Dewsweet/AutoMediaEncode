@@ -32,6 +32,9 @@ class ProgressBarCard(QWidget):
         self.TimeTextLabel = CaptionLabel('预计剩余时间: ', self)
         self.TimeLabel = CaptionLabel('00:00:00', self)
 
+        self.errorLabel = CaptionLabel('', self)
+        self.errorLabel.setVisible(False)
+
         self._initLayout()
 
     def _initLayout(self):
@@ -56,6 +59,7 @@ class ProgressBarCard(QWidget):
         self.cardLayout.addLayout(self.processFileHLayout)
         self.cardLayout.addLayout(self.processBarHLayout)
         self.cardLayout.addLayout(self.processInfoHLayout)
+        self.cardLayout.addWidget(self.errorLabel)
         self.cardLayout.addStretch(1)
         self.cardLayout.setSpacing(0)
 
@@ -75,6 +79,11 @@ class ProgressBarCard(QWidget):
         self.TimeLabel.hide()
         self.barTextLabel.hide()
         self.progress_bar.hide()
+    
+    def show_error(self, error_msg: str):
+        self.errorLabel.setText(error_msg)
+        self.errorLabel.setStyleSheet("color: red;")
+        self.errorLabel.setVisible(True)
 
 class TaskCardTemplate(ExpandGroupSettingCard):
     def __init__(self, ico, title: str, parent=None):
@@ -178,6 +187,7 @@ class TaskCard(QWidget):
         if hasattr(self.task_card.taskGroup, 'update_time'):
             self.task_card.taskGroup.update_time("失败")
         self.task_card.taskGroup.processingLabel.setText('已失败')
+        self.task_card.taskGroup.show_error(error_msg)
 
     def mark_as_cancelled(self):
         """任务手动中止的样式更改"""

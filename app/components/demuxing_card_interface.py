@@ -250,7 +250,7 @@ class MuxingOptionCard(HeaderCardWidget):
         self.chapter_suffix_cb = ComboBox()
         self.chapter_suffix_cb.addItems(['XML', 'TXT'])
 
-        self.sub_departition_ckeackbox = CheckBox('字幕去子集化')
+        self.desubsetting_ckeackbox = CheckBox('字幕去子集化')
 
         # self.turehd_decore_ckeackbox = CheckBox('提取有损 Core')
 
@@ -259,7 +259,7 @@ class MuxingOptionCard(HeaderCardWidget):
         self.contextHLayout1.addStretch(1)
 
         self.mainLayout.addLayout(self.contextHLayout1)
-        self.mainLayout.addWidget(self.sub_departition_ckeackbox)
+        self.mainLayout.addWidget(self.desubsetting_ckeackbox)
         # self.mainLayout.addWidget(self.turehd_decore_ckeackbox)
         self.mainLayout.addStretch(1)
 
@@ -270,13 +270,13 @@ class MuxingOptionCard(HeaderCardWidget):
         """获取当前选项卡的状态"""
         return {
             "chapter_suffix": self.chapter_suffix_cb.currentText(),
-            "sub_departition": self.sub_departition_ckeackbox.isChecked()
+            "desubsetting": self.desubsetting_ckeackbox.isChecked()
         }
 
     def set_options_enabled(self, is_mkv: bool):
         """根据是否包含MKV文件来启用或禁用选项"""
         self.chapter_suffix_cb.setEnabled(is_mkv)
-        self.sub_departition_ckeackbox.setEnabled(is_mkv)
+        self.desubsetting_ckeackbox.setEnabled(is_mkv)
 
 class OutputCard(HeaderCardWidget):
     def __init__(self, parent=None):
