@@ -14,7 +14,7 @@ from ...common.media_utils import classify_files
 from ...common.signal_bus import signalBus
 from ...common.logger import logger
 from ..tool_service import ToolService
-from ..ffmpeg_error_service import FfmpegErrorService
+from ..error_service import ErrorService
 from .ffmpeg_builder import FFmpegBuilder
 
 class RecodeWorker(QThread):
@@ -179,7 +179,7 @@ class RecodeWorker(QThread):
                     logger.error(f"[Task {task_id}] Subprocess execution failed: {error_out}")
                     logger.exception("发生异常时 Subprocess 的完整追踪信息:")
 
-                    main_error = FfmpegErrorService.handle_error(error_out)
+                    main_error = ErrorService.handle_error(error_out)
                     error_msg = f"文件 [{file_path.name}] 处理失败\n[可能因为]: {main_error}"
                     signalBus.taskError.emit(task_id, error_msg)
                     self.stop()
@@ -247,7 +247,7 @@ class RecodeWorker(QThread):
             # ffmpeg-progress-yield 出错时往往会抛出 RuntimeError 其内部带有完整的日志 
             err_msg = str(e)
             logger.exception(f"[Task {task_id}] FfmpegProgress execution failed:") 
-            main_error = FfmpegErrorService.handle_error(err_msg)
+            main_error = ErrorService.handle_error(err_msg)
             error_msg = f"文件 [{filename}] 处理失败\n[可能因为]: {main_error}"
             signalBus.taskError.emit(task_id, error_msg)
             self.stop()

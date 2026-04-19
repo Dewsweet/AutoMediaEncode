@@ -1,7 +1,8 @@
 # coding: utf-8
-class FfmpegErrorService:
+class ErrorService:
     @classmethod
-    def handle_error(cls, err_msg: str):
+    def ffmpeg_error(cls, err_msg: str):
+        """从FFmpeg的错误输出中提取核心错误信息, 并提供针对常见错误的提示"""
         lines = [line.strip() for line in err_msg.splitlines() if line.strip()] # 过滤掉空行和纯空白行
         
         # 过滤FFmpeg级联崩溃产生的"通用"废话错误，这样就能暴露出最前面的真实原因

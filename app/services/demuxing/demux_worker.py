@@ -12,7 +12,7 @@ from ffmpeg_progress_yield import FfmpegProgress
 from ...common.signal_bus import signalBus
 from ...common.logger import logger
 from ..tool_service import ToolService
-from ..ffmpeg_error_service import FfmpegErrorService
+from ..error_service import ErrorService
 from .desubsetting_service import SubtitleProcessService
 
 class DemuxWorker(QThread):
@@ -340,7 +340,7 @@ class DemuxWorker(QThread):
             if not self._is_cancelled:
                 err_msg = str(e)
                 logger.error(err_msg)
-                main_error = FfmpegErrorService.handle_error(err_msg)
+                main_error = ErrorService.ffmpeg_error(err_msg)
                 error_msg = f"文件 [{file_name}] 处理失败\n[可能因为]: {main_error}"
                 signalBus.taskError.emit(task_id, error_msg)
         finally:

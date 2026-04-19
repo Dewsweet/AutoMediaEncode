@@ -1,10 +1,11 @@
 from pathlib import Path
 import time
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog, QStackedWidget
 
-from qfluentwidgets import FluentIcon as FIF, InfoBar, InfoBarPosition
+from qfluentwidgets import FluentIcon as FIF, InfoBar, InfoBarPosition, qrouter
 
+from ..components.fileload_interface import FileLoadInterface
 from ..components.hearder_widget import HeaderWidget
 from ..components.demuxing_card_interface import InputFilesCard, MuxingOptionCard, OutputCard
 from ..common.media_utils import DEMUXING_EXTS
@@ -16,8 +17,15 @@ class DemuxingInterface(QWidget):
         super().__init__(parent)
         self.setObjectName('MuxingInterface')
 
-        self.mainLayout = QVBoxLayout(self)
+        self.mainPage = QWidget(self)
+        self.mainPage.setObjectName('mainPage')
+        self.mainLayout = QVBoxLayout(self.mainPage)
         self.mainLayout.setContentsMargins(20, 20, 20, 10)
+
+        self.vBoxLayout = QVBoxLayout(self)
+        self.stackedWidget = QStackedWidget(self)
+        self.vBoxLayout.addWidget(self.stackedWidget)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self.Hbox = QWidget(self)
         self.HboxLayout = QHBoxLayout(self.Hbox)
@@ -27,6 +35,21 @@ class DemuxingInterface(QWidget):
         self.optionCard = MuxingOptionCard(self)
         self.outputCard = OutputCard(self)
 
+        self._init_file_filter()
+        self._loadPage()
+        self._initLayout()
+        self._connect_signals()
+
+    def _loadPage(self):
+        self.loadPage = QWidget()
+        self.loadPage.setObjectName('LoadPage')
+        self.loadLayout = QVBoxLayout(self.loadPage)
+
+        self.loaderComponent = FileLoadInterface(self.file_filter, "📌 点击 or 拖放载入文件😋", parent=self.loadPage)
+        self.loaderComponent.setFixedSize(360, 200)
+        self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
+
+    def _initLayout(self):
         self.HboxLayout.addWidget(self.inputFilesCard, 7)
         self.HboxLayout.addWidget(self.optionCard, 3)
         self.HboxLayout.setContentsMargins(0, 0, 0, 0)
@@ -35,8 +58,11 @@ class DemuxingInterface(QWidget):
         self.mainLayout.addWidget(self.Hbox)
         self.mainLayout.addWidget(self.outputCard, alignment=Qt.AlignBottom)
 
-        self._init_file_filter()
-        self._connect_signals()
+        self.stackedWidget.addWidget(self.loadPage)
+        self.stackedWidget.addWidget(self.mainPage)
+
+        qrouter.setDefaultRouteKey(self.stackedWidget, self.loadPage.objectName())
+        self.stackedWidget.setCurrentIndex(0)
 
     def _init_file_filter(self):
         v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in DEMUXING_EXTS) + ")"
@@ -44,17 +70,34 @@ class DemuxingInterface(QWidget):
         self.file_filter = f"{v_ext};;{all_ext}"
 
     def _connect_signals(self):
+        # 载入文件
+        self.loaderComponent.filesReady.connect(self.on_files_loaded)
         self.header.reload_button.clicked.connect(self.open_file_dialog)
         self.inputFilesCard.load_files_requested.connect(self.open_file_dialog)
         self.header.start_button.clicked.connect(self.emit_builder_output)
 
-        # 当用户点击输出路径的浏览按钮
+        # 输出路径
         self.outputCard.output_path_view_button.clicked.connect(self.choose_output_dir)
         
         # 挂载任务状态侦听信号
         signalBus.taskCompleted.connect(self.on_task_finished)
         signalBus.taskCancelled.connect(self.on_task_finished)
         signalBus.taskError.connect(self.on_task_error)
+
+    def open_file_dialog(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "选择抽流文件", "", self.file_filter)
+        if files:
+            self.on_files_loaded(files)
+
+    def on_files_loaded(self, files: list):
+        if not files: 
+            return
+            
+        self.inputFilesCard.update_files(files)
+        
+        if self.stackedWidget.currentIndex() != 1:
+            qrouter.push(self.stackedWidget, self.mainPage.objectName())
+            self.stackedWidget.setCurrentIndex(1)
 
     def choose_output_dir(self):
         folder = QFileDialog.getExistingDirectory(self, "选择输出文件夹")
@@ -152,10 +195,6 @@ class DemuxingInterface(QWidget):
                 parent=self
             )
 
-    def open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择抽流文件", "", self.file_filter)
-        if files:
-            self.inputFilesCard.update_files(files)
 
 
 
