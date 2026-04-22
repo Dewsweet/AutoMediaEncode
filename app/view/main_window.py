@@ -9,7 +9,8 @@ from .mediainfo_interface import MediaifInterface
 from .setting_interface import SettingInterface
 from .recode_interface import RecodeInterface
 from .task_interface import TaskInterface
-from .demuxing_interface import DemuxingInterface
+from .demuxing_interface import DeMuxingInterface
+from .muxing_interface import MuxingInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
 
 class MainWindow(FluentWindow):
@@ -23,7 +24,8 @@ class MainWindow(FluentWindow):
         self.settingInterface = SettingInterface(self)
         self.recodeInterface = RecodeInterface(self)
         self.taskInterface = TaskInterface(self)
-        self.demuxingInterface = DemuxingInterface(self)
+        self.demuxingInterface = DeMuxingInterface(self)
+        self.muxingInterface = MuxingInterface(self)
         self.initNavigation()
         
 
@@ -105,6 +107,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.mediaInfoInterface, FIF.INFO, 'Media Info')
         self.addSubInterface(self.recodeInterface, FIF.VIDEO, 'Recode')
         self.addSubInterface(self.demuxingInterface, FIF.MOVIE, 'Demuxing')
+        self.addSubInterface(self.muxingInterface, FIF.MEDIA, 'Muxing')
 
         self.addSubInterface(self.taskInterface, FIF.MESSAGE, 'Task Progress', NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Setting', NavigationItemPosition.BOTTOM)

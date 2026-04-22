@@ -12,10 +12,10 @@ from ..common.media_utils import DEMUXING_EXTS
 from ..common.signal_bus import signalBus
 from ..common.task_types import DemuxPayload
 
-class DemuxingInterface(QWidget):
+class DeMuxingInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName('MuxingInterface')
+        self.setObjectName('DeMuxingInterface')
 
         self.mainPage = QWidget(self)
         self.mainPage.setObjectName('mainPage')
