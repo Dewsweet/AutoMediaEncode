@@ -18,16 +18,13 @@ class MuxingInterface(QWidget):
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 10)
 
-        self.vBox1 = QWidget(self)
-        self.vLayout1 = QVBoxLayout(self.vBox1)
+        self.vLayout1 = QVBoxLayout()
         self.vLayout1.setContentsMargins(0, 0, 0, 0)
 
-        self.vBox2 = QWidget(self)
-        self.vLayout2 = QVBoxLayout(self.vBox2)
+        self.vLayout2 = QVBoxLayout()
         self.vLayout2.setContentsMargins(0, 0, 0, 0)
 
-        self.hBox = QWidget(self)
-        self.hLayout = QHBoxLayout(self.hBox)
+        self.hLayout = QHBoxLayout()
         self.hLayout.setContentsMargins(0, 0, 0, 0)
 
         self._initWidget()
@@ -47,11 +44,11 @@ class MuxingInterface(QWidget):
 
         self.vLayout2.addWidget(self.optionCard)
 
-        self.hLayout.addWidget(self.vBox1, 6)
-        self.hLayout.addWidget(self.vBox2, 4)
+        self.hLayout.addLayout(self.vLayout1, 6)
+        self.hLayout.addLayout(self.vLayout2, 4)
 
         self.mainLayout.addWidget(self.header, alignment=Qt.AlignTop)
-        self.mainLayout.addWidget(self.hBox, 0)
+        self.mainLayout.addLayout(self.hLayout)
         self.mainLayout.addWidget(self.outputCard, alignment=Qt.AlignBottom)
         # self.setLayout(self.mainLayout)
 
