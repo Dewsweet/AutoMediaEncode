@@ -1,16 +1,27 @@
 # coding: utf-8
+import os
+from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QGroupBox, QCompleter, QDialog, QTableWidget, QMenu
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QCompleter, QFileDialog
 
 from qfluentwidgets import (HeaderCardWidget, SimpleCardWidget, TableWidget, ScrollArea, HorizontalSeparator, SmoothMode, RoundMenu, Action, CheckableMenu, 
-                            CheckBox, BodyLabel, ComboBox, LineEdit, PrimaryPushButton, StrongBodyLabel, EditableComboBox, PushButton, ToolButton, IconWidget, RadioButton)
+                            CheckBox, BodyLabel, ComboBox, LineEdit, PrimaryPushButton, StrongBodyLabel, EditableComboBox, PushButton, ToolButton, IconWidget, RadioButton, InfoBar, InfoBarPosition)
 from qfluentwidgets import FluentIcon as FIF
+from ..common.media_utils import MUXING_EXTS
 
 class InputFilesCard(HeaderCardWidget):
+    filesAdded = Signal(list)
+    removeFilesRequested = Signal(list)
+    clearFilesRequested = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle('输入文件')
+        self.setAcceptDrops(True)
+
+        self.loaded_files = [] # 记录当前已加载的绝对路径防复复
+        self.file_color_map = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫", "⚪", "🟥", "🟧", "🟨", "🟩", "🟦", "🟪", "🟫", "⬛", "⬜"]
 
         self.mainBox = QWidget()
         self.mainLayout = QVBoxLayout(self.mainBox)
@@ -20,23 +31,14 @@ class InputFilesCard(HeaderCardWidget):
 
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setWordWrap(False)  # 禁止自动换行，保持单行显示
-        self.table.setColumnCount(4)
-        self.table.setRowCount(3)
+        self.table.setColumnCount(4) 
+        self.table.setRowCount(0)
 
         self.table.setHorizontalHeaderLabels(["文件名", "容器", "文件大小", "文件路径"])
-        self.table.setColumnWidth(0, 180)
+        self.table.setColumnWidth(0, 200)
         self.table.setColumnWidth(1, 110)
         self.table.setColumnWidth(2, 100)
         self.table.setColumnWidth(3, 400)
-
-        testInfo = [
-            ['Placeholder1.mkv', 'Matroska', '500 MiB', r'C:\Users\Dewsweet\Desktop\.Temp\Placeholder1.mkv'],
-            ['ph2.265', 'HEVC/H.265', '1.2 GiB', r'C:\Users\Dewsweet\Desktop\.Temp\ph2.265'],
-            ['ph3.aac', 'AAC', '200 MiB', r'C:\Users\Dewsweet\Desktop\.Temp\ph3.aac']
-        ]
-        for i, row in enumerate(testInfo):
-            for j in range(len(row)):
-                self.table.setItem(i, j, QTableWidgetItem(row[j]))
 
         # self.table.resizeColumnsToContents() 
         self.header = self.table.horizontalHeader()
@@ -82,18 +84,106 @@ class InputFilesCard(HeaderCardWidget):
             self.table.setColumnHidden(logical_index, False)
             current_visual_index = self.header.visualIndex(logical_index)
             self.header.moveSection(current_visual_index, logical_index)
-        self.table.setColumnWidth(0, 180)
+        self.table.setColumnWidth(0, 200)
         self.table.setColumnWidth(1, 110)
         self.table.setColumnWidth(2, 100)
         self.table.setColumnWidth(3, 400)
 
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
-        add_files_action = Action(FIF.ADD, "添加文件", self, triggered=lambda: print("添加文件"))
-        remove_file_action = Action(FIF.REMOVE, "移除文件", self, triggered=lambda: print("移除文件"))
-        remove_all_action = Action("移除所有文件", self, triggered=lambda: print("清空列表"))
+        add_files_action = Action(FIF.ADD, "添加文件", self, triggered=self.on_add_files_clicked)
+        
+        remove_file_action = Action(FIF.REMOVE, "移除选中", self, triggered=self.on_remove_selected_files)
+        remove_all_action = Action("清空列表", self, triggered=self.on_clear_files)
+        
         menu.addActions([add_files_action, remove_file_action, remove_all_action])
         menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def on_add_files_clicked(self):
+        mux_ext_filter = "所支持的媒体文件 (" + " ".join(f"*{ext}" for ext in MUXING_EXTS ) + ");;所有文件 (*)"
+        file_paths, _ = QFileDialog.getOpenFileNames(self, "选择混流媒体文件", "", mux_ext_filter)
+        if file_paths:
+            self._filter_and_emit_files(file_paths)
+
+    def on_remove_selected_files(self):
+        selected_rows = sorted(set(item.row() for item in self.table.selectedItems()), reverse=True)
+        if not selected_rows:
+            return
+            
+        removed_paths = []
+        for row in selected_rows:
+            path_item = self.table.item(row, 0) # 从第一行获取隐藏的决对路径 UserRole
+            if path_item:
+                raw_path = path_item.data(Qt.UserRole)
+                removed_paths.append(raw_path)
+                if raw_path in self.loaded_files:
+                    self.loaded_files.remove(raw_path)
+            self.table.removeRow(row)
+            
+        if removed_paths:
+            self.removeFilesRequested.emit(removed_paths)
+
+    def on_clear_files(self):
+        self.table.setRowCount(0)
+        self.loaded_files.clear()
+        self.clearFilesRequested.emit()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        urls = event.mimeData().urls()
+        files = [url.toLocalFile() for url in urls if url.isLocalFile()]
+        if files:
+            self._filter_and_emit_files(files)
+
+    def _filter_and_emit_files(self, files: list):
+        valid_files = []
+        invalid_files = []
+        for f in files:
+            if Path(f).suffix.lower() in MUXING_EXTS:
+                valid_files.append(f)
+            else:
+                invalid_files.append(f)
+                
+        if invalid_files:
+            InfoBar.warning(
+                title="载入文件失败",
+                content=f"已过滤 {len(invalid_files)} 个不在支持列表中的文件。",
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self.parent()
+            )
+        if valid_files:
+            self.filesAdded.emit(valid_files)
+
+    def add_file_to_table(self, file_info: dict):
+        """外部调用：将解析过的文件信息写入表格"""
+        file_path = file_info.get('path', '')
+        if file_path in self.loaded_files:
+            return 
+            
+        self.loaded_files.append(file_path)
+        row = self.table.rowCount()
+        self.table.insertRow(row)
+        
+        # 色块分配
+        color_idx = (row) % len(self.file_color_map)
+        color_emoji = self.file_color_map[color_idx]
+        
+        name_item = QTableWidgetItem(f"{color_emoji} {file_info.get('name', 'Unknown')}")
+        name_item.setData(Qt.UserRole, file_path)
+        container_item = QTableWidgetItem(file_info.get('container', 'Unknown'))
+        size_item = QTableWidgetItem(file_info.get('format_size', '0 B'))
+        path_item = QTableWidgetItem(file_path)
+        
+        for col, item in enumerate([name_item, container_item, size_item, path_item]):
+            self.table.setItem(row, col, item)
 
 class TrackCard(HeaderCardWidget):
     def __init__(self, parent=None):
@@ -273,11 +363,11 @@ class DynamicComboList(QWidget):
         # hLayout.setSpacing(0)
 
         if self.label_text and is_initial:
-            self.deflaut_label = BodyLabel(self.label_text, self)
-            hLayout.addWidget(self.deflaut_label)
-        if self.deflaut_label and not is_initial:
+            self.default_label = BodyLabel(self.label_text, self)
+            hLayout.addWidget(self.default_label)
+        if self.default_label and not is_initial:
             label = BodyLabel('', self)
-            label.setFixedWidth(self.deflaut_label.sizeHint().width())
+            label.setFixedWidth(self.default_label.sizeHint().width())
             hLayout.addWidget(label)
 
         combo = ComboBox()
@@ -333,7 +423,7 @@ class OptionCard(HeaderCardWidget):
 
         self._initWidget()
         self._generalOptionsArea()
-        self._timestempOptionsArea()
+        self._timestampOptionsArea()
         self._video_properties_area()
         self._initLayout()
         self._connectSignals()
@@ -346,6 +436,7 @@ class OptionCard(HeaderCardWidget):
         self.containerCb = ComboBox()
         self.containerCb.addItems(['MKV', 'MP4', 'MOV'])
 
+        self.enable_attachment_checkbox = CheckBox('启用附件', self)
         self.using_hard_sub_checkbox = CheckBox('编码硬字幕', self)
 
         self.separator = HorizontalSeparator(self)
@@ -405,42 +496,42 @@ class OptionCard(HeaderCardWidget):
         self.go_hLayout5.addWidget(self.track_label_lable)
         self.go_hLayout5.addWidget(self.track_label_lineEdit, 1)
 
-    def _timestempOptionsArea(self):
+    def _timestampOptionsArea(self):
         self.to_text_vLayout = QVBoxLayout()
         self.to_edit_vLayout = QVBoxLayout()
         self.to_hLayout = QHBoxLayout()
 
-        self.timestemp_options_group = GroupExpandBox('时间戳和默认帧时长', self)
+        self.timestamp_options_group = GroupExpandBox('时间戳和默认帧时长', self)
 
         self.delay_label = BodyLabel('延迟(毫秒): ', self)
         self.delay_lineEdit = LineEdit()
 
-        self.timestemp_extend_label = BodyLabel('延展比例: ', self)
-        self.timestemp_extend_lineEdit = LineEdit()
+        self.timestamp_extend_label = BodyLabel('延展比例: ', self)
+        self.timestamp_extend_lineEdit = LineEdit()
 
         self.default_frame_duration_label = BodyLabel('默认帧时长和帧率: ', self)
         self.default_frame_duration_lineEdit = EditableComboBox()
         self.frame_duration_items = ['', '24p', '25p', '30p', '48p', '50i', '50p', '60i', '60p', '24000/1001p', '30000/1001p', '48000/1001p', '60000/1001i', '60000/1001p']
         self.default_frame_duration_lineEdit.addItems(self.frame_duration_items)
 
-        self.timestemp_files_label = BodyLabel('时间戳文件: ', self)
-        self.timestemp_files_lineEdit = LineEdit()
-        self.timestemp_files_view_btn = PushButton('...', self)
-        self.timestemp_files_layout = QHBoxLayout()
-        self.timestemp_files_layout.addWidget(self.timestemp_files_lineEdit)
-        self.timestemp_files_layout.addWidget(self.timestemp_files_view_btn)
+        self.timestamp_files_label = BodyLabel('时间戳文件: ', self)
+        self.timestamp_files_lineEdit = LineEdit()
+        self.timestamp_files_view_btn = PushButton('...', self)
+        self.timestamp_files_layout = QHBoxLayout()
+        self.timestamp_files_layout.addWidget(self.timestamp_files_lineEdit)
+        self.timestamp_files_layout.addWidget(self.timestamp_files_view_btn)
 
-        self.corrent_timestemp_checkbox = CheckBox('校正时间戳', self)
+        self.correct_timestamp_checkbox = CheckBox('校正时间戳', self)
 
         self.to_text_vLayout.addWidget(self.delay_label, alignment=Qt.AlignVCenter)
-        self.to_text_vLayout.addWidget(self.timestemp_extend_label, alignment=Qt.AlignVCenter)
+        self.to_text_vLayout.addWidget(self.timestamp_extend_label, alignment=Qt.AlignVCenter)
         self.to_text_vLayout.addWidget(self.default_frame_duration_label, alignment=Qt.AlignVCenter)
-        self.to_text_vLayout.addWidget(self.timestemp_files_label, alignment=Qt.AlignVCenter)
+        self.to_text_vLayout.addWidget(self.timestamp_files_label, alignment=Qt.AlignVCenter)
 
         self.to_edit_vLayout.addWidget(self.delay_lineEdit)
-        self.to_edit_vLayout.addWidget(self.timestemp_extend_lineEdit)
+        self.to_edit_vLayout.addWidget(self.timestamp_extend_lineEdit)
         self.to_edit_vLayout.addWidget(self.default_frame_duration_lineEdit)
-        self.to_edit_vLayout.addLayout(self.timestemp_files_layout)
+        self.to_edit_vLayout.addLayout(self.timestamp_files_layout)
 
         self.to_hLayout.addLayout(self.to_text_vLayout)
         self.to_hLayout.addLayout(self.to_edit_vLayout)
@@ -491,19 +582,20 @@ class OptionCard(HeaderCardWidget):
         self.general_options_group.addLayout(self.go_hLayout5)
 
 
-        # TimeStemp options layout
-        self.timestemp_options_group.addLayout(self.to_hLayout)
-        self.timestemp_options_group.addWidget(self.corrent_timestemp_checkbox)
+        # Timestamp options layout
+        self.timestamp_options_group.addLayout(self.to_hLayout)
+        self.timestamp_options_group.addWidget(self.correct_timestamp_checkbox)
 
         # Video properties layout
         self.video_properties_group.addLayout(self.vp_hLayout)
 
 
         self.mainLayout.addLayout(self.containerLayout)
+        self.mainLayout.addWidget(self.enable_attachment_checkbox)
         self.mainLayout.addWidget(self.using_hard_sub_checkbox)
         self.mainLayout.addWidget(self.separator)
         self.mainLayout.addWidget(self.general_options_group, alignment=Qt.AlignTop)
-        self.mainLayout.addWidget(self.timestemp_options_group, alignment=Qt.AlignTop)
+        self.mainLayout.addWidget(self.timestamp_options_group, alignment=Qt.AlignTop)
         self.mainLayout.addWidget(self.video_properties_group, alignment=Qt.AlignTop)
         self.mainLayout.addStretch(1)
 
@@ -535,5 +627,109 @@ class OutputCard(SimpleCardWidget):
 
 
         self.mainLayout.addLayout(self.OutputPathLayout)
+
+
+class AttachmentCard(HeaderCardWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setTitle("添加附件")
+        self.setAcceptDrops(True)
+        
+        self.mainBox = QWidget()
+        self.mainLayout = QVBoxLayout(self.mainBox)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        
+        self.table = TableWidget(self)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setWordWrap(False)
+        self.table.setColumnCount(3)
+        self.table.setRowCount(0)
+        
+        self.table.setHorizontalHeaderLabels(["附件名", "大小", "目录"])
+        self.table.setColumnWidth(0, 300)
+        self.table.setColumnWidth(1, 100)
+        self.table.setColumnWidth(2, 400)
+        
+        self.header = self.table.horizontalHeader()
+        self.header.setStretchLastSection(True) 
+        self.table.verticalHeader().hide()
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.show_content_menu)
+        
+        self.mainLayout.addWidget(self.table)
+        self.viewLayout.addWidget(self.mainBox)
+        self.viewLayout.setContentsMargins(0, 5, 0, 0)
+        
+    def show_content_menu(self, pos):
+        menu = RoundMenu(parent=self)
+        add_files_action = Action(FIF.ADD, "添加附件", self, triggered=self.on_add_attachments)
+        enable_action = Action(FIF.ACCEPT, "启用所选附件", self, triggered=self.on_enable_selected)
+        disable_action = Action(FIF.CANCEL, "禁用所选附件", self, triggered=self.on_disable_selected)
+        remove_file_action = Action(FIF.REMOVE, "移除选择附件", self, triggered=self.on_remove_selected)
+        remove_all_action = Action("移除所有附件", self, triggered=self.on_clear_attachments)
+        
+        menu.addActions([add_files_action, enable_action, disable_action, remove_file_action, remove_all_action])
+        menu.exec(self.table.viewport().mapToGlobal(pos))
+        
+    def on_enable_selected(self):
+        selected_rows = set(item.row() for item in self.table.selectedItems())
+        for row in selected_rows:
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(Qt.CheckState.Checked)
+
+    def on_disable_selected(self):
+        selected_rows = set(item.row() for item in self.table.selectedItems())
+        for row in selected_rows:
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+    def on_remove_selected(self):
+        selected_rows = sorted(set(item.row() for item in self.table.selectedItems()), reverse=True)
+        for row in selected_rows:
+            self.table.removeRow(row)
+
+    def on_clear_attachments(self):
+        self.table.setRowCount(0)
+
+    def on_add_attachments(self):
+        file_paths, _ = QFileDialog.getOpenFileNames(self, "选择附件文件", "", "Attachment Files (*.ttf *.otf *.png *.jpg *.jpeg *.xml);;All Files (*)")
+        if file_paths:
+            self._add_files_to_table(file_paths)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        urls = event.mimeData().urls()
+        if urls:
+            file_paths = [u.toLocalFile() for u in urls if u.isLocalFile()]
+            self._add_files_to_table(file_paths)
+
+    def _add_files_to_table(self, file_paths: list):
+        for path in file_paths:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            p = Path(path)
+            
+            size_bytes = p.stat().st_size
+            size_str = f"{size_bytes / 1024.0 / 1024.0:.2f} MiB" if size_bytes > 1048576 else f"{size_bytes / 1024.0:.2f} KiB"
+            
+            name_item = QTableWidgetItem(p.name)
+            name_item.setData(Qt.UserRole, path)
+            name_item.setCheckState(Qt.CheckState.Checked)
+            size_item = QTableWidgetItem(size_str)
+            path_item = QTableWidgetItem(str(p.parent))
+            
+            for col, item in enumerate([name_item, size_item, path_item]):
+                if col == 0:
+                    item.setFlags((item.flags() | Qt.ItemIsUserCheckable) & ~Qt.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                self.table.setItem(row, col, item)
 
 

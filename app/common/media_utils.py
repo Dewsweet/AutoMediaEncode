@@ -1,11 +1,21 @@
 from pathlib import Path
 
-VIDEO_EXTS = {'.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.ts', '.mpg', '.mpeg', '.m4v', '.m2ts', '.rmvb', '.vob', '.divx', '.xvid'}
-AUDIO_EXTS = {'.mp3', '.aac', '.wav', '.flac', '.ogg', '.m4a', '.wma', '.opus', '.alac', '.pcm', '.mka', '.tta', '.tak', '.wv', '.ape'}
+VIDEO_EXTS = {'.mp4', '.m4v', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.f4v', '.webm', '.mpg', '.mpeg', '.m1v', '.m2v', '.mpv', '.evo', '.evob', '.vob', '.ts', '.m2ts', '.mts', '.vob', '.divx', '.xvid', '.ogm', '.ogv', '.ram', '.rm', '.rmvb', '.rv'}
+AUDIO_EXTS = {'.mp2', '.mp3', '.aac', '.wav', '.flac', '.ogg', '.caf', '.m4a', '.wma', '.opus', '.alac', '.pcm', '.mka', '.tta', '.tak', '.wv', '.ape', '.ra', '.ac3'}
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.webp', '.heif', '.avif', '.j2k', '.jp2', '.jpx', '.j2c', '.jxl'}
 SUBTITLE_EXTS = {'.srt', '.ass', '.ssa', '.vtt', '.sub'}
 
+BDMV = {'.bdmv', '.mpls', '.m2ts'}
+MATROSKA = {'.mk3d', '.mka', '.mks', '.mkv'}
+AVC = {'.264', '.avc', '.h264', '.x264'}
+HEVC = {'.265', '.hevc', '.h265', '.x265'}
+IVF = {'.av1', '.vp8', '.vp9', '.avf'}
+DTS = {'.dts', '.dtshd', '.dts-hd', '.dtsma'}
+DOLBY = {'.ac3', '.eac3', '.eb3', '.ec3'}
+TRUEHD = {'.mlp', '.thd', '.thd+ac3', '.truehd', '.true-hd'}
+
 DEMUXING_EXTS = VIDEO_EXTS | {'.mka', '.mks'}
+MUXING_EXTS = VIDEO_EXTS | AUDIO_EXTS | SUBTITLE_EXTS | MATROSKA | AVC | HEVC | IVF | DTS | DOLBY | TRUEHD | {'.ffv1'}
 
 def classify_files(file_paths):
     """
