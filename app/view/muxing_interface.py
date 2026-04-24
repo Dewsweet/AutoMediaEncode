@@ -79,15 +79,24 @@ class MuxingInterface(QWidget):
             file_info = MuxProbeService.probe_file(path)
             if file_info:
                 # 把基础信息发给列表展示
-                self.inputFilesCard.add_file_to_table(file_info)
-                
-                # TODO: 下一步就是把这个 file_info 数据传递给 self.trackCard 去解析轨道信息
+                color_emoji = self.inputFilesCard.add_file_to_table(file_info)
+                if color_emoji:
+                    # 下一步就是把这个 file_info 数据传递给 self.trackCard 去解析轨道信息
+                    self.trackCard.add_tracks(file_info, color_emoji)
+                    
+                    # 附件区域
+                    attachments = file_info.get('attachments', [])
+                    if attachments:
+                        self.attachmentCard.add_attachments(file_info['path'], attachments)
 
     def _handle_files_removed(self, paths: list):
-        print("Mux Interface remove: ", paths)
-        # TODO: 从 TrackCard 中移除属于这些文件的轨道信息
+        # 从 TrackCard 中移除属于这些文件的轨道信息
+        for path in paths:
+            self.trackCard.remove_tracks_by_file(path)
+            self.attachmentCard.remove_attachments_by_file(path)
         
     def _handle_files_cleared(self):
-        print("Mux Interface cleared.")
-        # TODO: 清空整个 TrackCard 的子轨道
+        # 清空整个 TrackCard 的子轨道
+        self.trackCard.clear_all_tracks()
+        self.attachmentCard.clear_all_attachments()
 

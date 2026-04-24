@@ -166,7 +166,7 @@ class InputFilesCard(HeaderCardWidget):
         """外部调用：将解析过的文件信息写入表格"""
         file_path = file_info.get('path', '')
         if file_path in self.loaded_files:
-            return 
+            return None
             
         self.loaded_files.append(file_path)
         row = self.table.rowCount()
@@ -184,6 +184,8 @@ class InputFilesCard(HeaderCardWidget):
         
         for col, item in enumerate([name_item, container_item, size_item, path_item]):
             self.table.setItem(row, col, item)
+            
+        return color_emoji
 
 class TrackCard(HeaderCardWidget):
     def __init__(self, parent=None):
@@ -200,7 +202,7 @@ class TrackCard(HeaderCardWidget):
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setWordWrap(False)  # 禁止自动换行，保持单行显示
         self.table.setColumnCount(len(self.hearderItems))
-        self.table.setRowCount(3)
+        self.table.setRowCount(0)
         self.table.setHorizontalHeaderLabels(self.hearderItems)
         self.table.setColumnWidth(0, 115)
         self.table.setColumnWidth(1, 95)
@@ -211,16 +213,6 @@ class TrackCard(HeaderCardWidget):
         self.table.setColumnWidth(6, 150)
         self.table.setColumnWidth(7, 180)
         self.table.setColumnWidth(8, 40)
-
-        testInfo = [
-            ['HEVC/H.265', '🎬 视频', 'und', '', '0', '是', '1920x1080 px', 'Placeholder1.mkv', ''],
-            ['AAC', '🎧 音频', 'und', '', '1', '是', '48000 Hz 2 ch','ph3.aac', ''],
-            ['ASS', '📚 字幕', 'und', '', '2', '是', '','ph4.ass', '']
-        ]
-
-        for i, row in enumerate(testInfo):
-            for j in range(len(row)):
-                self.table.setItem(i, j, QTableWidgetItem(row[j]))
 
         # self.table.resizeColumnsToContents() 
         self.header = self.table.horizontalHeader()
@@ -241,6 +233,7 @@ class TrackCard(HeaderCardWidget):
     def _connectSignals(self):
         self.header.customContextMenuRequested.connect(self.show_header_menu)
         self.table.customContextMenuRequested.connect(self.show_content_menu)
+        self.table.cellClicked.connect(self._on_cell_clicked)
 
     def show_header_menu(self, pos):
         menu = CheckableMenu(parent=self)
@@ -276,23 +269,110 @@ class TrackCard(HeaderCardWidget):
         self.table.setColumnWidth(7, 180)
         self.table.setColumnWidth(8, 40)
 
+    def _on_cell_clicked(self, row, column):
+        # 左键轨道文本可以选中/不选中复选框 (列0是复选框)
+        if column != 0:
+            item = self.table.item(row, 0)
+            if item is not None:
+                new_state = Qt.Unchecked if item.checkState() == Qt.Checked else Qt.Checked
+                item.setCheckState(new_state)
+
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
-        select_all_action = Action("全选", self, triggered=lambda: print("全选"))
+        select_all_action = Action("全选行", self, triggered=self.table.selectAll)
 
-        submenu = RoundMenu("快速选择", self)
-        select_video_action = Action("所有视频", self, triggered=lambda: print("所有视频轨道"))
-        select_audio_action = Action("所有音频", self, triggered=lambda: print("所有音频轨道"))
-        select_subtitle_action = Action("所有字幕", self, triggered=lambda: print("所有字幕轨道"))
+        submenu = RoundMenu("快速启用", self)
+        select_video_action = Action("所有视频", self, triggered=lambda: self._select_tracks_by_type("视频"))
+        select_audio_action = Action("所有音频", self, triggered=lambda: self._select_tracks_by_type("音频"))
+        select_subtitle_action = Action("所有字幕", self, triggered=lambda: self._select_tracks_by_type("字幕"))
         submenu.addActions([select_video_action, select_audio_action, select_subtitle_action])
         
-        enabel_all_action = Action("全部启用", self, triggered=lambda: print("全部启用"))
-        disable_all_action = Action("全部禁用", self, triggered=lambda: print("全部禁用"))
+        enabel_all_action = Action("全部启用", self, triggered=lambda: self._set_all_checked(True))
+        disable_all_action = Action("全部禁用", self, triggered=lambda: self._set_all_checked(False))
         menu.addAction(select_all_action)
         menu.addMenu(submenu)
         menu.addActions([enabel_all_action, disable_all_action])
         menu.exec(self.table.viewport().mapToGlobal(pos))
 
+    def _set_all_checked(self, state: bool):
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(Qt.Checked if state else Qt.Unchecked)
+
+    def _select_tracks_by_type(self, track_type: str):
+        for row in range(self.table.rowCount()):
+            type_item = self.table.item(row, 1)
+            item = self.table.item(row, 0)
+            if type_item and item:
+                if track_type in type_item.text():
+                    item.setCheckState(Qt.Checked)
+                else:
+                    item.setCheckState(Qt.Unchecked)
+
+    def add_tracks(self, file_info: dict, color_emoji: str):
+        """外部调用：向轨道表中添加文件解析出的所有轨道"""
+        file_path = file_info.get('path', '')
+        tracks = file_info.get('tracks', [])
+        file_name = file_info.get('name', 'Unknown')
+        
+        for track in tracks:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            
+            codec = track.get('codec', 'Unknown')
+            t_type = track.get('type', 'Unknown')
+            prop = track.get('properties', {})
+            
+            # 类型转emoji
+            type_str = t_type
+            if t_type == 'video': type_str = '🎬 视频'
+            elif t_type == 'audio': type_str = '🎧 音频'
+            elif t_type == 'subtitles': type_str = '📚 字幕'
+            elif t_type == 'buttons': type_str = '🔘 互动'
+            
+            # 属性信息拼接
+            props_str = ""
+            if t_type == 'video':
+                props_str = f"{prop.get('pixel_dimensions', '')} px"
+            elif t_type == 'audio':
+                props_str = f"{prop.get('audio_sampling_frequency', '')} Hz {prop.get('audio_channels', '')} ch"
+                
+            lang = prop.get('language', 'und')
+            name = prop.get('track_name', '')
+            t_id = str(track.get('id', ''))
+            is_default = '是' if prop.get('default_track') else '否'
+            
+            codec_item = QTableWidgetItem(codec)
+            codec_item.setCheckState(Qt.Checked) # 默认启用
+            codec_item.setData(Qt.UserRole, file_path) # 隐式存储文件路径，方便后续删除
+            
+            type_item = QTableWidgetItem(type_str)
+            lang_item = QTableWidgetItem(lang)
+            name_item = QTableWidgetItem(name)
+            id_item = QTableWidgetItem(t_id)
+            default_item = QTableWidgetItem(is_default)
+            props_item = QTableWidgetItem(props_str)
+            file_item = QTableWidgetItem(f"{color_emoji} {file_name}")
+            delay_item = QTableWidgetItem("") # 通常无数据
+            
+            for col, item in enumerate([codec_item, type_item, lang_item, name_item, id_item, default_item, props_item, file_item, delay_item]):
+                self.table.setItem(row, col, item)
+
+    def remove_tracks_by_file(self, file_path: str):
+        """外部调用：删除指定文件的所有轨道"""
+        rows_to_remove = []
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and item.data(Qt.UserRole) == file_path:
+                rows_to_remove.append(row)
+                
+        for row in sorted(rows_to_remove, reverse=True):
+            self.table.removeRow(row)
+
+    def clear_all_tracks(self):
+        """外部调用：清空所有轨道"""
+        self.table.setRowCount(0)
 
 class GroupExpandBox(QWidget):
     def __init__(self, title:str, parent=None):
