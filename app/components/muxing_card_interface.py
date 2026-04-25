@@ -233,7 +233,6 @@ class TrackCard(HeaderCardWidget):
     def _connectSignals(self):
         self.header.customContextMenuRequested.connect(self.show_header_menu)
         self.table.customContextMenuRequested.connect(self.show_content_menu)
-        self.table.cellClicked.connect(self._on_cell_clicked)
 
     def show_header_menu(self, pos):
         menu = CheckableMenu(parent=self)
@@ -269,28 +268,20 @@ class TrackCard(HeaderCardWidget):
         self.table.setColumnWidth(7, 180)
         self.table.setColumnWidth(8, 40)
 
-    def _on_cell_clicked(self, row, column):
-        # 左键轨道文本可以选中/不选中复选框 (列0是复选框)
-        if column != 0:
-            item = self.table.item(row, 0)
-            if item is not None:
-                new_state = Qt.Unchecked if item.checkState() == Qt.Checked else Qt.Checked
-                item.setCheckState(new_state)
-
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
         select_all_action = Action("全选行", self, triggered=self.table.selectAll)
 
-        submenu = RoundMenu("快速启用", self)
-        select_video_action = Action("所有视频", self, triggered=lambda: self._select_tracks_by_type("视频"))
-        select_audio_action = Action("所有音频", self, triggered=lambda: self._select_tracks_by_type("音频"))
-        select_subtitle_action = Action("所有字幕", self, triggered=lambda: self._select_tracks_by_type("字幕"))
-        submenu.addActions([select_video_action, select_audio_action, select_subtitle_action])
+        # submenu = RoundMenu("快速选择", self)
+        # select_video_action = Action("所有视频", self, triggered=lambda: self._select_tracks_by_type("视频"))
+        # select_audio_action = Action("所有音频", self, triggered=lambda: self._select_tracks_by_type("音频"))
+        # select_subtitle_action = Action("所有字幕", self, triggered=lambda: self._select_tracks_by_type("字幕"))
+        # submenu.addActions([select_video_action, select_audio_action, select_subtitle_action])
         
         enabel_all_action = Action("全部启用", self, triggered=lambda: self._set_all_checked(True))
         disable_all_action = Action("全部禁用", self, triggered=lambda: self._set_all_checked(False))
         menu.addAction(select_all_action)
-        menu.addMenu(submenu)
+        # menu.addMenu(submenu)
         menu.addActions([enabel_all_action, disable_all_action])
         menu.exec(self.table.viewport().mapToGlobal(pos))
 
@@ -300,15 +291,13 @@ class TrackCard(HeaderCardWidget):
             if item:
                 item.setCheckState(Qt.Checked if state else Qt.Unchecked)
 
-    def _select_tracks_by_type(self, track_type: str):
-        for row in range(self.table.rowCount()):
-            type_item = self.table.item(row, 1)
-            item = self.table.item(row, 0)
-            if type_item and item:
-                if track_type in type_item.text():
-                    item.setCheckState(Qt.Checked)
-                else:
-                    item.setCheckState(Qt.Unchecked)
+    # def _select_tracks_by_type(self, track_type: str):
+    #     self.table.clearSelection()
+    #     type_col_index = self.hearderItems.index('类型')
+    #     for row in range(self.table.rowCount()):
+    #         type_item = self.table.item(row, type_col_index)
+    #         if type_item and track_type in type_item.text():
+    #             self.table.selectRow(row)
 
     def add_tracks(self, file_info: dict, color_emoji: str):
         """外部调用：向轨道表中添加文件解析出的所有轨道"""
@@ -330,6 +319,7 @@ class TrackCard(HeaderCardWidget):
             elif t_type == 'audio': type_str = '🎧 音频'
             elif t_type == 'subtitles': type_str = '📚 字幕'
             elif t_type == 'buttons': type_str = '🔘 互动'
+            elif t_type == 'chapters': type_str = '📑 章节'
             
             # 属性信息拼接
             props_str = ""
@@ -337,13 +327,20 @@ class TrackCard(HeaderCardWidget):
                 props_str = f"{prop.get('pixel_dimensions', '')} px"
             elif t_type == 'audio':
                 props_str = f"{prop.get('audio_sampling_frequency', '')} Hz {prop.get('audio_channels', '')} ch"
+            elif t_type == 'chapters':
+                entries = prop.get('num_entries')
+                if entries: props_str = f"{entries} entries"
                 
-            lang = prop.get('language', 'und')
+            lang = prop.get('language', 'und') if t_type != 'chapters' else 'und'
             name = prop.get('track_name', '')
+            if name is None: name = ''
             t_id = str(track.get('id', ''))
             is_default = '是' if prop.get('default_track') else '否'
+            if t_type == 'chapters':
+                is_default = '否'
+                lang = ''
             
-            codec_item = QTableWidgetItem(codec)
+            codec_item = QTableWidgetItem(f"{color_emoji} {codec}")
             codec_item.setCheckState(Qt.Checked) # 默认启用
             codec_item.setData(Qt.UserRole, file_path) # 隐式存储文件路径，方便后续删除
             
@@ -353,7 +350,7 @@ class TrackCard(HeaderCardWidget):
             id_item = QTableWidgetItem(t_id)
             default_item = QTableWidgetItem(is_default)
             props_item = QTableWidgetItem(props_str)
-            file_item = QTableWidgetItem(f"{color_emoji} {file_name}")
+            file_item = QTableWidgetItem(file_name)
             delay_item = QTableWidgetItem("") # 通常无数据
             
             for col, item in enumerate([codec_item, type_item, lang_item, name_item, id_item, default_item, props_item, file_item, delay_item]):
@@ -777,6 +774,45 @@ class AttachmentCard(HeaderCardWidget):
         file_paths, _ = QFileDialog.getOpenFileNames(self, "选择附件文件", "", "Attachment Files (*.ttf *.otf *.png *.jpg *.jpeg *.xml);;All Files (*)")
         if file_paths:
             self._add_files_to_table(file_paths)
+
+    def remove_attachments_by_file(self, file_path: str):
+        """外部调用：删除属于某个源文件的所有附件"""
+        rows_to_remove = []
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item and item.data(Qt.UserRole) == file_path:
+                rows_to_remove.append(row)
+                
+        for row in sorted(rows_to_remove, reverse=True):
+            self.table.removeRow(row)
+
+    def clear_all_attachments(self):
+        """外部调用：清空所有附件"""
+        self.table.setRowCount(0)
+
+    def add_attachments(self, source_file: str, attachments: list):
+        """外部调用：将 mkvprobe 解析出的附件添加到列表"""
+        for att in attachments:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            
+            att_name = att.get('file_name', 'Unknown')
+            size_bytes = att.get('size', 0)
+            size_str = f"{size_bytes / 1024.0 / 1024.0:.2f} MiB" if size_bytes > 1048576 else f"{size_bytes / 1024.0:.2f} KiB"
+            
+            name_item = QTableWidgetItem(att_name)
+            name_item.setData(Qt.UserRole, source_file) # 将源视频路径存在此处方便后续删除
+            name_item.setCheckState(Qt.CheckState.Checked)
+            
+            size_item = QTableWidgetItem(size_str)
+            path_item = QTableWidgetItem("内置附件")
+            
+            for col, item in enumerate([name_item, size_item, path_item]):
+                if col == 0:
+                    item.setFlags((item.flags() | Qt.ItemIsUserCheckable) & ~Qt.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                self.table.setItem(row, col, item)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():

@@ -15,7 +15,7 @@ DOLBY = {'.ac3', '.eac3', '.eb3', '.ec3'}
 TRUEHD = {'.mlp', '.thd', '.thd+ac3', '.truehd', '.true-hd'}
 
 DEMUXING_EXTS = VIDEO_EXTS | {'.mka', '.mks'}
-MUXING_EXTS = VIDEO_EXTS | AUDIO_EXTS | SUBTITLE_EXTS | MATROSKA | AVC | HEVC | IVF | DTS | DOLBY | TRUEHD | {'.ffv1'}
+MUXING_EXTS = VIDEO_EXTS | AUDIO_EXTS | SUBTITLE_EXTS | MATROSKA | AVC | HEVC | IVF | DTS | DOLBY | TRUEHD | {'.ffv1', '.txt', '.xml'}
 
 def classify_files(file_paths):
     """

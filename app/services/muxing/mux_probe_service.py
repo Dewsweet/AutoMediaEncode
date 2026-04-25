@@ -39,8 +39,45 @@ class MuxProbeService:
                 return {}
                 
             data = json.loads(result.stdout)
-            container_type = data.get('container', {}).get('type', 'Unknown')
             file_size = path_obj.stat().st_size
+
+            # 补救纯章节文件的探测
+            if not data.get('container', {}).get('recognized', True):
+                ext = path_obj.suffix.lower()
+                if ext in ['.txt', '.xml']:
+                    tracks = [{
+                        'codec': f"{ext.strip('.').upper()} Chapters",
+                        'type': 'chapters',
+                        'properties': {'track_name': ''}
+                    }]
+                    return {
+                        'path': file_path,
+                        'name': path_obj.name,
+                        'size': file_size,
+                        'format_size': MuxProbeService.format_size(file_size),
+                        'container': 'Chapters',
+                        'tracks': tracks,
+                        'attachments': [],
+                        'chapters': []
+                    }
+                else:
+                    return {}
+
+            container_type = data.get('container', {}).get('type', 'Unknown')
+            
+            tracks = data.get('tracks', [])
+            chapters = data.get('chapters', [])
+            # 把mkv自带章节作为伪轨道拼在最后
+            if chapters:
+                num_entries = sum(c.get('num_entries', 0) for c in chapters)
+                tracks.append({
+                    'codec': 'Chapters',
+                    'type': 'chapters',
+                    'properties': {
+                        'num_entries': num_entries,
+                        'track_name': ''
+                    }
+                })
             
             return {
                 'path': file_path,
@@ -48,9 +85,9 @@ class MuxProbeService:
                 'size': file_size,
                 'format_size': MuxProbeService.format_size(file_size),
                 'container': container_type,
-                'tracks': data.get('tracks', []),
+                'tracks': tracks,
                 'attachments': data.get('attachments', []),
-                'chapters': data.get('chapters', [])
+                'chapters': chapters
             }
         except Exception as e:
             logger.error(f"探测文件异常 [{file_path}]: {e}")
