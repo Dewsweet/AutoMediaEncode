@@ -841,8 +841,22 @@ class OutputCard(SimpleCardWidget):
         self.OutputPathLayout.addWidget(self.output_path_lineEdit)
         self.OutputPathLayout.addWidget(self.output_path_view_button)
 
-
         self.mainLayout.addLayout(self.OutputPathLayout)
+        self.output_path_view_button.clicked.connect(self._browse_output_path)
+        
+    def _browse_output_path(self):
+        import os
+        current_path = self.output_path_lineEdit.text()
+        default_dir = os.path.dirname(current_path) if current_path else ""
+        
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "选择输出文件",
+            default_dir or current_path,
+            "Matroska/Audio/Subtitle (*.mkv *.mka *.mks);;所有文件 (*)"
+        )
+        if file_path:
+            self.output_path_lineEdit.setText(file_path)
 
 class AttachmentCard(HeaderCardWidget):
     def __init__(self, parent=None):

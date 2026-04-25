@@ -74,7 +74,13 @@ class MuxingInterface(QWidget):
         )
         
         self.trackCard.trackSelectionUpdated.connect(self._handle_track_selection_changed)
+        self.trackCard.table.itemChanged.connect(self._handle_track_item_changed)
         self.optionCard.optionValueChanged.connect(self._handle_option_value_changed)
+
+    def _handle_track_item_changed(self, item):
+        # 只有第一列的状态改变，才会影响后缀推断
+        if item.column() == 0:
+            self._update_output_path()
 
     def _handle_track_selection_changed(self, row: int):
         if row == -1:
@@ -113,15 +119,66 @@ class MuxingInterface(QWidget):
                     attachments = file_info.get('attachments', [])
                     if attachments:
                         self.attachmentCard.add_attachments(file_info['path'], attachments)
+        
+        self._update_output_path()
 
     def _handle_files_removed(self, paths: list):
         # 从 TrackCard 中移除属于这些文件的轨道信息
         for path in paths:
             self.trackCard.remove_tracks_by_file(path)
             self.attachmentCard.remove_attachments_by_file(path)
+        self._update_output_path()
+
+    def _update_output_path(self):
+        # 依据加载进去的第一个文件为准，如果没有文件就清空
+        if self.inputFilesCard.table.rowCount() == 0:
+            self.outputCard.output_path_lineEdit.clear()
+            return
+        
+        # 获取第一个文件的路径
+        first_file_item = self.inputFilesCard.table.item(0, 3)
+        if not first_file_item:
+            return
+            
+        first_file_path = first_file_item.text()
+        
+        # 解析当前的轨道类型
+        has_video = False
+        has_audio = False
+        has_subtitle = False
+        
+        for row in range(self.trackCard.table.rowCount()):
+            codec_item = self.trackCard.table.item(row, 0)
+            type_item = self.trackCard.table.item(row, 1)
+            
+            # 判断是否启用该轨道
+            if codec_item and codec_item.checkState() == Qt.Checked:
+                t_type = type_item.text() if type_item else ''
+                if '视频' in t_type:
+                    has_video = True
+                elif '音频' in t_type:
+                    has_audio = True
+                elif '字幕' in t_type:
+                    has_subtitle = True
+        
+        # 后缀判定: 默认 mkv。除非仅有音频那就是 mka，或者仅有字幕那就是 mks。
+        ext = '.mkv'
+        if not has_video:
+            if has_audio and not has_subtitle:
+                ext = '.mka'
+            elif has_subtitle and not has_audio:
+                ext = '.mks'
+                
+        import os
+        base_path = os.path.splitext(first_file_path)[0]
+        
+        # 为了避免跟原文件同名，加一个 "_muxed" 尾缀
+        default_out = f"{base_path}_muxed{ext}"
+        self.outputCard.output_path_lineEdit.setText(default_out)
         
     def _handle_files_cleared(self):
         # 清空整个 TrackCard 的子轨道
         self.trackCard.clear_all_tracks()
         self.attachmentCard.clear_all_attachments()
+        self._update_output_path()
 
