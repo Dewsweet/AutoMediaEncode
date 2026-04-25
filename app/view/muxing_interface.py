@@ -72,6 +72,31 @@ class MuxingInterface(QWidget):
         self.optionCard.enable_attachment_checkbox.stateChanged.connect(
             lambda state: self.attachmentCard.setVisible(state == Qt.CheckState.Checked.value)
         )
+        
+        self.trackCard.trackSelectionUpdated.connect(self._handle_track_selection_changed)
+        self.optionCard.optionValueChanged.connect(self._handle_option_value_changed)
+
+    def _handle_track_selection_changed(self, row: int):
+        if row == -1:
+            self.optionCard.set_track_selected_state(False)
+            return
+
+        data = self.trackCard.get_track_data(row)
+        if data:
+            enabled, name, language, is_default, flags = data
+            self.optionCard.set_track_selected_state(True)
+            self.optionCard.update_from_track(enabled, name, language, is_default, flags)
+
+    def _handle_option_value_changed(self, key: str, value: object):
+        # 将 OptionCard 发出的修改，应用到当前选中的轨道上
+        # 因为我们允许多选但这里主要针对触发联动的最后一行。如果需要修改所有选中行，可以获取所有选中行
+        selected_items = self.trackCard.table.selectedItems()
+        if not selected_items:
+            return
+            
+        selected_rows = set(item.row() for item in selected_items)
+        for row in selected_rows:
+            self.trackCard.set_track_data(row, key, value)
 
     def _handle_files_added(self, file_paths: list):
         for path in file_paths:

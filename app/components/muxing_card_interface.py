@@ -188,6 +188,8 @@ class InputFilesCard(HeaderCardWidget):
         return color_emoji
 
 class TrackCard(HeaderCardWidget):
+    trackSelectionUpdated = Signal(int) # 告诉外部当前选中的行索引 (传入-1即没有选中)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle('确认轨道')
@@ -197,7 +199,7 @@ class TrackCard(HeaderCardWidget):
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
         self.table = TableWidget(self)
-        self.hearderItems = ['编码格式', '类型', '语言', '名称', 'ID', '默认轨道', '属性', '输入文件', '延迟']
+        self.hearderItems = ['编码格式', '类型', '语言', '名称', 'ID', '默认轨道', '属性', '输入文件']
 
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setWordWrap(False)  # 禁止自动换行，保持单行显示
@@ -212,7 +214,6 @@ class TrackCard(HeaderCardWidget):
         self.table.setColumnWidth(5, 65)
         self.table.setColumnWidth(6, 150)
         self.table.setColumnWidth(7, 180)
-        self.table.setColumnWidth(8, 40)
 
         # self.table.resizeColumnsToContents() 
         self.header = self.table.horizontalHeader()
@@ -233,6 +234,51 @@ class TrackCard(HeaderCardWidget):
     def _connectSignals(self):
         self.header.customContextMenuRequested.connect(self.show_header_menu)
         self.table.customContextMenuRequested.connect(self.show_content_menu)
+        self.table.itemSelectionChanged.connect(self._on_table_selection_changed)
+        
+    def _on_table_selection_changed(self):
+        selected_rows = set(item.row() for item in self.table.selectedItems())
+        # 取最后一个选中的行即可 (或最后一次选中的行)
+        if len(selected_rows) > 0:
+            self.trackSelectionUpdated.emit(list(selected_rows)[-1])
+        else:
+            self.trackSelectionUpdated.emit(-1)
+
+    def get_track_data(self, row: int):
+        """外部调用：获取指定行的通用数据"""
+        if row < 0 or row >= self.table.rowCount():
+            return None
+            
+        enabled = self.table.item(row, 0).checkState() == Qt.Checked
+        language = self.table.item(row, 2).text()
+        name = self.table.item(row, 3).text()
+        is_default = self.table.item(row, 5).text() == "是"
+        
+        flags_data = self.table.item(row, 0).data(Qt.UserRole + 1)
+        flags = flags_data if flags_data is not None else []
+            
+        return enabled, name, language, is_default, flags
+        
+    def set_track_data(self, row: int, key: str, value: object):
+        """外部调用：更新指定行的通用数据"""
+        if row < 0 or row >= self.table.rowCount():
+            return
+            
+        if key == 'enabled':
+            item = self.table.item(row, 0)
+            if item: item.setCheckState(Qt.Checked if value else Qt.Unchecked)
+        elif key == 'name':
+            item = self.table.item(row, 3)
+            if item: item.setText(str(value))
+        elif key == 'language':
+            item = self.table.item(row, 2)
+            if item: item.setText(str(value))
+        elif key == 'is_default':
+            item = self.table.item(row, 5)
+            if item: item.setText("是" if value else "否")
+        elif key == 'flags':
+            item = self.table.item(row, 0)
+            if item: item.setData(Qt.UserRole + 1, value)
 
     def show_header_menu(self, pos):
         menu = CheckableMenu(parent=self)
@@ -266,7 +312,6 @@ class TrackCard(HeaderCardWidget):
         self.table.setColumnWidth(5, 65)
         self.table.setColumnWidth(6, 150)
         self.table.setColumnWidth(7, 180)
-        self.table.setColumnWidth(8, 40)
 
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
@@ -344,6 +389,9 @@ class TrackCard(HeaderCardWidget):
             codec_item.setCheckState(Qt.Checked) # 默认启用
             codec_item.setData(Qt.UserRole, file_path) # 隐式存储文件路径，方便后续删除
             
+            init_flags = ['默认轨道'] if prop.get('default_track') else []
+            codec_item.setData(Qt.UserRole + 1, init_flags) # 隐式存储 flags 数据
+            
             type_item = QTableWidgetItem(type_str)
             lang_item = QTableWidgetItem(lang)
             name_item = QTableWidgetItem(name)
@@ -351,9 +399,8 @@ class TrackCard(HeaderCardWidget):
             default_item = QTableWidgetItem(is_default)
             props_item = QTableWidgetItem(props_str)
             file_item = QTableWidgetItem(file_name)
-            delay_item = QTableWidgetItem("") # 通常无数据
             
-            for col, item in enumerate([codec_item, type_item, lang_item, name_item, id_item, default_item, props_item, file_item, delay_item]):
+            for col, item in enumerate([codec_item, type_item, lang_item, name_item, id_item, default_item, props_item, file_item]):
                 self.table.setItem(row, col, item)
 
     def remove_tracks_by_file(self, file_path: str):
@@ -371,59 +418,34 @@ class TrackCard(HeaderCardWidget):
         """外部调用：清空所有轨道"""
         self.table.setRowCount(0)
 
-class GroupExpandBox(QWidget):
+class GroupBox(QWidget):
     def __init__(self, title:str, parent=None):
         super().__init__(parent)
-        self.is_expanded = True
+        self.mainLayout = QVBoxLayout(self)
+        self.mainLayout.setContentsMargins(0, 0, 0, 10)
+        self.mainLayout.setSpacing(5)
 
-        self.mainBox = QWidget(self)
-        self.mainLayout = QVBoxLayout(self.mainBox)
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-
-        self.headerBox = QWidget(self)
-        self.headerLayout = QHBoxLayout(self.headerBox)
-        self.headerLayout.setContentsMargins(0, 0, 0, 0)
-
-        self.titleIcon = IconWidget(FIF.CHEVRON_DOWN_MED, self)
-        self.titleIcon.setFixedSize(10, 10)
-        self.titleLabel = BodyLabel(title, self)
-
-        self.headerLayout.addWidget(self.titleIcon)
-        self.headerLayout.addWidget(self.titleLabel)
-        self.headerLayout.addStretch(1)
+        self.titleLabel = StrongBodyLabel(title, self)
 
         self.view = QWidget(self)
         self.view.setObjectName("view")
-        self.view.setStyleSheet("""#view {border: 1px solid #CCCCCC; border-radius: 6px; background-color: #F9F9F9;}""")
+        self.view.setStyleSheet("""#view {border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 6px; background-color: transparent;}""")
         self.viewLayout = QVBoxLayout(self.view)
         self.viewLayout.setContentsMargins(10, 10, 10, 10)
         self.viewLayout.setSpacing(5)
 
-        self.mainLayout.addWidget(self.headerBox)
+        self.mainLayout.addWidget(self.titleLabel)
         self.mainLayout.addWidget(self.view)
-        self.mainLayout.setSpacing(0)
-        self.setLayout(self.mainLayout)
 
-        self.headerBox.mouseReleaseEvent = lambda e: self.toggle_expand()
-
-    def toggle_expand(self):
-        self.is_expanded = not self.is_expanded
-        # self.view.setVisible(self.is_expanded)
-        if self.is_expanded:
-            self.titleIcon.setIcon(FIF.CHEVRON_DOWN_MED)
-            self.view.setFixedHeight(self.view.sizeHint().height())
-
-        else:
-            self.titleIcon.setIcon(FIF.CHEVRON_RIGHT_MED)
-            self.view.setFixedHeight(2)
-
-    def addWidget(self, widget):
+    def addWidget(self, widget, alignment=Qt.AlignmentFlag.AlignLeft):
         self.viewLayout.addWidget(widget)
     
     def addLayout(self, layout):
         self.viewLayout.addLayout(layout)
 
 class DynamicComboList(QWidget):
+    valueChanged = Signal(list) # 当内部值发生变化时发送
+
     def __init__(self, parent=None, items:list=[], text:str=''):
         super().__init__(parent)
         self.vLayout = QVBoxLayout(self)
@@ -449,6 +471,7 @@ class DynamicComboList(QWidget):
 
         combo = ComboBox()
         combo.addItems(self.options)
+        combo.currentTextChanged.connect(lambda: self.valueChanged.emit(self.get_values()))
         hLayout.addWidget(combo, 1)
 
         return row_widget, hLayout, combo
@@ -472,19 +495,76 @@ class DynamicComboList(QWidget):
         hLayout.addWidget(remove_btn)
         self.vLayout.addWidget(row_widget)
 
-        remove_btn.clicked.connect(lambda: row_widget.deleteLater())
+        remove_btn.clicked.connect(self._handle_remove_row(row_widget))
 
+    def _handle_remove_row(self, row_widget):
+        def cleanup():
+            row_widget.setParent(None)
+            row_widget.deleteLater()
+            self.valueChanged.emit(self.get_values()) # 触发变动
+        return cleanup
+
+    def clear(self):
+        """清除所有额外行，重置第一行为空"""
+        combos = self.findChildren(ComboBox)
+        if combos and len(combos) > 0:
+            combos[0].blockSignals(True)
+            combos[0].setCurrentIndex(0) # 第一行重置
+            combos[0].blockSignals(False)
+        
+        # 移除额外添加的行
+        for i in range(self.vLayout.count() - 1, 0, -1):
+            item = self.vLayout.itemAt(i)
+            if item and item.widget():
+                widget = item.widget()
+                widget.setParent(None)
+                widget.deleteLater()
+                
+        self.valueChanged.emit(self.get_values())
+
+    def set_values(self, values: list):
+        self.blockSignals(True)
+        self.clear()
+        
+        if not values:
+            self.blockSignals(False)
+            return
+            
+        combos = self.findChildren(ComboBox)
+        if combos and values[0] in self.options:
+            combos[0].blockSignals(True)
+            combos[0].setCurrentText(values[0])
+            combos[0].blockSignals(False)
+            
+        for val in values[1:]:
+            if val in self.options:
+                self._add_new_row()
+                new_combos = self.findChildren(ComboBox)
+                if new_combos:
+                    new_combos[-1].blockSignals(True)
+                    new_combos[-1].setCurrentText(val)
+                    new_combos[-1].blockSignals(False)
+        
+        self.blockSignals(False)
+        # self.valueChanged.emit(self.get_values())
 
     def get_values(self):
         values = []
-        for combo in self.findChildren(EditableComboBox):
-            values.append(combo.currentText())
+        for combo in self.findChildren(ComboBox):
+            if combo.currentText() and combo.currentText().strip():
+                values.append(combo.currentText())
         return values
     
 class OptionCard(HeaderCardWidget):
+    optionValueChanged = Signal(str, object) # 供外部接收改变
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle("选项与属性")
+
+        self._is_updating = False # 防止双向绑定更新死循环
+        self.is_mkv = True
+        self.is_track_selected = False
 
         self.mainBox = QWidget()
         self.mainBox.setStyleSheet("background-color: transparent;")
@@ -529,7 +609,7 @@ class OptionCard(HeaderCardWidget):
         self.go_hLayout4 = QHBoxLayout()
         self.go_hLayout5 = QHBoxLayout()
 
-        self.general_options_group = GroupExpandBox('通用选项', self)
+        self.general_options_group = GroupBox('通用选项', self)
 
         self.track_enabled_label = BodyLabel('启用轨道: ', self)
         self.track_enabled_cb = ComboBox()
@@ -553,9 +633,9 @@ class OptionCard(HeaderCardWidget):
         self.compression_method_cb = ComboBox()
         self.compression_method_cb.addItems(['自动决定', '不做额外压缩', 'zlib'])
 
-        self.track_label_lable = BodyLabel('标签: ', self)
-        self.track_label_lable.setFixedWidth(self.track_enabled_label.sizeHint().width())
-        self.track_label_lineEdit = LineEdit()
+        # self.track_label_lable = BodyLabel('标签: ', self)
+        # self.track_label_lable.setFixedWidth(self.track_enabled_label.sizeHint().width())
+        # self.track_label_lineEdit = LineEdit()
 
         
         self.go_hLayout1.addWidget(self.track_enabled_label)
@@ -570,21 +650,21 @@ class OptionCard(HeaderCardWidget):
         self.go_hLayout4.addWidget(self.compression_method)
         self.go_hLayout4.addWidget(self.compression_method_cb, 1)
 
-        self.go_hLayout5.addWidget(self.track_label_lable)
-        self.go_hLayout5.addWidget(self.track_label_lineEdit, 1)
+        # self.go_hLayout5.addWidget(self.track_label_lable)
+        # self.go_hLayout5.addWidget(self.track_label_lineEdit, 1)
 
     def _timestampOptionsArea(self):
         self.to_text_vLayout = QVBoxLayout()
         self.to_edit_vLayout = QVBoxLayout()
         self.to_hLayout = QHBoxLayout()
 
-        self.timestamp_options_group = GroupExpandBox('时间戳和默认帧时长', self)
+        self.timestamp_options_group = GroupBox('时间戳和默认帧时长', self)
 
         self.delay_label = BodyLabel('延迟(毫秒): ', self)
         self.delay_lineEdit = LineEdit()
 
-        self.timestamp_extend_label = BodyLabel('延展比例: ', self)
-        self.timestamp_extend_lineEdit = LineEdit()
+        # self.timestamp_extend_label = BodyLabel('延展比例: ', self)
+        # self.timestamp_extend_lineEdit = LineEdit()
 
         self.default_frame_duration_label = BodyLabel('默认帧时长和帧率: ', self)
         self.default_frame_duration_lineEdit = EditableComboBox()
@@ -601,12 +681,12 @@ class OptionCard(HeaderCardWidget):
         self.correct_timestamp_checkbox = CheckBox('校正时间戳', self)
 
         self.to_text_vLayout.addWidget(self.delay_label, alignment=Qt.AlignVCenter)
-        self.to_text_vLayout.addWidget(self.timestamp_extend_label, alignment=Qt.AlignVCenter)
+        # self.to_text_vLayout.addWidget(self.timestamp_extend_label, alignment=Qt.AlignVCenter)
         self.to_text_vLayout.addWidget(self.default_frame_duration_label, alignment=Qt.AlignVCenter)
         self.to_text_vLayout.addWidget(self.timestamp_files_label, alignment=Qt.AlignVCenter)
 
         self.to_edit_vLayout.addWidget(self.delay_lineEdit)
-        self.to_edit_vLayout.addWidget(self.timestamp_extend_lineEdit)
+        # self.to_edit_vLayout.addWidget(self.timestamp_extend_lineEdit)
         self.to_edit_vLayout.addWidget(self.default_frame_duration_lineEdit)
         self.to_edit_vLayout.addLayout(self.timestamp_files_layout)
 
@@ -620,7 +700,7 @@ class OptionCard(HeaderCardWidget):
 
         self.display_aspect_edit_Hlayout = QHBoxLayout()
 
-        self.video_properties_group = GroupExpandBox('视频属性', self)
+        self.video_properties_group = GroupBox('视频属性', self)
 
         self.setting_aspect_ratio_rb = RadioButton('设置宽高比: ', self)
         self.aspect_ratio_cb = EditableComboBox()
@@ -635,16 +715,16 @@ class OptionCard(HeaderCardWidget):
         self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_x_label)
         self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_lineEdit)
 
-        self.video_crop_label = BodyLabel('画面裁剪: ', self)
-        self.video_crop_lineEdit = LineEdit()
+        # self.video_crop_label = BodyLabel('画面裁剪: ', self)
+        # self.video_crop_lineEdit = LineEdit()
 
         self.vp_text_vLayout.addWidget(self.setting_aspect_ratio_rb, alignment=Qt.AlignVCenter)
         self.vp_text_vLayout.addWidget(self.setting_display_aspect_rb, alignment=Qt.AlignVCenter)
-        self.vp_text_vLayout.addWidget(self.video_crop_label, alignment=Qt.AlignVCenter)
+        # self.vp_text_vLayout.addWidget(self.video_crop_label, alignment=Qt.AlignVCenter)
 
         self.vp_edit_vLayout.addWidget(self.aspect_ratio_cb)
         self.vp_edit_vLayout.addLayout(self.display_aspect_edit_Hlayout)
-        self.vp_edit_vLayout.addWidget(self.video_crop_lineEdit)
+        # self.vp_edit_vLayout.addWidget(self.video_crop_lineEdit)
 
         self.vp_hLayout.addLayout(self.vp_text_vLayout)
         self.vp_hLayout.addLayout(self.vp_edit_vLayout)
@@ -680,7 +760,66 @@ class OptionCard(HeaderCardWidget):
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
 
     def _connectSignals(self):
-        pass
+        self.containerCb.currentTextChanged.connect(self._on_container_changed)
+        
+        # 联动 TrackCard 的基本修改
+        self.track_enabled_cb.currentTextChanged.connect(lambda t: self._emit_option_changed('enabled', t == '是'))
+        self.track_name_lineEdit.textChanged.connect(lambda t: self._emit_option_changed('name', t))
+        self.track_language_lineEdit.currentTextChanged.connect(lambda t: self._emit_option_changed('language', t))
+        self.track_flag.valueChanged.connect(self._on_track_flag_changed)
+        
+        self.timestamp_files_view_btn.clicked.connect(self._select_timestamp_file)
+
+        self._on_container_changed(self.containerCb.currentText())
+
+    def _select_timestamp_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "选择时间戳文件", "", "文本文件 (*.txt);;所有文件 (*)")
+        if file_path:
+            self.timestamp_files_lineEdit.setText(file_path)
+            self._emit_option_changed('timestamp_file', file_path)
+    def _on_track_flag_changed(self, flags: list):
+        self._emit_option_changed('is_default', '默认轨道' in flags)
+        self._emit_option_changed('flags', flags)
+    def _emit_option_changed(self, key: str, val):
+        if not self._is_updating:
+            self.optionValueChanged.emit(key, val)
+
+    def _on_container_changed(self, text: str):
+        self.is_mkv = (text == 'MKV')
+        self._update_options_state()
+
+    def set_track_selected_state(self, selected: bool):
+        """外部告知当前是否有行被选中，没有选中时应禁用选项"""
+        self.is_track_selected = selected
+        self._update_options_state()
+        
+    def _update_options_state(self):
+        # 只有在 MKV 容器且选中了轨道时，才启用下面这三块选项 (选项卡要求默认变灰，全局变灰)
+        enabled = self.is_mkv and self.is_track_selected
+        
+        style = "" if enabled else "color: rgba(128, 128, 128, 0.7);"
+        
+        for group in [self.general_options_group, self.timestamp_options_group, self.video_properties_group]:
+            group.setEnabled(enabled)
+            # 为组内的标签调整颜色实现变灰效果
+            for lbl in group.findChildren(BodyLabel):
+                lbl.setStyleSheet(style)
+
+    def update_from_track(self, enabled: bool, name: str, language: str, is_default: bool, flags: list):
+        """外部调用：根据当前选中的单条轨道填充通用选项"""
+        self._is_updating = True
+        
+        self.track_enabled_cb.setCurrentText('是' if enabled else '否')
+        self.track_name_lineEdit.setText(name)
+        self.track_language_lineEdit.setCurrentText(language)
+        
+        self.track_flag.set_values(flags)
+        
+        self._is_updating = False
+
+    def get_track_flags(self):
+        """获取所有当前选择的标记"""
+        return self.track_flag.get_values()
 
 class OutputCard(SimpleCardWidget):
     def __init__(self, parent=None):
@@ -704,7 +843,6 @@ class OutputCard(SimpleCardWidget):
 
 
         self.mainLayout.addLayout(self.OutputPathLayout)
-
 
 class AttachmentCard(HeaderCardWidget):
     def __init__(self, parent=None):
