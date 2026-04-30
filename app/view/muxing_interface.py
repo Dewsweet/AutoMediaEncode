@@ -1,12 +1,28 @@
 # coding: utf-8
-from PySide6.QtCore import Qt
+from pathlib import Path
+from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter
 
-from qfluentwidgets import qrouter, StrongBodyLabel
+from qfluentwidgets import qrouter, StrongBodyLabel, InfoBar, InfoBarPosition
 
 from ..components.muxing_card_interface import InputFilesCard, TrackCard, OptionCard, OutputCard, AttachmentCard
 from ..components.hearder_widget import HeaderWidget
 from ..services.muxing.mux_probe_service import MuxProbeService
+
+class MuxProbeWorker(QThread):
+    """用于在后台异步探测媒体文件信息的线程"""
+    infoLoaded = Signal(str, object) # 参数: (文件路径, 探测结果字典)
+    workFinished = Signal()
+
+    def __init__(self, file_paths: list, parent=None):
+        super().__init__(parent)
+        self.file_paths = file_paths
+
+    def run(self):
+        for path in self.file_paths:
+            file_info = MuxProbeService.probe_file(path)
+            self.infoLoaded.emit(path, file_info)
+        self.workFinished.emit()
 
 class MuxingInterface(QWidget):
     def __init__(self, parent=None):
@@ -76,13 +92,67 @@ class MuxingInterface(QWidget):
         self.trackCard.trackSelectionUpdated.connect(self._handle_track_selection_changed)
         self.trackCard.table.itemChanged.connect(self._handle_track_item_changed)
         self.optionCard.optionValueChanged.connect(self._handle_option_value_changed)
+        self.optionCard.containerCb.currentTextChanged.connect(lambda _: self._update_output_path())
+        
+        self.header.reload_button.clicked.connect(self._handle_reload_clicked)
+
+        self._probe_workers = []
+
+    def _handle_reload_clicked(self):
+        self.inputFilesCard.on_clear_files()
+        self.inputFilesCard.on_add_files_clicked()
+
+    def _handle_files_added(self, file_paths: list):
+        if not file_paths:
+            return
+            
+        # 允许多个加载任务并发执行（存入列表防止被 Python GC 强制回收导致奔溃）
+        worker = MuxProbeWorker(file_paths, self)
+        self._probe_workers.append(worker)
+        
+        worker.infoLoaded.connect(self._on_probe_info_loaded)
+        worker.workFinished.connect(self._update_output_path)
+        worker.workFinished.connect(lambda: self._cleanup_worker(worker))
+        worker.start()
+
+    def _cleanup_worker(self, worker):
+        if worker in self._probe_workers:
+            self._probe_workers.remove(worker)
+            worker.deleteLater()
+
+    def _on_probe_info_loaded(self, path: str, file_info: dict):
+        if file_info:
+            # 添加到 InputFilesCard 的表格中，并获取返回的 color_emoji
+            color_emoji = self.inputFilesCard.add_file_to_table(file_info)
+            if color_emoji:
+                # 关联轨道
+                self.trackCard.add_tracks(file_info, color_emoji)   
+                # 附件区域
+                attachments = file_info.get('attachments', [])
+                if attachments:
+                    self.attachmentCard.add_attachments(file_info['path'], attachments)
+                    self.optionCard.enable_attachment_checkbox.setChecked(True)
+
+    def _handle_files_removed(self, paths: list):
+        """当文件被移除时, 更新 TrackCard 和 AttachmentCard 中对应的轨道和附件"""
+        for path in paths:
+            self.trackCard.remove_tracks_by_file(path)
+            self.attachmentCard.remove_attachments_by_file(path)
+        self._update_output_path()
+
+    def _handle_files_cleared(self):
+        """当文件被清空时, 清空 TrackCard 和 AttachmentCard 中的所有轨道和附件"""
+        self.trackCard.clear_all_tracks()
+        self.attachmentCard.clear_all_attachments()
+        self._update_output_path()
 
     def _handle_track_item_changed(self, item):
-        # 只有第一列的状态改变，才会影响后缀推断
+        """当 TrackCard 中的某个 item 发生改变时, 检查是否是启用状态的改变, 如果是则更新输出路径"""
         if item.column() == 0:
             self._update_output_path()
 
     def _handle_track_selection_changed(self, row: int):
+        """当 TrackCard 中的选中行发生改变时, 更新 OptionCard 中显示对应轨道的信息"""
         if row == -1:
             self.optionCard.set_track_selected_state(False)
             return
@@ -94,8 +164,7 @@ class MuxingInterface(QWidget):
             self.optionCard.update_from_track(enabled, name, language, is_default, flags)
 
     def _handle_option_value_changed(self, key: str, value: object):
-        # 将 OptionCard 发出的修改，应用到当前选中的轨道上
-        # 因为我们允许多选但这里主要针对触发联动的最后一行。如果需要修改所有选中行，可以获取所有选中行
+        """当选项卡中的值发生改变时，更新 TrackCard 中对应行的数据"""
         selected_items = self.trackCard.table.selectedItems()
         if not selected_items:
             return
@@ -104,32 +173,10 @@ class MuxingInterface(QWidget):
         for row in selected_rows:
             self.trackCard.set_track_data(row, key, value)
 
-    def _handle_files_added(self, file_paths: list):
-        for path in file_paths:
-            # TODO: 后续改为子线程中调用，防界面卡顿。先直接调用
-            file_info = MuxProbeService.probe_file(path)
-            if file_info:
-                # 把基础信息发给列表展示
-                color_emoji = self.inputFilesCard.add_file_to_table(file_info)
-                if color_emoji:
-                    # 下一步就是把这个 file_info 数据传递给 self.trackCard 去解析轨道信息
-                    self.trackCard.add_tracks(file_info, color_emoji)
-                    
-                    # 附件区域
-                    attachments = file_info.get('attachments', [])
-                    if attachments:
-                        self.attachmentCard.add_attachments(file_info['path'], attachments)
-        
-        self._update_output_path()
 
-    def _handle_files_removed(self, paths: list):
-        # 从 TrackCard 中移除属于这些文件的轨道信息
-        for path in paths:
-            self.trackCard.remove_tracks_by_file(path)
-            self.attachmentCard.remove_attachments_by_file(path)
-        self._update_output_path()
 
     def _update_output_path(self):
+        """根据当前输入的文件和轨道选择情况，自动生成一个默认的输出路径"""
         # 依据加载进去的第一个文件为准，如果没有文件就清空
         if self.inputFilesCard.table.rowCount() == 0:
             self.outputCard.output_path_lineEdit.clear()
@@ -161,24 +208,26 @@ class MuxingInterface(QWidget):
                 elif '字幕' in t_type:
                     has_subtitle = True
         
-        # 后缀判定: 默认 mkv。除非仅有音频那就是 mka，或者仅有字幕那就是 mks。
-        ext = '.mkv'
-        if not has_video:
-            if has_audio and not has_subtitle:
-                ext = '.mka'
-            elif has_subtitle and not has_audio:
-                ext = '.mks'
+        # 容器类型
+        container_type = self.optionCard.containerCb.currentText().lower()
+        
+        # 后缀判定: 
+        if container_type == 'mkv':
+            ext = '.mkv'
+            if not has_video:
+                if has_audio and not has_subtitle:
+                    ext = '.mka'
+                elif has_subtitle and not has_audio:
+                    ext = '.mks'
+        else:
+            # mp4, mov 等直接根据所选容器指定后缀
+            ext = f'.{container_type}'
                 
-        import os
-        base_path = os.path.splitext(first_file_path)[0]
+        output_path = Path(first_file_path).with_suffix(ext)
+        if output_path.exists():
+             output_path = output_path.with_stem(output_path.stem + '_muxed')
+
+        self.outputCard.output_path_lineEdit.setText(str(output_path))
         
-        # 为了避免跟原文件同名，加一个 "_muxed" 尾缀
-        default_out = f"{base_path}_muxed{ext}"
-        self.outputCard.output_path_lineEdit.setText(default_out)
-        
-    def _handle_files_cleared(self):
-        # 清空整个 TrackCard 的子轨道
-        self.trackCard.clear_all_tracks()
-        self.attachmentCard.clear_all_attachments()
-        self._update_output_path()
+
 

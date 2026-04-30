@@ -1,7 +1,7 @@
 # coding: utf-8
 import os
 from pathlib import Path
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSettings
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QCompleter, QFileDialog
 
@@ -55,10 +55,23 @@ class InputFilesCard(HeaderCardWidget):
         self.viewLayout.setContentsMargins(0, 5, 0, 0)
 
         self._connectSignals()
+        self._restore_table_state()
 
     def _connectSignals(self):
         self.header.customContextMenuRequested.connect(self.show_header_menu)
         self.table.customContextMenuRequested.connect(self.show_content_menu)
+        self.header.sectionMoved.connect(self._save_table_state)
+        self.header.sectionResized.connect(self._save_table_state)
+
+    def _save_table_state(self, *args):
+        settings = QSettings("AutoMediaEncode", "InputFilesCard")
+        settings.setValue("headerState", self.header.saveState())
+
+    def _restore_table_state(self):
+        settings = QSettings("AutoMediaEncode", "InputFilesCard")
+        state = settings.value("headerState")
+        if state:
+            self.header.restoreState(state)
 
     def show_header_menu(self, pos):
         menu = CheckableMenu(parent=self)
@@ -73,7 +86,11 @@ class InputFilesCard(HeaderCardWidget):
             action.setCheckable(True)
             action.setChecked(not self.table.isColumnHidden(i))
 
-            action.triggered.connect(lambda checked, col_index=i: self.table.setColumnHidden(col_index, not checked))
+            def on_toggled(checked, col_index=i):
+                self.table.setColumnHidden(col_index, not checked)
+                self._save_table_state()
+
+            action.triggered.connect(on_toggled)
             menu.addAction(action)
 
         menu.exec(self.header.mapToGlobal(pos))
@@ -88,6 +105,7 @@ class InputFilesCard(HeaderCardWidget):
         self.table.setColumnWidth(1, 110)
         self.table.setColumnWidth(2, 100)
         self.table.setColumnWidth(3, 400)
+        self._save_table_state()
 
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
@@ -139,6 +157,7 @@ class InputFilesCard(HeaderCardWidget):
         files = [url.toLocalFile() for url in urls if url.isLocalFile()]
         if files:
             self._filter_and_emit_files(files)
+
 
     def _filter_and_emit_files(self, files: list):
         valid_files = []
@@ -230,11 +249,24 @@ class TrackCard(HeaderCardWidget):
         self.viewLayout.setContentsMargins(0, 5, 0, 0)
 
         self._connectSignals()
+        self._restore_table_state()
 
     def _connectSignals(self):
         self.header.customContextMenuRequested.connect(self.show_header_menu)
         self.table.customContextMenuRequested.connect(self.show_content_menu)
         self.table.itemSelectionChanged.connect(self._on_table_selection_changed)
+        self.header.sectionMoved.connect(self._save_table_state)
+        self.header.sectionResized.connect(self._save_table_state)
+
+    def _save_table_state(self, *args):
+        settings = QSettings("AutoMediaEncode", "TrackCard")
+        settings.setValue("headerState", self.header.saveState())
+
+    def _restore_table_state(self):
+        settings = QSettings("AutoMediaEncode", "TrackCard")
+        state = settings.value("headerState")
+        if state:
+            self.header.restoreState(state)
         
     def _on_table_selection_changed(self):
         selected_rows = set(item.row() for item in self.table.selectedItems())
@@ -279,70 +311,6 @@ class TrackCard(HeaderCardWidget):
         elif key == 'flags':
             item = self.table.item(row, 0)
             if item: item.setData(Qt.UserRole + 1, value)
-
-    def show_header_menu(self, pos):
-        menu = CheckableMenu(parent=self)
-        
-        reset_action = Action("重置所有列", self)
-        reset_action.triggered.connect(self.reset_columns)
-        menu.addAction(reset_action)
-        menu.addSeparator()
-        for i in range(1, self.table.columnCount()):
-            col_name = self.table.horizontalHeaderItem(i).text()
-            action = Action(col_name, self)
-            action.setCheckable(True)
-            action.setChecked(not self.table.isColumnHidden(i))
-
-            action.triggered.connect(lambda checked, col_index=i: self.table.setColumnHidden(col_index, not checked))
-            menu.addAction(action)
-
-        menu.exec(self.header.mapToGlobal(pos))
-
-    def reset_columns(self):
-        """恢复所有列的原始顺序和宽度, 并全部显示"""
-        for logical_index in range(1, self.table.columnCount()):
-            self.table.setColumnHidden(logical_index, False)
-            current_visual_index = self.header.visualIndex(logical_index)
-            self.header.moveSection(current_visual_index, logical_index)
-        self.table.setColumnWidth(0, 115)
-        self.table.setColumnWidth(1, 95)
-        self.table.setColumnWidth(2, 65)
-        self.table.setColumnWidth(3, 100)
-        self.table.setColumnWidth(4, 30)
-        self.table.setColumnWidth(5, 65)
-        self.table.setColumnWidth(6, 150)
-        self.table.setColumnWidth(7, 180)
-
-    def show_content_menu(self, pos):
-        menu = RoundMenu(parent=self)
-        select_all_action = Action("全选行", self, triggered=self.table.selectAll)
-
-        # submenu = RoundMenu("快速选择", self)
-        # select_video_action = Action("所有视频", self, triggered=lambda: self._select_tracks_by_type("视频"))
-        # select_audio_action = Action("所有音频", self, triggered=lambda: self._select_tracks_by_type("音频"))
-        # select_subtitle_action = Action("所有字幕", self, triggered=lambda: self._select_tracks_by_type("字幕"))
-        # submenu.addActions([select_video_action, select_audio_action, select_subtitle_action])
-        
-        enabel_all_action = Action("全部启用", self, triggered=lambda: self._set_all_checked(True))
-        disable_all_action = Action("全部禁用", self, triggered=lambda: self._set_all_checked(False))
-        menu.addAction(select_all_action)
-        # menu.addMenu(submenu)
-        menu.addActions([enabel_all_action, disable_all_action])
-        menu.exec(self.table.viewport().mapToGlobal(pos))
-
-    def _set_all_checked(self, state: bool):
-        for row in range(self.table.rowCount()):
-            item = self.table.item(row, 0)
-            if item:
-                item.setCheckState(Qt.Checked if state else Qt.Unchecked)
-
-    # def _select_tracks_by_type(self, track_type: str):
-    #     self.table.clearSelection()
-    #     type_col_index = self.hearderItems.index('类型')
-    #     for row in range(self.table.rowCount()):
-    #         type_item = self.table.item(row, type_col_index)
-    #         if type_item and track_type in type_item.text():
-    #             self.table.selectRow(row)
 
     def add_tracks(self, file_info: dict, color_emoji: str):
         """外部调用：向轨道表中添加文件解析出的所有轨道"""
@@ -418,7 +386,78 @@ class TrackCard(HeaderCardWidget):
         """外部调用：清空所有轨道"""
         self.table.setRowCount(0)
 
-class GroupBox(QWidget):
+
+    def show_header_menu(self, pos):
+        menu = CheckableMenu(parent=self)
+        
+        reset_action = Action("重置所有列", self)
+        reset_action.triggered.connect(self.reset_columns)
+        menu.addAction(reset_action)
+        menu.addSeparator()
+        for i in range(1, self.table.columnCount()):
+            col_name = self.table.horizontalHeaderItem(i).text()
+            action = Action(col_name, self)
+            action.setCheckable(True)
+            action.setChecked(not self.table.isColumnHidden(i))
+
+            def on_toggled(checked, col_index=i):
+                self.table.setColumnHidden(col_index, not checked)
+                self._save_table_state()
+
+            action.triggered.connect(on_toggled)
+            menu.addAction(action)
+
+        menu.exec(self.header.mapToGlobal(pos))
+
+    def reset_columns(self):
+        """恢复所有列的原始顺序和宽度, 并全部显示"""
+        for logical_index in range(1, self.table.columnCount()):
+            self.table.setColumnHidden(logical_index, False)
+            current_visual_index = self.header.visualIndex(logical_index)
+            self.header.moveSection(current_visual_index, logical_index)
+        self.table.setColumnWidth(0, 115)
+        self.table.setColumnWidth(1, 95)
+        self.table.setColumnWidth(2, 65)
+        self.table.setColumnWidth(3, 100)
+        self.table.setColumnWidth(4, 30)
+        self.table.setColumnWidth(5, 65)
+        self.table.setColumnWidth(6, 150)
+        self.table.setColumnWidth(7, 180)
+        self._save_table_state()
+
+    def show_content_menu(self, pos):
+        menu = RoundMenu(parent=self)
+        select_all_action = Action("全选行", self, triggered=self.table.selectAll)
+
+        # submenu = RoundMenu("快速选择", self)
+        # select_video_action = Action("所有视频", self, triggered=lambda: self._select_tracks_by_type("视频"))
+        # select_audio_action = Action("所有音频", self, triggered=lambda: self._select_tracks_by_type("音频"))
+        # select_subtitle_action = Action("所有字幕", self, triggered=lambda: self._select_tracks_by_type("字幕"))
+        # submenu.addActions([select_video_action, select_audio_action, select_subtitle_action])
+        
+        enabel_all_action = Action("全部启用", self, triggered=lambda: self._set_all_checked(True))
+        disable_all_action = Action("全部禁用", self, triggered=lambda: self._set_all_checked(False))
+        menu.addAction(select_all_action)
+        # menu.addMenu(submenu)
+        menu.addActions([enabel_all_action, disable_all_action])
+        menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def _set_all_checked(self, state: bool):
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                item.setCheckState(Qt.Checked if state else Qt.Unchecked)
+
+    # def _select_tracks_by_type(self, track_type: str):
+    #     self.table.clearSelection()
+    #     type_col_index = self.hearderItems.index('类型')
+    #     for row in range(self.table.rowCount()):
+    #         type_item = self.table.item(row, type_col_index)
+    #         if type_item and track_type in type_item.text():
+    #             self.table.selectRow(row)
+
+
+class OptionGroupBox(QWidget):
     def __init__(self, title:str, parent=None):
         super().__init__(parent)
         self.mainLayout = QVBoxLayout(self)
@@ -486,7 +525,6 @@ class DynamicComboList(QWidget):
 
         add_btn.clicked.connect(self._add_new_row)
 
-    
     def _add_new_row(self):
         row_widget, hLayout, combo = self._create_row()
 
@@ -498,6 +536,7 @@ class DynamicComboList(QWidget):
         remove_btn.clicked.connect(self._handle_remove_row(row_widget))
 
     def _handle_remove_row(self, row_widget):
+        """返回一个函数, 用于处理删除行的逻辑"""
         def cleanup():
             row_widget.setParent(None)
             row_widget.deleteLater()
@@ -594,7 +633,7 @@ class OptionCard(HeaderCardWidget):
         self.containerCb.addItems(['MKV', 'MP4', 'MOV'])
 
         self.enable_attachment_checkbox = CheckBox('启用附件', self)
-        self.using_hard_sub_checkbox = CheckBox('编码硬字幕', self)
+        # self.using_hard_sub_checkbox = CheckBox('编码硬字幕', self)
 
         self.separator = HorizontalSeparator(self)
 
@@ -609,7 +648,7 @@ class OptionCard(HeaderCardWidget):
         self.go_hLayout4 = QHBoxLayout()
         self.go_hLayout5 = QHBoxLayout()
 
-        self.general_options_group = GroupBox('通用选项', self)
+        self.general_options_group = OptionGroupBox('通用选项', self)
 
         self.track_enabled_label = BodyLabel('启用轨道: ', self)
         self.track_enabled_cb = ComboBox()
@@ -658,7 +697,7 @@ class OptionCard(HeaderCardWidget):
         self.to_edit_vLayout = QVBoxLayout()
         self.to_hLayout = QHBoxLayout()
 
-        self.timestamp_options_group = GroupBox('时间戳和默认帧时长', self)
+        self.timestamp_options_group = OptionGroupBox('时间戳和默认帧时长', self)
 
         self.delay_label = BodyLabel('延迟(毫秒): ', self)
         self.delay_lineEdit = LineEdit()
@@ -700,7 +739,7 @@ class OptionCard(HeaderCardWidget):
 
         self.display_aspect_edit_Hlayout = QHBoxLayout()
 
-        self.video_properties_group = GroupBox('视频属性', self)
+        self.video_properties_group = OptionGroupBox('视频属性', self)
 
         self.setting_aspect_ratio_rb = RadioButton('设置宽高比: ', self)
         self.aspect_ratio_cb = EditableComboBox()
@@ -749,7 +788,7 @@ class OptionCard(HeaderCardWidget):
 
         self.mainLayout.addLayout(self.containerLayout)
         self.mainLayout.addWidget(self.enable_attachment_checkbox)
-        self.mainLayout.addWidget(self.using_hard_sub_checkbox)
+        # self.mainLayout.addWidget(self.using_hard_sub_checkbox)
         self.mainLayout.addWidget(self.separator)
         self.mainLayout.addWidget(self.general_options_group, alignment=Qt.AlignTop)
         self.mainLayout.addWidget(self.timestamp_options_group, alignment=Qt.AlignTop)
@@ -760,7 +799,7 @@ class OptionCard(HeaderCardWidget):
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
 
     def _connectSignals(self):
-        self.containerCb.currentTextChanged.connect(self._on_container_changed)
+        self.containerCb.currentTextChanged.connect(self._on_container_changed) 
         
         # 联动 TrackCard 的基本修改
         self.track_enabled_cb.currentTextChanged.connect(lambda t: self._emit_option_changed('enabled', t == '是'))
@@ -770,16 +809,18 @@ class OptionCard(HeaderCardWidget):
         
         self.timestamp_files_view_btn.clicked.connect(self._select_timestamp_file)
 
-        self._on_container_changed(self.containerCb.currentText())
+        self._on_container_changed(self.containerCb.currentText()) 
 
     def _select_timestamp_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "选择时间戳文件", "", "文本文件 (*.txt);;所有文件 (*)")
         if file_path:
             self.timestamp_files_lineEdit.setText(file_path)
             self._emit_option_changed('timestamp_file', file_path)
+
     def _on_track_flag_changed(self, flags: list):
         self._emit_option_changed('is_default', '默认轨道' in flags)
         self._emit_option_changed('flags', flags)
+
     def _emit_option_changed(self, key: str, val):
         if not self._is_updating:
             self.optionValueChanged.emit(key, val)
@@ -794,7 +835,7 @@ class OptionCard(HeaderCardWidget):
         self._update_options_state()
         
     def _update_options_state(self):
-        # 只有在 MKV 容器且选中了轨道时，才启用下面这三块选项 (选项卡要求默认变灰，全局变灰)
+        """根据当前容器类型和是否选中轨道来启用/禁用选项，并调整标签颜色"""
         enabled = self.is_mkv and self.is_track_selected
         
         style = "" if enabled else "color: rgba(128, 128, 128, 0.7);"

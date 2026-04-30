@@ -34,18 +34,20 @@ class MuxProbeService:
                 encoding='utf-8'
             )
             if result.returncode != 0 and result.returncode != 1:
-                # mkvmerge 放回1有时也是成功的(带警告)，不绝对报错
                 logger.error(f"mkvmerge 探测失败 (code {result.returncode}): {result.stderr}")
                 return {}
                 
             data = json.loads(result.stdout)
+            container_type = data.get('container', {}).get('type', 'Unknown')
+            tracks = data.get('tracks', [])
+            chapters = data.get('chapters', [])
             file_size = path_obj.stat().st_size
 
-            # 补救纯章节文件的探测
+            # 补充 mkvmerge 对于章节载入的识别
             if not data.get('container', {}).get('recognized', True):
                 ext = path_obj.suffix.lower()
                 if ext in ['.txt', '.xml']:
-                    tracks = [{
+                    c_tracks = [{
                         'codec': f"{ext.strip('.').upper()} Chapters",
                         'type': 'chapters',
                         'properties': {'track_name': ''}
@@ -56,18 +58,14 @@ class MuxProbeService:
                         'size': file_size,
                         'format_size': MuxProbeService.format_size(file_size),
                         'container': 'Chapters',
-                        'tracks': tracks,
+                        'tracks': c_tracks,
                         'attachments': [],
                         'chapters': []
                     }
                 else:
                     return {}
 
-            container_type = data.get('container', {}).get('type', 'Unknown')
-            
-            tracks = data.get('tracks', [])
-            chapters = data.get('chapters', [])
-            # 把mkv自带章节作为伪轨道拼在最后
+            # 处理 mkv 自带章节
             if chapters:
                 num_entries = sum(c.get('num_entries', 0) for c in chapters)
                 tracks.append({
