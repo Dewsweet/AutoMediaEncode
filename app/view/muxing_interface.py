@@ -1,14 +1,15 @@
-# coding: utf-8
+﻿# coding: utf-8
 from pathlib import Path
+import uuid
 from PySide6.QtCore import Qt, QThread, Signal, QSettings
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter
 
 from qfluentwidgets import qrouter, StrongBodyLabel, InfoBar, InfoBarPosition
+from ..common.signal_bus import signalBus
 
 from ..components.muxing_card_interface import InputFilesCard, TrackCard, OptionCard, OutputCard, AttachmentCard
 from ..components.hearder_widget import HeaderWidget
 from ..services.muxing.mux_probe_service import MuxProbeService
-from ..services.muxing.mux_execute_service import MuxExecuteWorker
 
 class MuxProbeWorker(QThread):
     """用于在后台异步探测媒体文件信息的线程"""
@@ -96,10 +97,13 @@ class MuxingInterface(QWidget):
         self.optionCard.containerCb.currentTextChanged.connect(lambda _: self._update_output_path())
         
         self.header.reload_button.clicked.connect(self._handle_reload_clicked)
-        self.header.start_button.clicked.connect(self._start_muxing)
+        self.header.start_button.clicked.connect(self.emit_builder_output)
 
         self._probe_workers = []
-        self._mux_worker = None
+        
+        signalBus.taskCompleted.connect(self.on_task_finished)
+        signalBus.taskCancelled.connect(self.on_task_finished)
+        signalBus.taskError.connect(self.on_task_error)
 
     def _handle_reload_clicked(self):
         self.inputFilesCard.on_clear_files()
@@ -232,109 +236,70 @@ class MuxingInterface(QWidget):
 
         self.outputCard.output_path_lineEdit.setText(str(output_path))
 
-    def _collect_mux_parameters(self):
-        output_path = self.outputCard.output_path_lineEdit.text().strip()
-        if not output_path:
-            return None
-
-        input_files = {}
-
-        # 遍历轨道表提取信息
-        for row in range(self.trackCard.table.rowCount()):
-            enabled = self.trackCard.table.item(row, 0).checkState() == Qt.Checked
-            if not enabled:
-                continue
-
-            file_path = self.trackCard.table.item(row, 0).data(Qt.UserRole)
-            if file_path not in input_files:
-                input_files[file_path] = {'video': [], 'audio': [], 'subtitle': []}
-
-            t_type = self.trackCard.table.item(row, 1).text()
-            language = self.trackCard.table.item(row, 2).text()
-            name = self.trackCard.table.item(row, 3).text()
-            t_id = self.trackCard.table.item(row, 4).text()
-            is_default = self.trackCard.table.item(row, 5).text() == "是"
-            flags = self.trackCard.table.item(row, 0).data(Qt.UserRole + 1) or []
-
-            track_info = {
-                'id': t_id,
-                'name': name,
-                'language': language,
-                'is_default': is_default,
-                'flags': flags
-            }
-
-            if '视频' in t_type:
-                input_files[file_path]['video'].append(track_info)
-            elif '音频' in t_type:
-                input_files[file_path]['audio'].append(track_info)
-            elif '字幕' in t_type:
-                input_files[file_path]['subtitle'].append(track_info)
-
-        # 收集附件
-        attachments = []
-        if self.optionCard.enable_attachment_checkbox.isChecked():
-            for row in range(self.attachmentCard.table.rowCount()):
-                name = self.attachmentCard.table.item(row, 0).text()
-                directory = self.attachmentCard.table.item(row, 2).text()
-                attachments.append(str(Path(directory) / name))
-
-        return {
-            'container': self.optionCard.containerCb.currentText().lower(),
-            'output': output_path,
-            'inputs': input_files,
-            'attachments': attachments
-        }
-
-    def _start_muxing(self):
-        if self._mux_worker and self._mux_worker.isRunning():
-            InfoBar.warning(title='正在处理中', content='请等待当前任务完成', parent=self, position=InfoBarPosition.TOP_RIGHT)
-            return
-
-        params = self._collect_mux_parameters()
-        if not params:
-            InfoBar.warning(title='错误', content='请确保输出路径和输入参数正确', parent=self, position=InfoBarPosition.TOP_RIGHT)
-            return
-            
-        if not params['inputs']:
+    def emit_builder_output(self):
+        input_files = self.trackCard.get_selected_tracks()
+        if not input_files:
             InfoBar.warning(title='错误', content='请至少保留一个启用的轨道', parent=self, position=InfoBarPosition.TOP_RIGHT)
             return
+            
+        output_state = self.outputCard.get_state()
+        if not output_state.get('output_path'):
+            InfoBar.warning(title='错误', content='请确保输出路径和输入参数正确', parent=self, position=InfoBarPosition.TOP_RIGHT)
+            return
 
+        task_id = str(uuid.uuid4())
+        payload = {
+            "task_id": task_id,
+            "type": "Mux",
+            "files": list(input_files.keys()),
+            "states": {
+                "tracks_state": input_files,
+                "option_state": self.optionCard.get_state(),
+                "output_state": output_state,
+                "attachment_state": self.attachmentCard.get_state() if self.optionCard.enable_attachment_checkbox.isChecked() else {'attachments': []}
+            }
+        }
+        
+        self._current_checking_task_id = task_id
+        self._current_task_has_error = False
+        self._current_task_is_finished = False
+
+        self.header.start_button.setText('正在执行中...')
         self.header.start_button.setEnabled(False)
-        self.header.start_button.setText('处理中...')
 
-        self._mux_worker = MuxExecuteWorker(params, self)
-        self._mux_worker.progress.connect(self._on_mux_progress)
-        self._mux_worker.finished.connect(self._on_mux_finished)
-        self._mux_worker.error.connect(self._on_mux_error)
-        self._mux_worker.start()
+        signalBus.taskAdded.emit(payload)
 
-    def _on_mux_progress(self, val: int):
-        self.header.start_button.setText(f'处理中... {val}%')
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(800, lambda t=task_id: self._check_task_start_success(t))
 
-    def _on_mux_finished(self, code: int):
-        self.header.start_button.setEnabled(True)
-        self.header.start_button.setText('开始混流')
-        
-        InfoBar.success(
-            title='完成', 
-            content='混流操作已成功完成！', 
-            parent=self, 
-            position=InfoBarPosition.TOP_RIGHT, 
-            duration=2000
-        )
+    def _check_task_start_success(self, task_id: str):
+        if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):
+            InfoBar.success(
+                title='任务执行成功',
+                content='混流任务已开始执行，进入「任务进度」可查看详情',
+                orient=Qt.Horizontal,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=2000,
+                parent=self
+            )
 
-    def _on_mux_error(self, err_msg: str):
-        self.header.start_button.setEnabled(True)
-        self.header.start_button.setText('开始混流')
-        
-        InfoBar.error(
-            title='错误', 
-            content=str(err_msg), 
-            parent=self, 
-            position=InfoBarPosition.TOP_RIGHT,
-            duration=3000
-        )
-        
+    def on_task_finished(self, task_id: str):
+        if getattr(self, '_current_checking_task_id', '') == task_id:
+            self._current_task_is_finished = True
+            self.header.start_button.setText('开始混流')
+            self.header.start_button.setEnabled(True)
 
-
+    def on_task_error(self, task_id: str, error_msg: str):
+        if getattr(self, '_current_checking_task_id', '') == task_id:
+            self._current_task_has_error = True
+            self.header.start_button.setText('开始混流')
+            self.header.start_button.setEnabled(True)
+            InfoBar.error(
+                title='运行错误',
+                content=f'执行任务期间发生错误:\n{error_msg}',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=-1,
+                parent=self
+            )

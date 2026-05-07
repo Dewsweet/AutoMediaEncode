@@ -29,8 +29,19 @@ class DemuxPayload(TypedDict):
     files: List[str]
     states: DemuxStates
 
-# 未来如果加入抽流、混流任务，可以在下方继续定义，并加入到 TaskPayload 联合类型中
-# class MuxPayload(TypedDict): ...
+class MuxStates(TypedDict):
+    """混流任务的状态配置"""
+    tracks_state: Dict[str, Dict[str, List[Dict[str, Any]]]] # filepath -> {video: [], audio: [], subtitle: []}
+    option_state: Dict[str, Any]
+    output_state: Dict[str, Any]
+    attachment_state: Dict[str, Any]
+
+class MuxPayload(TypedDict):
+    """混流任务的 Payload 结构"""
+    task_id: str
+    type: Literal["Mux"]
+    files: List[str]
+    states: MuxStates
 
 # 导出一个通用类型供后续 TaskManager 使用
-TaskPayload = Union[RecodePayload, DemuxPayload] 
+TaskPayload = Union[RecodePayload, DemuxPayload, MuxPayload] 

@@ -1,4 +1,4 @@
-# coding: utf-8
+﻿# coding: utf-8
 import os
 from pathlib import Path
 from PySide6.QtCore import Qt, Signal, QSettings
@@ -457,6 +457,41 @@ class TrackCard(HeaderCardWidget):
     #             self.table.selectRow(row)
 
 
+    def get_selected_tracks(self) -> dict:
+        input_files = {}
+        for row in range(self.table.rowCount()):
+            enabled = self.table.item(row, 0).checkState() == Qt.Checked
+            if not enabled:
+                continue
+
+            file_path = self.table.item(row, 0).data(Qt.UserRole)
+            if file_path not in input_files:
+                input_files[file_path] = {'video': [], 'audio': [], 'subtitle': []}
+
+            t_type = self.table.item(row, 1).text()
+            language = self.table.item(row, 2).text()
+            name = self.table.item(row, 3).text()
+            t_id = self.table.item(row, 4).text()
+            is_default = self.table.item(row, 5).text() == "是"
+            flags = self.table.item(row, 0).data(Qt.UserRole + 1) or []
+
+            track_info = {
+                'id': t_id,
+                'name': name,
+                'language': language,
+                'is_default': is_default,
+                'flags': flags
+            }
+
+            if '视频' in t_type:
+                input_files[file_path]['video'].append(track_info)
+            elif '音频' in t_type:
+                input_files[file_path]['audio'].append(track_info)
+            elif '字幕' in t_type:
+                input_files[file_path]['subtitle'].append(track_info)
+
+        return input_files
+
 class OptionGroupBox(QWidget):
     def __init__(self, title:str, parent=None):
         super().__init__(parent)
@@ -619,8 +654,8 @@ class OptionCard(HeaderCardWidget):
 
         self._initWidget()
         self._generalOptionsArea()
-        self._timestampOptionsArea()
-        self._video_properties_area()
+        # self._timestampOptionsArea()
+        # self._video_properties_area()
         self._initLayout()
         self._connectSignals()
 
@@ -692,81 +727,81 @@ class OptionCard(HeaderCardWidget):
         # self.go_hLayout5.addWidget(self.track_label_lable)
         # self.go_hLayout5.addWidget(self.track_label_lineEdit, 1)
 
-    def _timestampOptionsArea(self):
-        self.to_text_vLayout = QVBoxLayout()
-        self.to_edit_vLayout = QVBoxLayout()
-        self.to_hLayout = QHBoxLayout()
+    # def _timestampOptionsArea(self):
+    #     self.to_text_vLayout = QVBoxLayout()
+    #     self.to_edit_vLayout = QVBoxLayout()
+    #     self.to_hLayout = QHBoxLayout()
 
-        self.timestamp_options_group = OptionGroupBox('时间戳和默认帧时长', self)
+    #     self.timestamp_options_group = OptionGroupBox('时间戳和默认帧时长', self)
 
-        self.delay_label = BodyLabel('延迟(毫秒): ', self)
-        self.delay_lineEdit = LineEdit()
+    #     self.delay_label = BodyLabel('延迟(毫秒): ', self)
+    #     self.delay_lineEdit = LineEdit()
 
-        # self.timestamp_extend_label = BodyLabel('延展比例: ', self)
-        # self.timestamp_extend_lineEdit = LineEdit()
+    #     # self.timestamp_extend_label = BodyLabel('延展比例: ', self)
+    #     # self.timestamp_extend_lineEdit = LineEdit()
 
-        self.default_frame_duration_label = BodyLabel('默认帧时长和帧率: ', self)
-        self.default_frame_duration_lineEdit = EditableComboBox()
-        self.frame_duration_items = ['', '24p', '25p', '30p', '48p', '50i', '50p', '60i', '60p', '24000/1001p', '30000/1001p', '48000/1001p', '60000/1001i', '60000/1001p']
-        self.default_frame_duration_lineEdit.addItems(self.frame_duration_items)
+    #     self.default_frame_duration_label = BodyLabel('默认帧时长和帧率: ', self)
+    #     self.default_frame_duration_lineEdit = EditableComboBox()
+    #     self.frame_duration_items = ['', '24p', '25p', '30p', '48p', '50i', '50p', '60i', '60p', '24000/1001p', '30000/1001p', '48000/1001p', '60000/1001i', '60000/1001p']
+    #     self.default_frame_duration_lineEdit.addItems(self.frame_duration_items)
 
-        self.timestamp_files_label = BodyLabel('时间戳文件: ', self)
-        self.timestamp_files_lineEdit = LineEdit()
-        self.timestamp_files_view_btn = PushButton('...', self)
-        self.timestamp_files_layout = QHBoxLayout()
-        self.timestamp_files_layout.addWidget(self.timestamp_files_lineEdit)
-        self.timestamp_files_layout.addWidget(self.timestamp_files_view_btn)
+    #     self.timestamp_files_label = BodyLabel('时间戳文件: ', self)
+    #     self.timestamp_files_lineEdit = LineEdit()
+    #     self.timestamp_files_view_btn = PushButton('...', self)
+    #     self.timestamp_files_layout = QHBoxLayout()
+    #     self.timestamp_files_layout.addWidget(self.timestamp_files_lineEdit)
+    #     self.timestamp_files_layout.addWidget(self.timestamp_files_view_btn)
 
-        self.correct_timestamp_checkbox = CheckBox('校正时间戳', self)
+    #     self.correct_timestamp_checkbox = CheckBox('校正时间戳', self)
 
-        self.to_text_vLayout.addWidget(self.delay_label, alignment=Qt.AlignVCenter)
-        # self.to_text_vLayout.addWidget(self.timestamp_extend_label, alignment=Qt.AlignVCenter)
-        self.to_text_vLayout.addWidget(self.default_frame_duration_label, alignment=Qt.AlignVCenter)
-        self.to_text_vLayout.addWidget(self.timestamp_files_label, alignment=Qt.AlignVCenter)
+    #     self.to_text_vLayout.addWidget(self.delay_label, alignment=Qt.AlignVCenter)
+    #     # self.to_text_vLayout.addWidget(self.timestamp_extend_label, alignment=Qt.AlignVCenter)
+    #     self.to_text_vLayout.addWidget(self.default_frame_duration_label, alignment=Qt.AlignVCenter)
+    #     self.to_text_vLayout.addWidget(self.timestamp_files_label, alignment=Qt.AlignVCenter)
 
-        self.to_edit_vLayout.addWidget(self.delay_lineEdit)
-        # self.to_edit_vLayout.addWidget(self.timestamp_extend_lineEdit)
-        self.to_edit_vLayout.addWidget(self.default_frame_duration_lineEdit)
-        self.to_edit_vLayout.addLayout(self.timestamp_files_layout)
+    #     self.to_edit_vLayout.addWidget(self.delay_lineEdit)
+    #     # self.to_edit_vLayout.addWidget(self.timestamp_extend_lineEdit)
+    #     self.to_edit_vLayout.addWidget(self.default_frame_duration_lineEdit)
+    #     self.to_edit_vLayout.addLayout(self.timestamp_files_layout)
 
-        self.to_hLayout.addLayout(self.to_text_vLayout)
-        self.to_hLayout.addLayout(self.to_edit_vLayout)
+    #     self.to_hLayout.addLayout(self.to_text_vLayout)
+    #     self.to_hLayout.addLayout(self.to_edit_vLayout)
 
-    def _video_properties_area(self):
-        self.vp_text_vLayout = QVBoxLayout()
-        self.vp_edit_vLayout = QVBoxLayout()
-        self.vp_hLayout = QHBoxLayout()
+    # def _video_properties_area(self):
+    #     self.vp_text_vLayout = QVBoxLayout()
+    #     self.vp_edit_vLayout = QVBoxLayout()
+    #     self.vp_hLayout = QHBoxLayout()
 
-        self.display_aspect_edit_Hlayout = QHBoxLayout()
+    #     self.display_aspect_edit_Hlayout = QHBoxLayout()
 
-        self.video_properties_group = OptionGroupBox('视频属性', self)
+    #     self.video_properties_group = OptionGroupBox('视频属性', self)
 
-        self.setting_aspect_ratio_rb = RadioButton('设置宽高比: ', self)
-        self.aspect_ratio_cb = EditableComboBox()
-        self.aspect_ratio_items = ['', '1/1', '4/3', '16/9', '21/9', '1.66', '1.85', '2.00', '2.21', '2.35', '2.40']
-        self.aspect_ratio_cb.addItems(self.aspect_ratio_items)
+    #     self.setting_aspect_ratio_rb = RadioButton('设置宽高比: ', self)
+    #     self.aspect_ratio_cb = EditableComboBox()
+    #     self.aspect_ratio_items = ['', '1/1', '4/3', '16/9', '21/9', '1.66', '1.85', '2.00', '2.21', '2.35', '2.40']
+    #     self.aspect_ratio_cb.addItems(self.aspect_ratio_items)
 
-        self.setting_display_aspect_rb = RadioButton('显示宽度/高度: ', self)
-        self.display_aspect_width_lineEdit = LineEdit()
-        self.display_aspect_height_x_label = BodyLabel('x', self)
-        self.display_aspect_height_lineEdit = LineEdit()
-        self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_width_lineEdit)
-        self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_x_label)
-        self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_lineEdit)
+    #     self.setting_display_aspect_rb = RadioButton('显示宽度/高度: ', self)
+    #     self.display_aspect_width_lineEdit = LineEdit()
+    #     self.display_aspect_height_x_label = BodyLabel('x', self)
+    #     self.display_aspect_height_lineEdit = LineEdit()
+    #     self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_width_lineEdit)
+    #     self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_x_label)
+    #     self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_lineEdit)
 
-        # self.video_crop_label = BodyLabel('画面裁剪: ', self)
-        # self.video_crop_lineEdit = LineEdit()
+    #     # self.video_crop_label = BodyLabel('画面裁剪: ', self)
+    #     # self.video_crop_lineEdit = LineEdit()
 
-        self.vp_text_vLayout.addWidget(self.setting_aspect_ratio_rb, alignment=Qt.AlignVCenter)
-        self.vp_text_vLayout.addWidget(self.setting_display_aspect_rb, alignment=Qt.AlignVCenter)
-        # self.vp_text_vLayout.addWidget(self.video_crop_label, alignment=Qt.AlignVCenter)
+    #     self.vp_text_vLayout.addWidget(self.setting_aspect_ratio_rb, alignment=Qt.AlignVCenter)
+    #     self.vp_text_vLayout.addWidget(self.setting_display_aspect_rb, alignment=Qt.AlignVCenter)
+    #     # self.vp_text_vLayout.addWidget(self.video_crop_label, alignment=Qt.AlignVCenter)
 
-        self.vp_edit_vLayout.addWidget(self.aspect_ratio_cb)
-        self.vp_edit_vLayout.addLayout(self.display_aspect_edit_Hlayout)
-        # self.vp_edit_vLayout.addWidget(self.video_crop_lineEdit)
+    #     self.vp_edit_vLayout.addWidget(self.aspect_ratio_cb)
+    #     self.vp_edit_vLayout.addLayout(self.display_aspect_edit_Hlayout)
+    #     # self.vp_edit_vLayout.addWidget(self.video_crop_lineEdit)
 
-        self.vp_hLayout.addLayout(self.vp_text_vLayout)
-        self.vp_hLayout.addLayout(self.vp_edit_vLayout)
+    #     self.vp_hLayout.addLayout(self.vp_text_vLayout)
+    #     self.vp_hLayout.addLayout(self.vp_edit_vLayout)
 
     def _initLayout(self):
         # General options layout
@@ -779,11 +814,11 @@ class OptionCard(HeaderCardWidget):
 
 
         # Timestamp options layout
-        self.timestamp_options_group.addLayout(self.to_hLayout)
-        self.timestamp_options_group.addWidget(self.correct_timestamp_checkbox)
+        # self.timestamp_options_group.addLayout(self.to_hLayout)
+        # self.timestamp_options_group.addWidget(self.correct_timestamp_checkbox)
 
-        # Video properties layout
-        self.video_properties_group.addLayout(self.vp_hLayout)
+        # # Video properties layout
+        # self.video_properties_group.addLayout(self.vp_hLayout)
 
 
         self.mainLayout.addLayout(self.containerLayout)
@@ -791,8 +826,8 @@ class OptionCard(HeaderCardWidget):
         # self.mainLayout.addWidget(self.using_hard_sub_checkbox)
         self.mainLayout.addWidget(self.separator)
         self.mainLayout.addWidget(self.general_options_group, alignment=Qt.AlignTop)
-        self.mainLayout.addWidget(self.timestamp_options_group, alignment=Qt.AlignTop)
-        self.mainLayout.addWidget(self.video_properties_group, alignment=Qt.AlignTop)
+        # self.mainLayout.addWidget(self.timestamp_options_group, alignment=Qt.AlignTop)
+        # self.mainLayout.addWidget(self.video_properties_group, alignment=Qt.AlignTop)
         self.mainLayout.addStretch(1)
 
         self.viewLayout.addWidget(self.scrollArea)
@@ -807,15 +842,15 @@ class OptionCard(HeaderCardWidget):
         self.track_language_lineEdit.currentTextChanged.connect(lambda t: self._emit_option_changed('language', t))
         self.track_flag.valueChanged.connect(self._on_track_flag_changed)
         
-        self.timestamp_files_view_btn.clicked.connect(self._select_timestamp_file)
+        # self.timestamp_files_view_btn.clicked.connect(self._select_timestamp_file)
 
         self._on_container_changed(self.containerCb.currentText()) 
 
-    def _select_timestamp_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "选择时间戳文件", "", "文本文件 (*.txt);;所有文件 (*)")
-        if file_path:
-            self.timestamp_files_lineEdit.setText(file_path)
-            self._emit_option_changed('timestamp_file', file_path)
+    # def _select_timestamp_file(self):
+    #     file_path, _ = QFileDialog.getOpenFileName(self, "选择时间戳文件", "", "文本文件 (*.txt);;所有文件 (*)")
+    #     if file_path:
+    #         self.timestamp_files_lineEdit.setText(file_path)
+    #         self._emit_option_changed('timestamp_file', file_path)
 
     def _on_track_flag_changed(self, flags: list):
         self._emit_option_changed('is_default', '默认轨道' in flags)
@@ -840,7 +875,8 @@ class OptionCard(HeaderCardWidget):
         
         style = "" if enabled else "color: rgba(128, 128, 128, 0.7);"
         
-        for group in [self.general_options_group, self.timestamp_options_group, self.video_properties_group]:
+        # for group in [self.general_options_group, self.timestamp_options_group, self.video_properties_group]:
+        for group in [self.general_options_group]:
             group.setEnabled(enabled)
             # 为组内的标签调整颜色实现变灰效果
             for lbl in group.findChildren(BodyLabel):
@@ -861,6 +897,12 @@ class OptionCard(HeaderCardWidget):
     def get_track_flags(self):
         """获取所有当前选择的标记"""
         return self.track_flag.get_values()
+
+    def get_state(self) -> dict:
+        return {
+            'container': self.containerCb.currentText(),
+            'enable_attachment': self.enable_attachment_checkbox.isChecked()
+        }
 
 class OutputCard(SimpleCardWidget):
     def __init__(self, parent=None):
@@ -886,7 +928,6 @@ class OutputCard(SimpleCardWidget):
         self.output_path_view_button.clicked.connect(self._browse_output_path)
         
     def _browse_output_path(self):
-        import os
         current_path = self.output_path_lineEdit.text()
         default_dir = os.path.dirname(current_path) if current_path else ""
         
@@ -898,6 +939,14 @@ class OutputCard(SimpleCardWidget):
         )
         if file_path:
             self.output_path_lineEdit.setText(file_path)
+
+    def get_state(self) -> dict:
+        output_path = self.output_path_lineEdit.text().strip()
+        output_dir = os.path.dirname(output_path) if output_path else ''
+        return {
+            'output_dir': output_dir,
+            'output_path': output_path
+        }
 
 class AttachmentCard(HeaderCardWidget):
     def __init__(self, parent=None):
@@ -1042,3 +1091,13 @@ class AttachmentCard(HeaderCardWidget):
                 self.table.setItem(row, col, item)
 
 
+
+    def get_state(self) -> dict:
+        attachments = []
+        for row in range(self.table.rowCount()):
+            if self.table.item(row, 0).checkState() == Qt.Checked:
+                name = self.table.item(row, 0).text()
+                directory = self.table.item(row, 2).text()
+                if directory != "内置附件":
+                    attachments.append(str(Path(directory) / name))
+        return {'attachments': attachments}

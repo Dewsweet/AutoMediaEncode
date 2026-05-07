@@ -4,6 +4,7 @@ from PySide6.QtCore import QObject
 from ..common.signal_bus import signalBus
 from ..services.recode.recode_worker import RecodeWorker
 from ..services.demuxing.demux_worker import DemuxWorker
+from .muxing.mux_worker import MuxWorker
 
 class TaskManager(QObject):
     """
@@ -46,6 +47,12 @@ class TaskManager(QObject):
             worker.start()
         elif task_type == "Demux":
             worker = DemuxWorker(payload=payload, parent=self)
+            worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
+            self.workers[task_id] = worker
+            worker.start()
+
+        elif task_type == "Mux":
+            worker = MuxWorker(payload=payload, parent=self)
             worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
             self.workers[task_id] = worker
             worker.start()
