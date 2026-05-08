@@ -64,11 +64,11 @@ class InputFilesCard(HeaderCardWidget):
         self.header.sectionResized.connect(self._save_table_state)
 
     def _save_table_state(self, *args):
-        settings = QSettings("AutoMediaEncode", "InputFilesCard")
+        settings = QSettings("AutoMediaEncode", "MuxingInputFilesCard")
         settings.setValue("headerState", self.header.saveState())
 
     def _restore_table_state(self):
-        settings = QSettings("AutoMediaEncode", "InputFilesCard")
+        settings = QSettings("AutoMediaEncode", "MuxingInputFilesCard")
         state = settings.value("headerState")
         if state:
             self.header.restoreState(state)
@@ -117,10 +117,12 @@ class InputFilesCard(HeaderCardWidget):
         menu.addActions([add_files_action, remove_file_action, remove_all_action])
         menu.exec(self.table.viewport().mapToGlobal(pos))
 
-    def on_add_files_clicked(self):
+    def on_add_files_clicked(self, clear_previous: bool = False):
         mux_ext_filter = "所支持的媒体文件 (" + " ".join(f"*{ext}" for ext in MUXING_EXTS ) + ");;所有文件 (*)"
         file_paths, _ = QFileDialog.getOpenFileNames(self, "选择混流媒体文件", "", mux_ext_filter)
         if file_paths:
+            if clear_previous:
+                self.on_clear_files()
             self._filter_and_emit_files(file_paths)
 
     def on_remove_selected_files(self):
@@ -371,6 +373,30 @@ class TrackCard(HeaderCardWidget):
             for col, item in enumerate([codec_item, type_item, lang_item, name_item, id_item, default_item, props_item, file_item]):
                 self.table.setItem(row, col, item)
 
+        # 每次添加新轨道后都进行一次排序，保持轨道类型的相对顺序
+        def _get_type_order(t_type_str):
+            if '视频' in t_type_str: return 0
+            if '音频' in t_type_str: return 1
+            if '字幕' in t_type_str: return 2
+            if '章节' in t_type_str: return 3
+            return 4
+
+        all_rows = []
+        for row in range(self.table.rowCount()):
+            row_items = []
+            for col in range(self.table.columnCount()):
+                row_items.append(self.table.takeItem(row, col))
+            all_rows.append(row_items)
+            
+        all_rows.sort(key=lambda items: _get_type_order(items[1].text()) if items[1] else 4)
+        
+        self.table.setRowCount(0)
+        for row_items in all_rows:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            for col, item in enumerate(row_items):
+                self.table.setItem(row, col, item)
+
     def remove_tracks_by_file(self, file_path: str):
         """外部调用：删除指定文件的所有轨道"""
         rows_to_remove = []
@@ -448,27 +474,38 @@ class TrackCard(HeaderCardWidget):
             if item:
                 item.setCheckState(Qt.Checked if state else Qt.Unchecked)
 
-    # def _select_tracks_by_type(self, track_type: str):
-    #     self.table.clearSelection()
-    #     type_col_index = self.hearderItems.index('类型')
-    #     for row in range(self.table.rowCount()):
-    #         type_item = self.table.item(row, type_col_index)
-    #         if type_item and track_type in type_item.text():
-    #             self.table.selectRow(row)
-
-
     def get_selected_tracks(self) -> dict:
+        """外部调用：获取当前表格中所有轨道的状态和信息，按照输入文件进行组织"""
         input_files = {}
+        chapter_files = []
+        ordered_tracks = []
+
+        # 第一轮遍历先收集所有文件路径，确保即使某些轨道被禁用导致文件路径没有被记录，也能保证最终结果中包含该文件
+        for row in range(self.table.rowCount()):
+            file_path = self.table.item(row, 0).data(Qt.UserRole)
+            if file_path not in input_files:
+                input_files[file_path] = {'video': [], 'audio': [], 'subtitle': [], 'chapters': [], 'keep_chapters': False, 'empty': True}
+
+        # 第二轮遍历收集轨道信息和章节文件，章节文件单独收集不归属任何输入文件
         for row in range(self.table.rowCount()):
             enabled = self.table.item(row, 0).checkState() == Qt.Checked
             if not enabled:
                 continue
 
             file_path = self.table.item(row, 0).data(Qt.UserRole)
-            if file_path not in input_files:
-                input_files[file_path] = {'video': [], 'audio': [], 'subtitle': []}
-
             t_type = self.table.item(row, 1).text()
+            if '章节' in t_type:
+                if Path(file_path).suffix.lower() in {'.txt', '.xml'}:
+                    chapter_files.append(file_path)
+                    continue
+                else:
+                    input_files[file_path]['keep_chapters'] = True 
+                    input_files[file_path]['empty'] = False
+                    continue
+
+            # 对于普通轨道，标记为非空并继续收集信息
+            input_files[file_path]['empty'] = False
+
             language = self.table.item(row, 2).text()
             name = self.table.item(row, 3).text()
             t_id = self.table.item(row, 4).text()
@@ -489,8 +526,16 @@ class TrackCard(HeaderCardWidget):
                 input_files[file_path]['audio'].append(track_info)
             elif '字幕' in t_type:
                 input_files[file_path]['subtitle'].append(track_info)
+                
+            ordered_tracks.append({'file': file_path, 'id': t_id, 'type': t_type})
 
-        return input_files
+        final_input_files = {k: v for k, v in input_files.items() if not v['empty']}
+        
+        return {
+            'files': final_input_files,
+            'chapter_files': chapter_files,
+            'ordered_tracks': ordered_tracks
+        }
 
 class OptionGroupBox(QWidget):
     def __init__(self, title:str, parent=None):
@@ -650,12 +695,9 @@ class OptionCard(HeaderCardWidget):
         self.scrollArea.setStyleSheet("""#scrollArea {background-color: transparent; border: none;}""")
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.mainBox)
-        # self.scrollArea.setSmoothMode(SmoothMode.NO_SMOOTH)
 
         self._initWidget()
         self._generalOptionsArea()
-        # self._timestampOptionsArea()
-        # self._video_properties_area()
         self._initLayout()
         self._connectSignals()
 
@@ -668,8 +710,6 @@ class OptionCard(HeaderCardWidget):
         self.containerCb.addItems(['MKV', 'MP4', 'MOV'])
 
         self.enable_attachment_checkbox = CheckBox('启用附件', self)
-        # self.using_hard_sub_checkbox = CheckBox('编码硬字幕', self)
-
         self.separator = HorizontalSeparator(self)
 
         self.containerLayout.addWidget(self.containerLabel)
@@ -706,12 +746,8 @@ class OptionCard(HeaderCardWidget):
         self.compression_method = BodyLabel('压缩方法: ', self)
         self.compression_method_cb = ComboBox()
         self.compression_method_cb.addItems(['自动决定', '不做额外压缩', 'zlib'])
-
-        # self.track_label_lable = BodyLabel('标签: ', self)
-        # self.track_label_lable.setFixedWidth(self.track_enabled_label.sizeHint().width())
-        # self.track_label_lineEdit = LineEdit()
-
         
+
         self.go_hLayout1.addWidget(self.track_enabled_label)
         self.go_hLayout1.addWidget(self.track_enabled_cb, 1)
 
@@ -724,84 +760,7 @@ class OptionCard(HeaderCardWidget):
         self.go_hLayout4.addWidget(self.compression_method)
         self.go_hLayout4.addWidget(self.compression_method_cb, 1)
 
-        # self.go_hLayout5.addWidget(self.track_label_lable)
-        # self.go_hLayout5.addWidget(self.track_label_lineEdit, 1)
 
-    # def _timestampOptionsArea(self):
-    #     self.to_text_vLayout = QVBoxLayout()
-    #     self.to_edit_vLayout = QVBoxLayout()
-    #     self.to_hLayout = QHBoxLayout()
-
-    #     self.timestamp_options_group = OptionGroupBox('时间戳和默认帧时长', self)
-
-    #     self.delay_label = BodyLabel('延迟(毫秒): ', self)
-    #     self.delay_lineEdit = LineEdit()
-
-    #     # self.timestamp_extend_label = BodyLabel('延展比例: ', self)
-    #     # self.timestamp_extend_lineEdit = LineEdit()
-
-    #     self.default_frame_duration_label = BodyLabel('默认帧时长和帧率: ', self)
-    #     self.default_frame_duration_lineEdit = EditableComboBox()
-    #     self.frame_duration_items = ['', '24p', '25p', '30p', '48p', '50i', '50p', '60i', '60p', '24000/1001p', '30000/1001p', '48000/1001p', '60000/1001i', '60000/1001p']
-    #     self.default_frame_duration_lineEdit.addItems(self.frame_duration_items)
-
-    #     self.timestamp_files_label = BodyLabel('时间戳文件: ', self)
-    #     self.timestamp_files_lineEdit = LineEdit()
-    #     self.timestamp_files_view_btn = PushButton('...', self)
-    #     self.timestamp_files_layout = QHBoxLayout()
-    #     self.timestamp_files_layout.addWidget(self.timestamp_files_lineEdit)
-    #     self.timestamp_files_layout.addWidget(self.timestamp_files_view_btn)
-
-    #     self.correct_timestamp_checkbox = CheckBox('校正时间戳', self)
-
-    #     self.to_text_vLayout.addWidget(self.delay_label, alignment=Qt.AlignVCenter)
-    #     # self.to_text_vLayout.addWidget(self.timestamp_extend_label, alignment=Qt.AlignVCenter)
-    #     self.to_text_vLayout.addWidget(self.default_frame_duration_label, alignment=Qt.AlignVCenter)
-    #     self.to_text_vLayout.addWidget(self.timestamp_files_label, alignment=Qt.AlignVCenter)
-
-    #     self.to_edit_vLayout.addWidget(self.delay_lineEdit)
-    #     # self.to_edit_vLayout.addWidget(self.timestamp_extend_lineEdit)
-    #     self.to_edit_vLayout.addWidget(self.default_frame_duration_lineEdit)
-    #     self.to_edit_vLayout.addLayout(self.timestamp_files_layout)
-
-    #     self.to_hLayout.addLayout(self.to_text_vLayout)
-    #     self.to_hLayout.addLayout(self.to_edit_vLayout)
-
-    # def _video_properties_area(self):
-    #     self.vp_text_vLayout = QVBoxLayout()
-    #     self.vp_edit_vLayout = QVBoxLayout()
-    #     self.vp_hLayout = QHBoxLayout()
-
-    #     self.display_aspect_edit_Hlayout = QHBoxLayout()
-
-    #     self.video_properties_group = OptionGroupBox('视频属性', self)
-
-    #     self.setting_aspect_ratio_rb = RadioButton('设置宽高比: ', self)
-    #     self.aspect_ratio_cb = EditableComboBox()
-    #     self.aspect_ratio_items = ['', '1/1', '4/3', '16/9', '21/9', '1.66', '1.85', '2.00', '2.21', '2.35', '2.40']
-    #     self.aspect_ratio_cb.addItems(self.aspect_ratio_items)
-
-    #     self.setting_display_aspect_rb = RadioButton('显示宽度/高度: ', self)
-    #     self.display_aspect_width_lineEdit = LineEdit()
-    #     self.display_aspect_height_x_label = BodyLabel('x', self)
-    #     self.display_aspect_height_lineEdit = LineEdit()
-    #     self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_width_lineEdit)
-    #     self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_x_label)
-    #     self.display_aspect_edit_Hlayout.addWidget(self.display_aspect_height_lineEdit)
-
-    #     # self.video_crop_label = BodyLabel('画面裁剪: ', self)
-    #     # self.video_crop_lineEdit = LineEdit()
-
-    #     self.vp_text_vLayout.addWidget(self.setting_aspect_ratio_rb, alignment=Qt.AlignVCenter)
-    #     self.vp_text_vLayout.addWidget(self.setting_display_aspect_rb, alignment=Qt.AlignVCenter)
-    #     # self.vp_text_vLayout.addWidget(self.video_crop_label, alignment=Qt.AlignVCenter)
-
-    #     self.vp_edit_vLayout.addWidget(self.aspect_ratio_cb)
-    #     self.vp_edit_vLayout.addLayout(self.display_aspect_edit_Hlayout)
-    #     # self.vp_edit_vLayout.addWidget(self.video_crop_lineEdit)
-
-    #     self.vp_hLayout.addLayout(self.vp_text_vLayout)
-    #     self.vp_hLayout.addLayout(self.vp_edit_vLayout)
 
     def _initLayout(self):
         # General options layout
@@ -812,22 +771,10 @@ class OptionCard(HeaderCardWidget):
         self.general_options_group.addLayout(self.go_hLayout4)
         self.general_options_group.addLayout(self.go_hLayout5)
 
-
-        # Timestamp options layout
-        # self.timestamp_options_group.addLayout(self.to_hLayout)
-        # self.timestamp_options_group.addWidget(self.correct_timestamp_checkbox)
-
-        # # Video properties layout
-        # self.video_properties_group.addLayout(self.vp_hLayout)
-
-
         self.mainLayout.addLayout(self.containerLayout)
         self.mainLayout.addWidget(self.enable_attachment_checkbox)
-        # self.mainLayout.addWidget(self.using_hard_sub_checkbox)
         self.mainLayout.addWidget(self.separator)
         self.mainLayout.addWidget(self.general_options_group, alignment=Qt.AlignTop)
-        # self.mainLayout.addWidget(self.timestamp_options_group, alignment=Qt.AlignTop)
-        # self.mainLayout.addWidget(self.video_properties_group, alignment=Qt.AlignTop)
         self.mainLayout.addStretch(1)
 
         self.viewLayout.addWidget(self.scrollArea)
@@ -841,16 +788,9 @@ class OptionCard(HeaderCardWidget):
         self.track_name_lineEdit.textChanged.connect(lambda t: self._emit_option_changed('name', t))
         self.track_language_lineEdit.currentTextChanged.connect(lambda t: self._emit_option_changed('language', t))
         self.track_flag.valueChanged.connect(self._on_track_flag_changed)
-        
-        # self.timestamp_files_view_btn.clicked.connect(self._select_timestamp_file)
-
         self._on_container_changed(self.containerCb.currentText()) 
 
     # def _select_timestamp_file(self):
-    #     file_path, _ = QFileDialog.getOpenFileName(self, "选择时间戳文件", "", "文本文件 (*.txt);;所有文件 (*)")
-    #     if file_path:
-    #         self.timestamp_files_lineEdit.setText(file_path)
-    #         self._emit_option_changed('timestamp_file', file_path)
 
     def _on_track_flag_changed(self, flags: list):
         self._emit_option_changed('is_default', '默认轨道' in flags)
@@ -925,8 +865,16 @@ class OutputCard(SimpleCardWidget):
         self.OutputPathLayout.addWidget(self.output_path_view_button)
 
         self.mainLayout.addLayout(self.OutputPathLayout)
-        self.output_path_view_button.clicked.connect(self._browse_output_path)
+        self.has_manual_path = False
+        self._connectSignals()
         
+    def _connectSignals(self):
+        self.output_path_view_button.clicked.connect(self._browse_output_path)
+        self.output_path_lineEdit.textEdited.connect(self._on_text_edited)
+
+    def _on_text_edited(self, text):
+        self.has_manual_path = bool(text.strip())
+          
     def _browse_output_path(self):
         current_path = self.output_path_lineEdit.text()
         default_dir = os.path.dirname(current_path) if current_path else ""
@@ -939,10 +887,15 @@ class OutputCard(SimpleCardWidget):
         )
         if file_path:
             self.output_path_lineEdit.setText(file_path)
+            self.has_manual_path = True
 
     def get_state(self) -> dict:
+        """返回输出路径相关状态：output_dir 与 output_path"""
         output_path = self.output_path_lineEdit.text().strip()
-        output_dir = os.path.dirname(output_path) if output_path else ''
+        if not output_path:
+            return {'output_dir': '', 'output_path': ''}
+
+        output_dir = str(Path(output_path).parent)
         return {
             'output_dir': output_dir,
             'output_path': output_path

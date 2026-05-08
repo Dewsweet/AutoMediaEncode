@@ -23,6 +23,8 @@ class MuxWorker(QThread):
             container = states['option_state'].get('container')
             output_path = output_state.get('output_path')
             tracks_state = states['tracks_state'] 
+            ordered_tracks = states.get('ordered_tracks', [])
+            chapter_files = states.get('chapter_files', [])
             attachments = states['attachment_state'].get('attachments', [])
 
             # 仅处理 mkv
@@ -37,11 +39,25 @@ class MuxWorker(QThread):
 
             cmd = [mkvmerge_path, '-o', output_path]
 
+            file_paths = list(tracks_state.keys())
+            chapter_file = chapter_files[0] if chapter_files else None
+            chapter_used = False
+
             # 遍历每个输入文件及其提取的轨道
             for file_path, tracks in tracks_state.items():
                 video_ids = [str(t['id']) for t in tracks.get('video', [])]
                 audio_ids = [str(t['id']) for t in tracks.get('audio', [])]
                 subtitle_ids = [str(t['id']) for t in tracks.get('subtitle', [])]
+
+                if not video_ids and not audio_ids and not subtitle_ids and tracks.get('empty', False):
+                    continue
+
+                if chapter_file and not chapter_used:
+                    cmd.extend(['--chapters', chapter_file])
+                    chapter_used = True
+
+                if not tracks.get('keep_chapters', False):
+                    cmd.append('--no-chapters')
 
                 # 控制复制的轨道
                 if video_ids:
@@ -71,7 +87,9 @@ class MuxWorker(QThread):
                             cmd.extend(['--track-name', f"{tid}:{track['name']}"])
                             
                         if track.get('is_default'):
-                            cmd.extend(['--default-track', f"{tid}:1"])
+                            cmd.extend(['--default-track-flag', f"{tid}:1"])
+                        else:
+                            cmd.extend(['--default-track-flag', f"{tid}:0"])
 
                         flags = track.get('flags', [])
                         
@@ -84,6 +102,17 @@ class MuxWorker(QThread):
 
                 # 追加具体文件
                 cmd.append(file_path)
+
+            if ordered_tracks:
+                track_order_args = []
+                for t in ordered_tracks:
+                    if '章节' in t['type']: continue
+                    if t['file'] in file_paths:
+                        f_idx = file_paths.index(t['file'])
+                        track_order_args.append(f"{f_idx}:{t['id']}")
+                
+                if track_order_args:
+                    cmd.extend(['--track-order', ','.join(track_order_args)])
 
             # 全局附件
             for att in attachments:

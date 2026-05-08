@@ -1,12 +1,12 @@
 ﻿# coding: utf-8
 from pathlib import Path
 import uuid
-from PySide6.QtCore import Qt, QThread, Signal, QSettings
+from PySide6.QtCore import Qt, QThread, Signal, QSettings, QTimer
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter
 
 from qfluentwidgets import qrouter, StrongBodyLabel, InfoBar, InfoBarPosition
 from ..common.signal_bus import signalBus
-
+from ..common.task_types import MuxPayload
 from ..components.muxing_card_interface import InputFilesCard, TrackCard, OptionCard, OutputCard, AttachmentCard
 from ..components.hearder_widget import HeaderWidget
 from ..services.muxing.mux_probe_service import MuxProbeService
@@ -36,8 +36,11 @@ class MuxingInterface(QWidget):
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 10)
 
+        self._probe_workers = []
+
         self._initWidget()
         self._initLayout()
+        self._connect_signals()
 
     def _initWidget(self):
         self.header = HeaderWidget('媒体混流', '对各种媒体工具进行混流, 封装成媒体文件', '开始混流', self)
@@ -80,34 +83,30 @@ class MuxingInterface(QWidget):
         self.mainLayout.addWidget(self.outputCard, alignment=Qt.AlignBottom)
         # self.setLayout(self.mainLayout)
 
-        self._connect_signals()
-
     def _connect_signals(self):
-        self.inputFilesCard.filesAdded.connect(self._handle_files_added)
-        self.inputFilesCard.removeFilesRequested.connect(self._handle_files_removed)
-        self.inputFilesCard.clearFilesRequested.connect(self._handle_files_cleared)
-        
-        self.optionCard.enable_attachment_checkbox.stateChanged.connect(
-            lambda state: self.attachmentCard.setVisible(state == Qt.CheckState.Checked.value)
-        )
-        
-        self.trackCard.trackSelectionUpdated.connect(self._handle_track_selection_changed)
-        self.trackCard.table.itemChanged.connect(self._handle_track_item_changed)
-        self.optionCard.optionValueChanged.connect(self._handle_option_value_changed)
-        self.optionCard.containerCb.currentTextChanged.connect(lambda _: self._update_output_path())
-        
-        self.header.reload_button.clicked.connect(self._handle_reload_clicked)
-        self.header.start_button.clicked.connect(self.emit_builder_output)
-
-        self._probe_workers = []
-        
         signalBus.taskCompleted.connect(self.on_task_finished)
         signalBus.taskCancelled.connect(self.on_task_finished)
         signalBus.taskError.connect(self.on_task_error)
 
-    def _handle_reload_clicked(self):
-        self.inputFilesCard.on_clear_files()
-        self.inputFilesCard.on_add_files_clicked()
+        self.header.reload_button.clicked.connect(self.on_files_reloaded)
+        self.header.start_button.clicked.connect(self.emit_builder_output)
+
+        self.inputFilesCard.filesAdded.connect(self._handle_files_added)
+        self.inputFilesCard.removeFilesRequested.connect(self._handle_files_removed)
+        self.inputFilesCard.clearFilesRequested.connect(self._handle_files_cleared)
+        
+        self.trackCard.trackSelectionUpdated.connect(self._handle_track_selection_changed)
+        self.trackCard.table.itemChanged.connect(self._handle_track_item_changed)
+
+        self.optionCard.enable_attachment_checkbox.stateChanged.connect(
+            lambda state: self.attachmentCard.setVisible(state == Qt.CheckState.Checked.value)
+        )
+        self.optionCard.optionValueChanged.connect(self._handle_option_value_changed)
+        self.optionCard.containerCb.currentTextChanged.connect(lambda _: self._update_output_path())
+
+
+    def on_files_reloaded(self):
+        self.inputFilesCard.on_add_files_clicked(clear_previous=True)
 
     def _handle_files_added(self, file_paths: list):
         if not file_paths:
@@ -117,7 +116,7 @@ class MuxingInterface(QWidget):
         worker = MuxProbeWorker(file_paths, self)
         self._probe_workers.append(worker)
         
-        worker.infoLoaded.connect(self._on_probe_info_loaded)
+        worker.infoLoaded.connect(self._on_show_loaded_info)
         worker.workFinished.connect(self._update_output_path)
         worker.workFinished.connect(lambda: self._cleanup_worker(worker))
         worker.start()
@@ -127,7 +126,8 @@ class MuxingInterface(QWidget):
             self._probe_workers.remove(worker)
             worker.deleteLater()
 
-    def _on_probe_info_loaded(self, path: str, file_info: dict):
+    def _on_show_loaded_info(self, file_path: str, file_info: dict):
+        """接收探测结果的槽函数，负责将文件信息展示到 UI 上，并关联轨道和附件"""
         if file_info:
             # 添加到 InputFilesCard 的表格中，并获取返回的 color_emoji
             color_emoji = self.inputFilesCard.add_file_to_table(file_info)
@@ -139,6 +139,7 @@ class MuxingInterface(QWidget):
                 if attachments:
                     self.attachmentCard.add_attachments(file_info['path'], attachments)
                     self.optionCard.enable_attachment_checkbox.setChecked(True)
+
 
     def _handle_files_removed(self, paths: list):
         """当文件被移除时, 更新 TrackCard 和 AttachmentCard 中对应的轨道和附件"""
@@ -180,10 +181,11 @@ class MuxingInterface(QWidget):
         for row in selected_rows:
             self.trackCard.set_track_data(row, key, value)
 
-
-
     def _update_output_path(self):
         """根据当前输入的文件和轨道选择情况，自动生成一个默认的输出路径"""
+        if getattr(self.outputCard, 'has_manual_path', False):
+            return
+
         # 依据加载进去的第一个文件为准，如果没有文件就清空
         if self.inputFilesCard.table.rowCount() == 0:
             self.outputCard.output_path_lineEdit.clear()
@@ -200,12 +202,10 @@ class MuxingInterface(QWidget):
         has_video = False
         has_audio = False
         has_subtitle = False
-        
         for row in range(self.trackCard.table.rowCount()):
             codec_item = self.trackCard.table.item(row, 0)
             type_item = self.trackCard.table.item(row, 1)
             
-            # 判断是否启用该轨道
             if codec_item and codec_item.checkState() == Qt.Checked:
                 t_type = type_item.text() if type_item else ''
                 if '视频' in t_type:
@@ -215,10 +215,8 @@ class MuxingInterface(QWidget):
                 elif '字幕' in t_type:
                     has_subtitle = True
         
-        # 容器类型
         container_type = self.optionCard.containerCb.currentText().lower()
         
-        # 后缀判定: 
         if container_type == 'mkv':
             ext = '.mkv'
             if not has_video:
@@ -227,7 +225,6 @@ class MuxingInterface(QWidget):
                 elif has_subtitle and not has_audio:
                     ext = '.mks'
         else:
-            # mp4, mov 等直接根据所选容器指定后缀
             ext = f'.{container_type}'
                 
         output_path = Path(first_file_path).with_suffix(ext)
@@ -236,30 +233,52 @@ class MuxingInterface(QWidget):
 
         self.outputCard.output_path_lineEdit.setText(str(output_path))
 
+
     def emit_builder_output(self):
-        input_files = self.trackCard.get_selected_tracks()
+        track_data = self.trackCard.get_selected_tracks()
+        option_state = self.optionCard.get_state()
+        output_state = self.outputCard.get_state()
+        attachment_state = self.attachmentCard.get_state() if self.optionCard.enable_attachment_checkbox.isChecked() else {'attachments': []}
+        input_files = track_data.get('files', {})
+        chapter_files = track_data.get('chapter_files', [])
+        ordered_tracks = track_data.get('ordered_tracks', [])
+        files_list = list(input_files.keys())
+
         if not input_files:
-            InfoBar.warning(title='错误', content='请至少保留一个启用的轨道', parent=self, position=InfoBarPosition.TOP_RIGHT)
+            InfoBar.warning(
+                title='错误', 
+                content='请至少保留一个启用的轨道', 
+                parent=self, 
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT
+                )
             return
             
-        output_state = self.outputCard.get_state()
         if not output_state.get('output_path'):
-            InfoBar.warning(title='错误', content='请确保输出路径和输入参数正确', parent=self, position=InfoBarPosition.TOP_RIGHT)
+            InfoBar.warning(
+                title='错误', 
+                content='请确保输出路径和输入参数正确', 
+                parent=self,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT
+                )
             return
 
         task_id = str(uuid.uuid4())
-        payload = {
-            "task_id": task_id,
-            "type": "Mux",
-            "files": list(input_files.keys()),
-            "states": {
+        payload = MuxPayload(
+            task_id=task_id,
+            type="Mux",
+            files=files_list,
+            states={
                 "tracks_state": input_files,
-                "option_state": self.optionCard.get_state(),
+                "chapter_files": chapter_files,
+                "ordered_tracks": ordered_tracks,
+                "option_state": option_state,
                 "output_state": output_state,
-                "attachment_state": self.attachmentCard.get_state() if self.optionCard.enable_attachment_checkbox.isChecked() else {'attachments': []}
+                "attachment_state": attachment_state
             }
-        }
-        
+        )
+
         self._current_checking_task_id = task_id
         self._current_task_has_error = False
         self._current_task_is_finished = False
@@ -268,8 +287,6 @@ class MuxingInterface(QWidget):
         self.header.start_button.setEnabled(False)
 
         signalBus.taskAdded.emit(payload)
-
-        from PySide6.QtCore import QTimer
         QTimer.singleShot(800, lambda t=task_id: self._check_task_start_success(t))
 
     def _check_task_start_success(self, task_id: str):
