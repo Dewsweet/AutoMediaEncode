@@ -734,7 +734,7 @@ class OptionCard(HeaderCardWidget):
 
         self.track_language_label = BodyLabel('轨道语言: ', self)
         self.track_language_lineEdit = EditableComboBox()
-        self.language_items = ['und', 'zh', 'en', 'jpn', 'kor']
+        self.language_items = ['und', 'zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'ru']
         self.track_language_lineEdit.addItems(self.language_items)
         self.language_completer = QCompleter(self.language_items, self.track_language_lineEdit)
         self.language_completer.setMaxVisibleItems(3)
@@ -883,7 +883,7 @@ class OutputCard(SimpleCardWidget):
             self,
             "选择输出文件",
             default_dir or current_path,
-            "Matroska/Audio/Subtitle (*.mkv *.mka *.mks);;所有文件 (*)"
+            "Matroska 文件 (*.mkv *.mka *.mks);;MP4 文件 (*.mp4);;QuickTime Movie 文件 (*.mov);;所有文件 (*)"
         )
         if file_path:
             self.output_path_lineEdit.setText(file_path)

@@ -32,6 +32,8 @@ class DemuxPayload(TypedDict):
 class MuxStates(TypedDict):
     """混流任务的状态配置"""
     tracks_state: Dict[str, Dict[str, List[Dict[str, Any]]]] # filepath -> {video: [], audio: [], subtitle: []}
+    ordered_tracks: List[Dict[str, Any]]
+    chapter_files: List[str]
     option_state: Dict[str, Any]
     output_state: Dict[str, Any]
     attachment_state: Dict[str, Any]

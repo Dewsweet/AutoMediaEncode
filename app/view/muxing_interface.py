@@ -243,6 +243,49 @@ class MuxingInterface(QWidget):
         chapter_files = track_data.get('chapter_files', [])
         ordered_tracks = track_data.get('ordered_tracks', [])
         files_list = list(input_files.keys())
+        target_container = str(option_state.get('container', '')).lower()
+
+        enabled_video_tracks = []
+        enabled_audio_tracks = []
+        has_subtitle_tracks = False
+        has_chapter_tracks = bool(chapter_files)
+
+        for file_tracks in input_files.values():
+            enabled_video_tracks.extend(file_tracks.get('video', []))
+            enabled_audio_tracks.extend(file_tracks.get('audio', []))
+            has_subtitle_tracks = has_subtitle_tracks or bool(file_tracks.get('subtitle'))
+            has_chapter_tracks = has_chapter_tracks or bool(file_tracks.get('keep_chapters', False))
+
+        if target_container in ('mp4', 'mov'):
+            if has_subtitle_tracks or has_chapter_tracks:
+                InfoBar.warning(
+                    title='提示',
+                    content='MP4 / MOV 不会封装软字幕和章节，请关闭对应轨道。',
+                    parent=self,
+                    isClosable=False,
+                    position=InfoBarPosition.TOP_RIGHT
+                )
+                return
+
+            if len(enabled_video_tracks) > 1 or len(enabled_audio_tracks) > 1:
+                InfoBar.error(
+                    title='错误',
+                    content='MP4 / MOV 仅支持一个视频轨和一个音频轨，请减少启用的轨道数量。',
+                    parent=self,
+                    isClosable=False,
+                    position=InfoBarPosition.TOP_RIGHT
+                )
+                return
+
+            if len(enabled_video_tracks) + len(enabled_audio_tracks) == 0:
+                InfoBar.error(
+                    title='错误',
+                    content='MP4 / MOV 至少需要启用一个视频轨或一个音频轨。',
+                    parent=self,
+                    isClosable=False,
+                    position=InfoBarPosition.TOP_RIGHT
+                )
+                return
 
         if not input_files:
             InfoBar.warning(
