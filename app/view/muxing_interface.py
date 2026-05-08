@@ -1,13 +1,14 @@
 ﻿# coding: utf-8
 from pathlib import Path
-import uuid
+import time
 from PySide6.QtCore import Qt, QThread, Signal, QSettings, QTimer
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter
-
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QStackedWidget, QFileDialog
 from qfluentwidgets import qrouter, StrongBodyLabel, InfoBar, InfoBarPosition
+
 from ..common.signal_bus import signalBus
 from ..common.task_types import MuxPayload
 from ..components.muxing_card_interface import InputFilesCard, TrackCard, OptionCard, OutputCard, AttachmentCard
+from ..components.fileload_interface import FileLoadInterface
 from ..components.hearder_widget import HeaderWidget
 from ..services.muxing.mux_probe_service import MuxProbeService
 
@@ -33,24 +34,37 @@ class MuxingInterface(QWidget):
 
         self.mainPage = QWidget()
         self.mainPage.setObjectName('mainPage')
-        self.mainLayout = QVBoxLayout(self)
+        self.mainLayout = QVBoxLayout(self.mainPage)
         self.mainLayout.setContentsMargins(20, 20, 20, 10)
+
+        self.vBoxLayout = QVBoxLayout(self)
+        self.stackedWidget = QStackedWidget(self)
+        self.vBoxLayout.addWidget(self.stackedWidget)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self._probe_workers = []
 
         self._initWidget()
+        self._loadPage()
         self._initLayout()
         self._connect_signals()
 
     def _initWidget(self):
         self.header = HeaderWidget('媒体混流', '对各种媒体工具进行混流, 封装成媒体文件', '开始混流', self)
-
         self.inputFilesCard = InputFilesCard(self)
         self.trackCard = TrackCard(self)
         self.optionCard = OptionCard(self)
         self.outputCard = OutputCard(self)
         self.attachmentCard = AttachmentCard(self)
         self.attachmentCard.hide()
+
+    def _loadPage(self):
+        self.loadPage = QWidget()
+        self.loadPage.setObjectName('LoadPage')
+        self.loadLayout = QVBoxLayout(self.loadPage)
+        self.loaderComponent = FileLoadInterface("所有文件 (*)", "📌 点击 or 拖放载入文件🥱", parent=self.loadPage)
+        self.loaderComponent.setFixedSize(360, 200)
+        self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
     def _initLayout(self):
         self.leftSplitter = QSplitter(Qt.Vertical)
@@ -78,20 +92,27 @@ class MuxingInterface(QWidget):
         self.contentSplitter.setHandleWidth(5)
         self.contentSplitter.setChildrenCollapsible(False)
 
+
         self.mainLayout.addWidget(self.header, alignment=Qt.AlignTop)
         self.mainLayout.addWidget(self.contentSplitter, 1)
         self.mainLayout.addWidget(self.outputCard, alignment=Qt.AlignBottom)
         # self.setLayout(self.mainLayout)
+
+        self.stackedWidget.addWidget(self.loadPage)
+        self.stackedWidget.addWidget(self.mainPage)
+        qrouter.setDefaultRouteKey(self.stackedWidget, self.loadPage.objectName())
+        self.stackedWidget.setCurrentIndex(0)
 
     def _connect_signals(self):
         signalBus.taskCompleted.connect(self.on_task_finished)
         signalBus.taskCancelled.connect(self.on_task_finished)
         signalBus.taskError.connect(self.on_task_error)
 
-        self.header.reload_button.clicked.connect(self.on_files_reloaded)
+        self.header.reload_button.clicked.connect(self.open_file_dialog)
         self.header.start_button.clicked.connect(self.emit_builder_output)
 
         self.inputFilesCard.filesAdded.connect(self._handle_files_added)
+        self.loaderComponent.filesReady.connect(self.on_files_loaded)
         self.inputFilesCard.removeFilesRequested.connect(self._handle_files_removed)
         self.inputFilesCard.clearFilesRequested.connect(self._handle_files_cleared)
         
@@ -106,7 +127,12 @@ class MuxingInterface(QWidget):
 
 
     def on_files_reloaded(self):
-        self.inputFilesCard.on_add_files_clicked(clear_previous=True)
+        self.open_file_dialog()
+
+    def open_file_dialog(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "选择混流媒体文件", "", "所有文件 (*)")
+        if files:
+            self.on_files_loaded(files)
 
     def _handle_files_added(self, file_paths: list):
         if not file_paths:
@@ -120,6 +146,14 @@ class MuxingInterface(QWidget):
         worker.workFinished.connect(self._update_output_path)
         worker.workFinished.connect(lambda: self._cleanup_worker(worker))
         worker.start()
+
+    def on_files_loaded(self, files: list):
+        if not files:
+            return
+
+        if self.stackedWidget.currentIndex() != 1:
+            self.stackedWidget.setCurrentWidget(self.mainPage)
+        self._handle_files_added(files)
 
     def _cleanup_worker(self, worker):
         if worker in self._probe_workers:
@@ -307,7 +341,7 @@ class MuxingInterface(QWidget):
                 )
             return
 
-        task_id = str(uuid.uuid4())
+        task_id = f"task_{int(time.time()*1000)}"
         payload = MuxPayload(
             task_id=task_id,
             type="Mux",
