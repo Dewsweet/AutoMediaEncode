@@ -90,7 +90,16 @@ class DeMuxingInterface(QWidget):
             self.on_files_loaded(files)
 
     def on_files_loaded(self, files: list):
-        if not files: 
+        if not files or Path(files[0]).suffix.lower() not in DEMUXING_EXTS:
+            InfoBar.warning(
+                title='载入文件失败',
+                content='该类型不再抽流列表内, 请重新选择',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
             return
             
         self.inputFilesCard.update_files(files)

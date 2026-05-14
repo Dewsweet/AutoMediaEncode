@@ -2,7 +2,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidgetItem, QApplication
 
-from qfluentwidgets import CardWidget, HeaderCardWidget, TreeWidget, RoundMenu, Action, BodyLabel, ComboBox, CheckBox, LineEdit, PushButton, PrimaryPushButton, FluentIcon as FIF
+from qfluentwidgets import CardWidget, HeaderCardWidget, TreeWidget, RoundMenu, Action, BodyLabel, ComboBox, CheckBox, LineEdit, PushButton, PrimaryPushButton, InfoBar, InfoBarPosition, FluentIcon as FIF
 
 from ..services.demuxing.demux_probe_service import DemuxProbeService
 from ..common.media_utils import classify_files, get_present_types, DEMUXING_EXTS
@@ -58,7 +58,18 @@ class InputFilesCard(HeaderCardWidget):
 
     def dropEvent(self, event):
         files = [u.toLocalFile() for u in event.mimeData().urls() if u.isLocalFile()]
-        if files:
+        if not files or Path(files[0]).suffix.lower() not in DEMUXING_EXTS:
+            InfoBar.warning(
+                title='载入文件失败',
+                content='该类型不再抽流列表内, 请重新选择',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self.parent().parent().parent()
+            )
+            return
+        else:
             self.update_files(files)
 
     def update_files(self, files: list):

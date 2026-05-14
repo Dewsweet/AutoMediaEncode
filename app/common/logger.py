@@ -23,16 +23,16 @@ def _setup_logger():
     
     # 文件输出 (DEBUG 级别以上，按天/按大小轮转，保留 7 天)
     log_dir = PathService.get_log_dir()
-    log_file = log_dir / "ame_run_{time:YYYY-MM-DD}.log"
+    log_file = log_dir / "ame_run.log"
     
     logger.add(
         str(log_file),
         level="DEBUG",
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
-        rotation="10 MB",      # 每个文件最大 10MB，超过就分割
-        retention="7 days",    # 仅保留最近 7 天的日志记录
+        rotation="00:00",
+        retention="7 days",
         encoding="utf-8",
-        enqueue=True           # 开启异步写入，保证多线程安全
+        enqueue=True
     )
 
 # 模块加载时立刻按照设定初始化，其他文件直接 'from logger import logger' 即可

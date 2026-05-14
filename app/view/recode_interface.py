@@ -151,7 +151,16 @@ class RecodeInterface(QWidget):
         self.hearder.start_button.clicked.connect(self.emit_builder_output)
 
     def on_files_loaded(self, files: list):
-        if not files:
+        if not files or Path(files[0]).suffix.lower() not in VIDEO_EXTS | AUDIO_EXTS | IMAGE_EXTS | SUBTITLE_EXTS:
+            InfoBar.warning(
+                title='载入文件失败',
+                content='未检测到有效的媒体文件, 请重新选择',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
             return
 
         self.process_loaded_files(files)
@@ -172,6 +181,15 @@ class RecodeInterface(QWidget):
         present_types = get_present_types(classified_dict)
         
         if not present_types:
+            InfoBar.warning(
+                title='载入文件失败',
+                content='未检测到有效的媒体文件, 请重新选择',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
             return
 
         # 1. 更新树形列表
@@ -330,20 +348,18 @@ class RecodeInterface(QWidget):
 
     def on_task_error(self, task_id: str, error_msg: str):
         """将转码任务发生错误时的弹窗集中放置在 RecodeInterface 进行提醒"""
-        self.on_task_finished(task_id)  # 发生错误也恢复按钮状态
-
         if getattr(self, '_current_checking_task_id', '') == task_id:
+            self.on_task_finished(task_id)  # 发生错误也恢复按钮状态
             self._current_task_has_error = True
-            
-        InfoBar.error(
-            title='执行失败',
-            content=error_msg,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=-1, 
-            parent=self.window() 
-        )
+            InfoBar.error(
+                title='执行失败',
+                content=error_msg,
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=-1, 
+                parent=self
+            )
 
     def update_videoParam_layout(self):
         """根据当前窗口宽度和预设开关状态，动态调整 videoParam 和 audioParam 的布局方式"""

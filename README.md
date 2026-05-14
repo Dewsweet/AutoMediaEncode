@@ -1,50 +1,56 @@
-**| 简体中文| [English](README_en.md) |**
+**| 简体中文 | [English](README_en.md) |**
 
-# AutoMediaEncode (AME)
+# AutoMediaEncode
 
-AutoMediaEncode (AME) 是一款基于 PySide6 和 Fluent Design 风格构建的现代化多媒体处理 GUI 工具。它旨在为有一点基础的用户提供直观、美观且强大的音视频转码、抽流、混流及高级压制管理体验。
+AutoMediaEncode (AME) 是一款基于 PySide6 和 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 构建的媒体处理现代化 GUI 工具。调用一些命令行程序完成对媒体文件的转码、抽流、混流操作，并计划引入一种节点式的自动化媒体处理工作流 (AME)。
 
-## ✨ 核心特性
-- **现代且优雅的 UI**：采用 Fluent Design 规范设计，支持系统明/暗主题自适应、自定义主题色以及自定义背景图片。
-- **媒体重编码 (Recode)**：
-  - **视频**：支持 H.264/AVC, H.265/HEVC, SVT-AV1 以及常见显卡的硬件加速编码 (NVENC 等)。
-  - **音频**：支持多种码率控制与常用格式转换。
-  - **图片 & 字幕**：支持快速的基础格式转换与处理。
-- **编码器预设管理**：内置常用压制参数预设，支持自定义调整，并能将其导出/导入为 JSON 数据。
-- **并行监控任务系统**：详尽的任务列表面板，实时测算 FFmpeg 进度 (当前进度、总体进度、ETA)，并提供健壮的报错与中止保护。
-- **自包含日志追踪**：内置基于 Loguru 的高级日志系统，保留详细的底层传递与执行参数。
+## 主要特性
+- **媒体信息**：调用 `Mediainfo` 获取输入文件的基本媒体信息，提供简易和详细两种展示文本。
+- **媒体重编码**：调用 `FFmpeg` 对输入视频、音频、图片、字幕进行转码处理。视频支持 H.264/H.265/SVT-AV1 及常见显卡硬件加速编码 (NVENC 等)，可自定义相关 `ffmpeg` 参数。
+- **媒体抽流**：参考 `gMKVExtractGUI` 的界面设计，调用 `mkvextract` 和 `ffmpeg` 对视频文件进行轨道提取。内置字幕子集化还原工具，勾选后可将子集化字幕对照字体映射表恢复为正常字幕后导出。
+- **媒体混流**：参考 `mkvtoolnix-gui` 的界面设计，调用 `mkvmerge` 和 `ffmpeg` 对输入文件进行混流封装。考虑到 mkvmerge 参数繁多，仅启用了常用选项，有更多功能需求可提交 issues 或使用 mkvtoolnix-gui。
+- **任务监控系统**：并行任务队列，以卡片形式实时展示 FFmpeg 进度 (当前进度、总体进度、ETA)，支持健壮的报错与中止保护。
+- **个性化与设置**：支持明/暗主题自适应、自定义主题色、自定义背景图片、编码器预设管理、工具路径配置等。
 
-## 🚀 路线图
-- [x] 模块化底层架构重构 & 任务总控机制
-- [x] 基础媒体重编码 (Recode)
-- [x] 主题与个性化设置与工具路径管理
-- [ ] 媒体抽流 (Demuxing) -- *WIP*
-- [ ] 媒体封装/混流 (Muxing) -- *WIP*
-- [ ] 结合 VapourSynth 的高级压制管线 (AutoEncoding)
-- [ ] 系统依赖工具 (FFmpeg 等) 的全自动下载与部署
+## 开发路线图
+- [x] 模块化底层架构 & 任务总控机制
+- [x] 主题与个性化设置 & 工具路径管理
+- [x] 媒体信息查看
+- [x] 媒体重编码
+- [x] 媒体抽流
+- [x] 媒体混流
+- [ ] AME 自动化工作流 (节点式流程编辑器) —— *WIP*
 
-## 🛠️ 安装与运行
-1. 克隆本仓库：
-   ```bash
-   git clone https://github.com/Dewsweet/AutoMediaEncode.git
-   cd AutoMediaEncode
-   ```
-2. 安装所需依赖 (推荐使用 Python 3.10+ 及虚拟环境)：
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. 启动 GUI：
-   ```bash
-   python main.py
-   ```
-*(注：当前为早期预览阶段，请在使用前确保系统环境中已正确指定 `ffmpeg.exe`)*
+## 安装与运行
 
-## 🤝 鸣谢
+### 方法一：Release 下载
+GUI 通过 Nuitka 打包构建为可执行文件。你可以在 [Releases](https://github.com/Dewsweet/AutoMediaEncode/releases) 下载压缩包，解压到合理位置即可直接运行。
+
+如果你下载的是非完整包 (不含 CLI 工具)，可自行下载对应程序并放置到软件根目录下的 `tools/` 文件夹中，或添加到系统环境变量。
+
+### 方法二：源码运行
+推荐使用 Python 3.10+ 及虚拟环境：
+
+```bash
+git clone https://github.com/Dewsweet/AutoMediaEncode.git
+cd AutoMediaEncode
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+## 鸣谢
+本项目所用到的相关工具与库，感谢前人的付出：
+- [FFmpeg](https://ffmpeg.org/)
+- [MediaInfo](https://mediaarea.net/)
+- [MKVToolNix](https://mkvtoolnix.download/)
+- x264 / x265 / SVT-AV1
+
 感谢以下社区与教程对多媒体处理知识的普及：
 - VCB-Studio 公开教程: [https://guides.vcb-s.com/](https://guides.vcb-s.com/)
 - 谜之压制组 压制教程: [https://iavoe.github.io/](https://iavoe.github.io/)
 
-本项目的界面基于优秀的开源库 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 构建。
-
-## 📄 许可协议
+## 许可协议
 本项目遵循 [GPLv3 License](LICENSE) 开源协议。
+](https://iavoe.github.io/)

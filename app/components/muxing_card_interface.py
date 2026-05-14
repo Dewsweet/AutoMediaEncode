@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, Signal, QSettings
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QCompleter, QFileDialog
 
-from qfluentwidgets import (HeaderCardWidget, SimpleCardWidget, TableWidget, ScrollArea, HorizontalSeparator, SmoothMode, RoundMenu, Action, CheckableMenu, 
+from qfluentwidgets import (HeaderCardWidget, SimpleCardWidget, TableWidget, ScrollArea, HorizontalSeparator, SmoothMode, RoundMenu, Action, CheckableMenu, ToolTipFilter,
                             CheckBox, BodyLabel, ComboBox, LineEdit, PrimaryPushButton, StrongBodyLabel, EditableComboBox, PushButton, ToolButton, IconWidget, RadioButton, InfoBar, InfoBarPosition)
 from qfluentwidgets import FluentIcon as FIF
 from ..common.media_utils import MUXING_EXTS
@@ -178,7 +178,7 @@ class InputFilesCard(HeaderCardWidget):
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=3000,
-                parent=self.parent()
+                parent=self.parent().parent().parent().parent()
             )
         if valid_files:
             self.filesAdded.emit(valid_files)
@@ -565,13 +565,14 @@ class OptionGroupBox(QWidget):
 class DynamicComboList(QWidget):
     valueChanged = Signal(list) # 当内部值发生变化时发送
 
-    def __init__(self, parent=None, items:list=[], text:str=''):
+    def __init__(self, parent=None, items:list=[], text:str='', desc:str=''):
         super().__init__(parent)
         self.vLayout = QVBoxLayout(self)
         self.vLayout.setContentsMargins(0, 0, 0, 0)
 
         self.options = items
         self.label_text = text
+        self.desc = desc
         self._add_initial_row()
 
     def _create_row(self, is_initial=False):
@@ -589,6 +590,7 @@ class DynamicComboList(QWidget):
             hLayout.addWidget(label)
 
         combo = ComboBox()
+        combo.setToolTip(self.desc)
         combo.addItems(self.options)
         combo.currentTextChanged.connect(lambda: self.valueChanged.emit(self.get_values()))
         hLayout.addWidget(combo, 1)
@@ -731,9 +733,11 @@ class OptionCard(HeaderCardWidget):
 
         self.track_name_label = BodyLabel('轨道名称: ', self)
         self.track_name_lineEdit = LineEdit()
+        self.track_name_lineEdit.setToolTip('为轨道指定名称')
 
         self.track_language_label = BodyLabel('轨道语言: ', self)
         self.track_language_lineEdit = EditableComboBox()
+        self.track_language_lineEdit.setToolTip('为轨道指定语言代码, \n除指定预设语言可手动输入符合 IETF BCP 47 标准的语言代码')
         self.language_items = ['und', 'zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'ru']
         self.track_language_lineEdit.addItems(self.language_items)
         self.language_completer = QCompleter(self.language_items, self.track_language_lineEdit)
@@ -741,7 +745,7 @@ class OptionCard(HeaderCardWidget):
         self.track_language_lineEdit.setCompleter(self.language_completer)
 
         self.flag_Items = ['', '默认轨道', '强制显示', '听觉障碍', '视觉障碍', '文字描述', '原始语言', '评论轨道']
-        self.track_flag = DynamicComboList(items=self.flag_Items, text='轨道标记: ')
+        self.track_flag = DynamicComboList(items=self.flag_Items, text='轨道标记: ', desc='为轨道添加一个或多个标记, 让播放器识别\n默认无标记, 一般选择默认轨道或强制显示')
 
         self.compression_method = BodyLabel('压缩方法: ', self)
         self.compression_method_cb = ComboBox()
@@ -828,7 +832,7 @@ class OptionCard(HeaderCardWidget):
         
         self.track_enabled_cb.setCurrentText('是' if enabled else '否')
         self.track_name_lineEdit.setText(name)
-        self.track_language_lineEdit.setCurrentText(language)
+        self.track_language_lineEdit.setText(language)
         
         self.track_flag.set_values(flags)
         
@@ -1042,8 +1046,6 @@ class AttachmentCard(HeaderCardWidget):
                 else:
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                 self.table.setItem(row, col, item)
-
-
 
     def get_state(self) -> dict:
         attachments = []
