@@ -11,6 +11,7 @@ from .recode_interface import RecodeInterface
 from .task_interface import TaskInterface
 from .demuxing_interface import DeMuxingInterface
 from .muxing_interface import MuxingInterface
+from .ame_workflow_interface import AMEWorkflowInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
 
 class MainWindow(FluentWindow):
@@ -26,6 +27,7 @@ class MainWindow(FluentWindow):
         self.taskInterface = TaskInterface(self)
         self.demuxingInterface = DeMuxingInterface(self)
         self.muxingInterface = MuxingInterface(self)
+        self.ameWorkflowInterface = AMEWorkflowInterface(self)
         self.initNavigation()
         
 
@@ -108,6 +110,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.recodeInterface, FIF.VIDEO, 'Recode')
         self.addSubInterface(self.demuxingInterface, FIF.MOVIE, 'Demuxing')
         self.addSubInterface(self.muxingInterface, FIF.MEDIA, 'Muxing')
+        self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME')
 
         self.addSubInterface(self.taskInterface, FIF.MESSAGE, 'Task Progress', NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Setting', NavigationItemPosition.BOTTOM)

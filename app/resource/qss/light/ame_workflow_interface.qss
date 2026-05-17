@@ -1,0 +1,8 @@
+ameCanvas {
+    background-color: transparent;
+    border: none;
+}
+
+QMenu {
+    background-color: transparent;
+}

@@ -1,0 +1,193 @@
+{
+    "workspace": {
+        "name": "工作区",
+        "category": "系统",
+        "color": "#607D8B",
+        "input_ports": [],
+        "output_ports": [
+            {"name": "path", "type": "any"}
+        ],
+        "params": {
+            "work_dir": ""
+        },
+        "description": "设定工作区目录，所有中间文件将写入该目录下的 temp 文件夹"
+    },
+    "input_file": {
+        "name": "输入文件",
+        "category": "输入",
+        "color": "#4CAF50",
+        "input_ports": [
+            {"name": "path", "type": "any", "required": false}
+        ],
+        "output_ports": [
+            {"name": "video", "type": "video"},
+            {"name": "audio", "type": "audio"},
+            {"name": "subtitle", "type": "subtitle"},
+            {"name": "chapter", "type": "chapter"}
+        ],
+        "params": {
+            "file_path": "",
+            "file_type": "auto"
+        },
+        "description": "载入媒体文件（容器、裸流、独立字幕/章节文件）"
+    },
+    "splitter": {
+        "name": "分离器",
+        "category": "处理",
+        "color": "#FF9800",
+        "input_ports": [
+            {"name": "input", "type": "any", "required": true}
+        ],
+        "output_ports": [
+            {"name": "video", "type": "video"},
+            {"name": "audio", "type": "audio"},
+            {"name": "subtitle", "type": "subtitle"},
+            {"name": "chapter", "type": "chapter"}
+        ],
+        "params": {
+            "tool": "ffmpeg",
+            "mode": "extract"
+        },
+        "description": "从输入文件中提取/引用指定轨道"
+    },
+    "encoder_x264": {
+        "name": "x264 编码",
+        "category": "编码",
+        "color": "#F44336",
+        "input_ports": [
+            {"name": "input", "type": "video", "required": true}
+        ],
+        "output_ports": [
+            {"name": "video", "type": "video"}
+        ],
+        "params": {
+            "preset": "",
+            "custom_cli": ""
+        },
+        "description": "x264 CLI 编码器"
+    },
+    "encoder_x265": {
+        "name": "x265 编码",
+        "category": "编码",
+        "color": "#F44336",
+        "input_ports": [
+            {"name": "input", "type": "video", "required": true}
+        ],
+        "output_ports": [
+            {"name": "video", "type": "video"}
+        ],
+        "params": {
+            "preset": "",
+            "custom_cli": ""
+        },
+        "description": "x265 CLI 编码器"
+    },
+    "encoder_svtav1": {
+        "name": "SVT-AV1 编码",
+        "category": "编码",
+        "color": "#F44336",
+        "input_ports": [
+            {"name": "input", "type": "video", "required": true}
+        ],
+        "output_ports": [
+            {"name": "video", "type": "video"}
+        ],
+        "params": {
+            "preset": "",
+            "custom_cli": ""
+        },
+        "description": "SVT-AV1 CLI 编码器"
+    },
+    "encoder_ffmpeg_video": {
+        "name": "FFmpeg 视频编码",
+        "category": "编码",
+        "color": "#F44336",
+        "input_ports": [
+            {"name": "input", "type": "video", "required": true}
+        ],
+        "output_ports": [
+            {"name": "video", "type": "video"}
+        ],
+        "params": {
+            "codec": "libx264",
+            "rc_mode": "crf",
+            "quality_val": 23,
+            "bitrate": "5000k",
+            "preset": "medium",
+            "profile": "",
+            "level": "",
+            "custom_options": ""
+        },
+        "description": "FFmpeg 视频编码器，支持多种编码格式和硬件加速"
+    },
+    "encoder_ffmpeg_audio": {
+        "name": "FFmpeg 音频编码",
+        "category": "编码",
+        "color": "#F44336",
+        "input_ports": [
+            {"name": "input", "type": "audio", "required": true}
+        ],
+        "output_ports": [
+            {"name": "audio", "type": "audio"}
+        ],
+        "params": {
+            "codec": "aac",
+            "rc_mode": "cbr",
+            "bitrate": "192k",
+            "quality_val": 5,
+            "custom_options": ""
+        },
+        "description": "FFmpeg 音频编码器"
+    },
+    "muxer_mkvmerge": {
+        "name": "封装 MKV",
+        "category": "封装",
+        "color": "#9C27B0",
+        "input_ports": [
+            {"name": "video", "type": "video", "required": false},
+            {"name": "audio", "type": "audio", "required": false},
+            {"name": "subtitle", "type": "subtitle", "required": false},
+            {"name": "chapter", "type": "chapter", "required": false},
+            {"name": "attachment", "type": "attachment", "required": false}
+        ],
+        "output_ports": [
+            {"name": "output", "type": "any"}
+        ],
+        "params": {
+            "container": "mkv",
+            "tracks": []
+        },
+        "description": "mkvmerge 封装器，支持多轨封装和轨道属性编辑"
+    },
+    "muxer_ffmpeg": {
+        "name": "封装 MP4/MOV",
+        "category": "封装",
+        "color": "#9C27B0",
+        "input_ports": [
+            {"name": "video", "type": "video", "required": false},
+            {"name": "audio", "type": "audio", "required": false}
+        ],
+        "output_ports": [
+            {"name": "output", "type": "any"}
+        ],
+        "params": {
+            "container": "mp4",
+            "faststart": false
+        },
+        "description": "FFmpeg 封装器，支持 MP4/MOV 容器"
+    },
+    "output": {
+        "name": "输出",
+        "category": "输出",
+        "color": "#2196F3",
+        "input_ports": [
+            {"name": "input", "type": "any", "required": true}
+        ],
+        "output_ports": [],
+        "params": {
+            "output_path": "",
+            "filename_template": "{input_name}_encoded"
+        },
+        "description": "输出文件路径和命名设置"
+    }
+}

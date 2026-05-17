@@ -1,0 +1,169 @@
+{
+    "video_encoders": {
+        "libx264": {
+            "name": "H.264 (x264)",
+            "rate_control": {
+                "crf": {"crf": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"qp": "{quality_val}"}
+            },
+            "options": {
+                "preset": ["ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"],
+                "profile": ["baseline", "main", "high", "high10", "high422", "high444"],
+                "tune": ["film", "animation", "grain", "stillimage", "fastdecode", "zerolatency"]
+            }
+        },
+        "libx265": {
+            "name": "H.265 (x265)",
+            "rate_control": {
+                "crf": {"crf": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"qp": "{quality_val}"}
+            },
+            "options": {
+                "preset": ["ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"],
+                "profile": ["main", "main10", "main12", "main444-8", "main444-10", "main444-12"],
+                "tune": ["psnr", "ssim", "grain", "fastdecode", "zerolatency"]
+            }
+        },
+        "svt_av1": {
+            "name": "AV1 (SVT-AV1)",
+            "rate_control": {
+                "crf": {"crf": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"qp": "{quality_val}"}
+            },
+            "options": {
+                "preset": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+                "profile": ["main", "professional", "high"]
+            }
+        },
+        "libvpx-vp9": {
+            "name": "VP9",
+            "rate_control": {
+                "crf": {"crf": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"}
+            },
+            "options": {
+                "deadline": ["best", "good", "realtime"]
+            }
+        },
+        "mpeg4": {
+            "name": "MPEG-4",
+            "rate_control": {
+                "crf": {"q:v": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"}
+            },
+            "options": {}
+        },
+        "h264_nvenc": {
+            "name": "H.264 (NVENC)",
+            "rate_control": {
+                "crf": {"cq": "{quality_val}", "rc": "constqp"},
+                "abr": {"b:v": "{bitrate}", "rc": "vbr"},
+                "cqp": {"qp": "{quality_val}", "rc": "constqp"}
+            },
+            "options": {
+                "preset": ["default", "slow", "medium", "fast", "p1", "p2", "p3", "p4", "p5", "p6", "p7"]
+            }
+        },
+        "hevc_nvenc": {
+            "name": "H.265 (NVENC)",
+            "rate_control": {
+                "crf": {"cq": "{quality_val}", "rc": "constqp"},
+                "abr": {"b:v": "{bitrate}", "rc": "vbr"},
+                "cqp": {"qp": "{quality_val}", "rc": "constqp"}
+            },
+            "options": {
+                "preset": ["default", "slow", "medium", "fast", "p1", "p2", "p3", "p4", "p5", "p6", "p7"]
+            }
+        },
+        "h264_qsv": {
+            "name": "H.264 (QSV)",
+            "rate_control": {
+                "crf": {"global_quality": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"q:v": "{quality_val}"}
+            },
+            "options": {}
+        },
+        "hevc_qsv": {
+            "name": "H.265 (QSV)",
+            "rate_control": {
+                "crf": {"global_quality": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"q:v": "{quality_val}"}
+            },
+            "options": {}
+        },
+        "h264_amf": {
+            "name": "H.264 (AMF)",
+            "rate_control": {
+                "crf": {"quality": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"qp_i": "{quality_val}", "qp_p": "{quality_val}"}
+            },
+            "options": {}
+        },
+        "hevc_amf": {
+            "name": "H.265 (AMF)",
+            "rate_control": {
+                "crf": {"quality": "{quality_val}"},
+                "abr": {"b:v": "{bitrate}"},
+                "cqp": {"qp_i": "{quality_val}", "qp_p": "{quality_val}"}
+            },
+            "options": {}
+        }
+    },
+    "audio_encoders": {
+        "aac": {
+            "name": "AAC",
+            "container": ".m4a",
+            "rate_control": {
+                "cbr": {"b:a": "{bitrate}"},
+                "abr": {"b:a": "{bitrate}"},
+                "quality": {"q:a": "{quality_val}"}
+            }
+        },
+        "libmp3lame": {
+            "name": "MP3",
+            "container": ".mp3",
+            "rate_control": {
+                "cbr": {"b:a": "{bitrate}"},
+                "abr": {"b:a": "{bitrate}"},
+                "quality": {"q:a": "{quality_val}"}
+            }
+        },
+        "flac": {
+            "name": "FLAC",
+            "container": ".flac",
+            "rate_control": {
+                "quality": {"compression_level": "{quality_val}"}
+            }
+        },
+        "opus": {
+            "name": "Opus",
+            "container": ".opus",
+            "rate_control": {
+                "cbr": {"b:a": "{bitrate}"},
+                "abr": {"b:a": "{bitrate}"},
+                "quality": {"vbr": "on", "compression_level": "{quality_val}"}
+            }
+        },
+        "libvorbis": {
+            "name": "Vorbis",
+            "container": ".ogg",
+            "rate_control": {
+                "abr": {"b:a": "{bitrate}"},
+                "quality": {"q:a": "{quality_val}"}
+            }
+        },
+        "ac3": {
+            "name": "AC-3",
+            "container": ".ac3",
+            "rate_control": {
+                "cbr": {"b:a": "{bitrate}"}
+            }
+        }
+    }
+}
