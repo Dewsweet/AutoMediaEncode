@@ -2,8 +2,49 @@ from PySide6.QtCore import Qt, QPointF, Signal
 
 from qfluentwidgets import RoundMenu, Action
 
-from .nodes.node_registry import get_nodes_by_category
-from . import CATEGORY_COLORS
+from .ame_nodes import NODE_CLASSES
+
+NODE_PALETTE_STRUCTURE = [
+    ("基础", [
+        ("工作区", "workspace"),
+        None,
+        ("输入文件", [
+            ("输入视频", "input_video"),
+            ("输入音频", "input_audio"),
+            ("输入字幕", "input_subtitle"),
+            ("输入附件", "input_attachment"),
+            ("输入章节", "input_chapter"),
+            ("输入文件", "input_file"),
+        ]),
+        ("输出文件", "output"),
+    ]),
+    ("处理", [
+        ("分离器", "splitter"),
+        ("vapoursynth", [
+            ("vpy加载器", "vpy_loader"),
+            ("vspipe", "vspipe"),
+        ]),
+        ("ffmpeg", "ffmpeg_processor"),
+    ]),
+    ("编码", [
+        ("视频编码", [
+            ("x264", "encoder_x264"),
+            ("x265", "encoder_x265"),
+            ("svtav1", "encoder_svtav1"),
+            ("ffmpeg(视频)", "encoder_ffmpeg_video"),
+        ]),
+        ("音频编码", [
+            ("aac", "encoder_aac"),
+            ("flac", "encoder_flac"),
+            ("opus", "encoder_opus"),
+            ("ffmpeg(音频)", "encoder_ffmpeg_audio"),
+        ]),
+    ]),
+    ("封装", [
+        ("mkvmerge", "muxer_mkvmerge"),
+        ("ffmpeg", "muxer_ffmpeg"),
+    ]),
+]
 
 
 class NodePaletteMenu(RoundMenu):
@@ -12,27 +53,33 @@ class NodePaletteMenu(RoundMenu):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self._scene_pos = QPointF(0, 0)
-        self._build()
 
     def set_scene_pos(self, pos: QPointF):
         self._scene_pos = pos
 
     def _build(self):
         self.clear()
-        nodes_by_cat = get_nodes_by_category()
+        from .ame_nodes import registry_key_to_type_name
+        self._build_tree(self, NODE_PALETTE_STRUCTURE, registry_key_to_type_name)
 
-        category_order = ["系统", "输入", "处理", "编码", "封装", "输出"]
-        for cat in category_order:
-            if cat in nodes_by_cat and nodes_by_cat[cat]:
-                color = CATEGORY_COLORS.get(cat, "#607D8B")
-                submenu = RoundMenu(cat, self)
-                for meta in nodes_by_cat[cat]:
-                    action = Action(meta['name'], submenu)
-                    action.triggered.connect(
-                        (lambda t: lambda: self._emit_node_type(t))(meta['type'])
-                    )
-                    submenu.addAction(action)
-                self.addMenu(submenu)
+    def _build_tree(self, parent_menu, items, key_to_type):
+        for item in items:
+            if item is None:
+                parent_menu.addSeparator()
+                continue
+            label, target = item
+            if isinstance(target, list):
+                submenu = RoundMenu(label, parent_menu)
+                self._build_tree(submenu, target, key_to_type)
+                parent_menu.addMenu(submenu)
+            else:
+                type_name = key_to_type(target)
+                action = Action(label, parent_menu)
+                action.triggered.connect(
+                    (lambda k: lambda: self.node_selected.emit(k, self._scene_pos))(target)
+                )
+                parent_menu.addAction(action)
 
-    def _emit_node_type(self, node_type: str):
-        self.node_selected.emit(node_type, self._scene_pos)
+    def exec(self, *args, **kwargs):
+        self._build()
+        super().exec(*args, **kwargs)

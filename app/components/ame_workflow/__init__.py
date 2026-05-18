@@ -17,13 +17,13 @@ class PortDirection:
 
 
 PORT_COLORS = {
-    PortType.VIDEO: (0xFF, 0x6B, 0x6B),
-    PortType.AUDIO: (0x4E, 0xCD, 0xC4),
-    PortType.SUBTITLE: (0xFF, 0xD9, 0x3D),
-    PortType.CHAPTER: (0xC7, 0x92, 0xEA),
-    PortType.ATTACHMENT: (0xFF, 0x8A, 0x65),
-    PortType.SCRIPT: (0x6C, 0x5C, 0xE7),
-    PortType.ANY: (0x95, 0xA5, 0xA6),
+    PortType.VIDEO: (255, 107, 107),
+    PortType.AUDIO: (78, 205, 196),
+    PortType.SUBTITLE: (255, 217, 61),
+    PortType.CHAPTER: (199, 146, 234),
+    PortType.ATTACHMENT: (255, 138, 101),
+    PortType.SCRIPT: (108, 92, 231),
+    PortType.ANY: (149, 165, 166),
 }
 
 CATEGORY_COLORS = {
@@ -33,16 +33,6 @@ CATEGORY_COLORS = {
     "编码": "#F44336",
     "封装": "#9C27B0",
     "输出": "#2196F3",
-}
-
-PORT_COMPATIBILITY = {
-    PortType.VIDEO: {PortType.VIDEO, PortType.ANY},
-    PortType.AUDIO: {PortType.AUDIO, PortType.ANY},
-    PortType.SUBTITLE: {PortType.SUBTITLE, PortType.ANY},
-    PortType.CHAPTER: {PortType.CHAPTER, PortType.ANY},
-    PortType.ATTACHMENT: {PortType.ATTACHMENT, PortType.ANY},
-    PortType.SCRIPT: {PortType.VIDEO},
-    PortType.ANY: {PortType.VIDEO, PortType.AUDIO, PortType.SUBTITLE, PortType.CHAPTER, PortType.ATTACHMENT, PortType.SCRIPT, PortType.ANY},
 }
 
 NODE_PORT_RADIUS = 5

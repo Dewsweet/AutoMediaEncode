@@ -1,193 +1,134 @@
 {
     "workspace": {
-        "name": "工作区",
-        "category": "系统",
-        "color": "#607D8B",
+        "name": "工作区", "category": "系统", "color": "#607D8B",
         "input_ports": [],
-        "output_ports": [
-            {"name": "path", "type": "any"}
-        ],
-        "params": {
-            "work_dir": ""
-        },
-        "description": "设定工作区目录，所有中间文件将写入该目录下的 temp 文件夹"
+        "output_ports": [{"name": "path", "type": "any"}],
+        "params": {"work_dir": ""}
     },
     "input_file": {
-        "name": "输入文件",
-        "category": "输入",
-        "color": "#4CAF50",
-        "input_ports": [
-            {"name": "path", "type": "any", "required": false}
-        ],
-        "output_ports": [
-            {"name": "video", "type": "video"},
-            {"name": "audio", "type": "audio"},
-            {"name": "subtitle", "type": "subtitle"},
-            {"name": "chapter", "type": "chapter"}
-        ],
-        "params": {
-            "file_path": "",
-            "file_type": "auto"
-        },
-        "description": "载入媒体文件（容器、裸流、独立字幕/章节文件）"
+        "name": "输入文件", "category": "输入", "color": "#4CAF50",
+        "input_ports": [{"name": "path", "type": "any", "required": false}],
+        "output_ports": [],
+        "params": {"file_path": "", "file_type": "auto"}
+    },
+    "input_video": {
+        "name": "输入视频", "category": "输入", "color": "#4CAF50",
+        "input_ports": [{"name": "path", "type": "any", "required": false}],
+        "output_ports": [{"name": "video", "type": "video"}],
+        "params": {"file_path": "", "file_type": "video"}
+    },
+    "input_audio": {
+        "name": "输入音频", "category": "输入", "color": "#4CAF50",
+        "input_ports": [{"name": "path", "type": "any", "required": false}],
+        "output_ports": [{"name": "audio", "type": "audio"}],
+        "params": {"file_path": "", "file_type": "audio"}
+    },
+    "input_subtitle": {
+        "name": "输入字幕", "category": "输入", "color": "#4CAF50",
+        "input_ports": [{"name": "path", "type": "any", "required": false}],
+        "output_ports": [{"name": "subtitle", "type": "subtitle"}],
+        "params": {"file_path": "", "file_type": "subtitle"}
+    },
+    "input_attachment": {
+        "name": "输入附件", "category": "输入", "color": "#4CAF50",
+        "input_ports": [{"name": "path", "type": "any", "required": false}],
+        "output_ports": [{"name": "attachment", "type": "attachment"}],
+        "params": {"file_path": "", "file_type": "attachment"}
+    },
+    "input_chapter": {
+        "name": "输入章节", "category": "输入", "color": "#4CAF50",
+        "input_ports": [{"name": "path", "type": "any", "required": false}],
+        "output_ports": [{"name": "chapter", "type": "chapter"}],
+        "params": {"file_path": "", "file_type": "chapter"}
     },
     "splitter": {
-        "name": "分离器",
-        "category": "处理",
-        "color": "#FF9800",
-        "input_ports": [
-            {"name": "input", "type": "any", "required": true}
-        ],
-        "output_ports": [
-            {"name": "video", "type": "video"},
-            {"name": "audio", "type": "audio"},
-            {"name": "subtitle", "type": "subtitle"},
-            {"name": "chapter", "type": "chapter"}
-        ],
-        "params": {
-            "tool": "ffmpeg",
-            "mode": "extract"
-        },
-        "description": "从输入文件中提取/引用指定轨道"
+        "name": "分离器", "category": "处理", "color": "#FF9800",
+        "input_ports": [{"name": "input", "type": "any", "required": true}],
+        "output_ports": [{"name": "video", "type": "video"}, {"name": "audio", "type": "audio"}, {"name": "subtitle", "type": "subtitle"}, {"name": "chapter", "type": "chapter"}],
+        "params": {"tool": "ffmpeg", "mode": "extract"}
+    },
+    "vpy_loader": {
+        "name": "vpy加载器", "category": "处理", "color": "#6C5CE7",
+        "input_ports": [{"name": "input", "type": "video", "required": true}],
+        "output_ports": [{"name": "script", "type": "script"}],
+        "params": {"vpy_path": ""}
+    },
+    "vspipe": {
+        "name": "vspipe", "category": "处理", "color": "#6C5CE7",
+        "input_ports": [{"name": "script", "type": "script", "required": true}],
+        "output_ports": [{"name": "video", "type": "video"}],
+        "params": {}
+    },
+    "ffmpeg_processor": {
+        "name": "ffmpeg", "category": "处理", "color": "#FF9800",
+        "input_ports": [{"name": "input", "type": "any", "required": true}],
+        "output_ports": [{"name": "output", "type": "any"}],
+        "params": {"cli_args": ""}
     },
     "encoder_x264": {
-        "name": "x264 编码",
-        "category": "编码",
-        "color": "#F44336",
-        "input_ports": [
-            {"name": "input", "type": "video", "required": true}
-        ],
-        "output_ports": [
-            {"name": "video", "type": "video"}
-        ],
-        "params": {
-            "preset": "",
-            "custom_cli": ""
-        },
-        "description": "x264 CLI 编码器"
+        "name": "x264 编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "video", "required": true}],
+        "output_ports": [{"name": "video", "type": "video"}],
+        "params": {"use_preset": true, "preset": "", "custom_cli": ""}
     },
     "encoder_x265": {
-        "name": "x265 编码",
-        "category": "编码",
-        "color": "#F44336",
-        "input_ports": [
-            {"name": "input", "type": "video", "required": true}
-        ],
-        "output_ports": [
-            {"name": "video", "type": "video"}
-        ],
-        "params": {
-            "preset": "",
-            "custom_cli": ""
-        },
-        "description": "x265 CLI 编码器"
+        "name": "x265 编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "video", "required": true}],
+        "output_ports": [{"name": "video", "type": "video"}],
+        "params": {"use_preset": true, "preset": "", "custom_cli": ""}
     },
     "encoder_svtav1": {
-        "name": "SVT-AV1 编码",
-        "category": "编码",
-        "color": "#F44336",
-        "input_ports": [
-            {"name": "input", "type": "video", "required": true}
-        ],
-        "output_ports": [
-            {"name": "video", "type": "video"}
-        ],
-        "params": {
-            "preset": "",
-            "custom_cli": ""
-        },
-        "description": "SVT-AV1 CLI 编码器"
+        "name": "SVT-AV1 编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "video", "required": true}],
+        "output_ports": [{"name": "video", "type": "video"}],
+        "params": {"use_preset": true, "preset": "", "custom_cli": ""}
     },
     "encoder_ffmpeg_video": {
-        "name": "FFmpeg 视频编码",
-        "category": "编码",
-        "color": "#F44336",
-        "input_ports": [
-            {"name": "input", "type": "video", "required": true}
-        ],
-        "output_ports": [
-            {"name": "video", "type": "video"}
-        ],
-        "params": {
-            "codec": "libx264",
-            "rc_mode": "crf",
-            "quality_val": 23,
-            "bitrate": "5000k",
-            "preset": "medium",
-            "profile": "",
-            "level": "",
-            "custom_options": ""
-        },
-        "description": "FFmpeg 视频编码器，支持多种编码格式和硬件加速"
+        "name": "ffmpeg 视频编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "video", "required": true}],
+        "output_ports": [{"name": "video", "type": "video"}],
+        "params": {"codec": "libx264", "rc_mode": "crf", "quality_val": 23, "bitrate": "5000k", "preset": "medium", "custom_options": ""}
     },
     "encoder_ffmpeg_audio": {
-        "name": "FFmpeg 音频编码",
-        "category": "编码",
-        "color": "#F44336",
-        "input_ports": [
-            {"name": "input", "type": "audio", "required": true}
-        ],
-        "output_ports": [
-            {"name": "audio", "type": "audio"}
-        ],
-        "params": {
-            "codec": "aac",
-            "rc_mode": "cbr",
-            "bitrate": "192k",
-            "quality_val": 5,
-            "custom_options": ""
-        },
-        "description": "FFmpeg 音频编码器"
+        "name": "ffmpeg 音频编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "audio", "required": true}],
+        "output_ports": [{"name": "audio", "type": "audio"}],
+        "params": {"codec": "aac", "rc_mode": "cbr", "bitrate": "192k", "quality_val": 5, "custom_options": ""}
+    },
+    "encoder_aac": {
+        "name": "AAC 编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "audio", "required": true}],
+        "output_ports": [{"name": "audio", "type": "audio"}],
+        "params": {"codec": "aac", "rc_mode": "cbr", "bitrate": "192k", "quality_val": 5, "custom_options": ""}
+    },
+    "encoder_flac": {
+        "name": "FLAC 编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "audio", "required": true}],
+        "output_ports": [{"name": "audio", "type": "audio"}],
+        "params": {"codec": "flac", "rc_mode": "quality", "bitrate": "", "quality_val": 8, "custom_options": ""}
+    },
+    "encoder_opus": {
+        "name": "Opus 编码", "category": "编码", "color": "#F44336",
+        "input_ports": [{"name": "input", "type": "audio", "required": true}],
+        "output_ports": [{"name": "audio", "type": "audio"}],
+        "params": {"codec": "opus", "rc_mode": "cbr", "bitrate": "128k", "quality_val": 5, "custom_options": ""}
     },
     "muxer_mkvmerge": {
-        "name": "封装 MKV",
-        "category": "封装",
-        "color": "#9C27B0",
-        "input_ports": [
-            {"name": "video", "type": "video", "required": false},
-            {"name": "audio", "type": "audio", "required": false},
-            {"name": "subtitle", "type": "subtitle", "required": false},
-            {"name": "chapter", "type": "chapter", "required": false},
-            {"name": "attachment", "type": "attachment", "required": false}
-        ],
-        "output_ports": [
-            {"name": "output", "type": "any"}
-        ],
-        "params": {
-            "container": "mkv",
-            "tracks": []
-        },
-        "description": "mkvmerge 封装器，支持多轨封装和轨道属性编辑"
+        "name": "封装 MKV", "category": "封装", "color": "#9C27B0",
+        "input_ports": [{"name": "video", "type": "video", "required": false}, {"name": "audio", "type": "audio", "required": false}, {"name": "subtitle", "type": "subtitle", "required": false}, {"name": "attachment", "type": "attachment", "required": false}],
+        "output_ports": [{"name": "output", "type": "any"}],
+        "params": {"tracks": []}
     },
     "muxer_ffmpeg": {
-        "name": "封装 MP4/MOV",
-        "category": "封装",
-        "color": "#9C27B0",
-        "input_ports": [
-            {"name": "video", "type": "video", "required": false},
-            {"name": "audio", "type": "audio", "required": false}
-        ],
-        "output_ports": [
-            {"name": "output", "type": "any"}
-        ],
-        "params": {
-            "container": "mp4",
-            "faststart": false
-        },
-        "description": "FFmpeg 封装器，支持 MP4/MOV 容器"
+        "name": "封装 MP4/MOV", "category": "封装", "color": "#9C27B0",
+        "input_ports": [{"name": "video", "type": "video", "required": false}, {"name": "audio", "type": "audio", "required": false}],
+        "output_ports": [{"name": "output", "type": "any"}],
+        "params": {"container": "mp4"}
     },
     "output": {
-        "name": "输出",
-        "category": "输出",
-        "color": "#2196F3",
-        "input_ports": [
-            {"name": "input", "type": "any", "required": true}
-        ],
+        "name": "输出文件", "category": "输出", "color": "#2196F3",
+        "input_ports": [{"name": "input", "type": "any", "required": true}],
         "output_ports": [],
-        "params": {
-            "output_path": "",
-            "filename_template": "{input_name}_encoded"
-        },
-        "description": "输出文件路径和命名设置"
+        "params": {"output_path": ""}
     }
 }
