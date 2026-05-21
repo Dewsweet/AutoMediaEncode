@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QGraphicsView
 
 from qfluentwidgets import isDarkTheme, qconfig
 
-from .ame_nodes import NODE_CLASSES
+from .nodes import ALL_NODE_CLASSES
 
 
 class AMEGraph:
@@ -13,27 +13,25 @@ class AMEGraph:
         self.graph = NodeGraph(parent=parent)
         self.graph.set_pipe_style(PipeLayoutEnum.CURVED.value)
 
-        for cls in NODE_CLASSES:
+        for cls in ALL_NODE_CLASSES:
             self.graph.register_node(cls)
 
         w = self.graph.widget
         w.setParent(parent)
         w.show()
-        w.setStyleSheet("QTabWidget { border: none; } QTabWidget::pane { border: none; } QTabBar::tab { border: none; } QTabBar { border: none; }")
+        w.setStyleSheet('QTabWidget,QTabWidget::pane,QTabBar,QTabBar::tab{border:none;}')
 
-        self._viewer = self._find_viewer(w)
+        self._viewer = None
+        for child in w.findChildren(QGraphicsView):
+            self._viewer = child
+            break
         if self._viewer:
             self._viewer.setContextMenuPolicy(Qt.CustomContextMenu)
             self._viewer.setFrameShape(QGraphicsView.NoFrame)
-            self._viewer.setStyleSheet("QGraphicsView { border: none; background: transparent; }")
+            self._viewer.setStyleSheet('QGraphicsView{border:none;background:transparent;}')
 
-        self._apply_theme()
         qconfig.themeChanged.connect(self._apply_theme)
-
-    def _find_viewer(self, widget):
-        for child in widget.findChildren(QGraphicsView):
-            return child
-        return None
+        self._apply_theme()
 
     def viewer(self):
         return self._viewer
@@ -42,7 +40,20 @@ class AMEGraph:
         return self.graph.widget
 
     def create_node(self, type_, name=None, pos=None):
-        return self.graph.create_node(type_, name=name, pos=pos, push_undo=False)
+        node = self.graph.create_node(type_, name=name, pos=pos, push_undo=False)
+        self._fix_node_view(node)
+        return node
+
+    def _fix_node_view(self, node):
+        if not hasattr(node, 'view') or node.view is None:
+            return
+        v = node.view
+        v.setCursor(Qt.CrossCursor)
+        if hasattr(v, 'text_item') and v.text_item:
+            try:
+                v.text_item.setTextInteractionFlags(Qt.NoTextInteraction)
+            except Exception:
+                pass
 
     def selected_nodes(self):
         return self.graph.selected_nodes()
@@ -76,7 +87,6 @@ class AMEGraph:
             text_c = (80, 80, 80, 255)
             border_c = (200, 200, 200, 255)
             node_bg = (245, 245, 245)
-
         for node in self.graph.all_nodes():
             node.model.text_color = text_c
             node.model.border_color = border_c

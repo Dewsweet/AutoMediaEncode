@@ -5,7 +5,7 @@ import re
 
 from PySide6.QtCore import Qt, Signal, QPoint, QPointF, QPropertyAnimation, QEasingCurve, QRectF
 from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent, QPainter, QPen, QBrush
-from PySide6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QWidget, QGraphicsDropShadowEffect, QStackedWidget, QLabel, QFileDialog
+from PySide6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QWidget, QGraphicsDropShadowEffect, QStackedWidget, QLabel, QFileDialog, QTextEdit
 from qfluentwidgets import (ToolButton, FluentIcon as FIF, BodyLabel, PushButton, LineEdit, ComboBox, SwitchButton, SpinBox, isDarkTheme, qconfig, MessageBoxBase)
 
 
@@ -50,8 +50,7 @@ class WorkspaceBody(NodeBodyWidget):
         return {'work_dir': self._edit.text()}
 
     def set_params(self, params: dict):
-        if params.get('work_dir'):
-            self._edit.setText(params['work_dir'])
+        self._edit.setText(str(params.get('work_dir', '')))
 
 
 class InputFileBody(NodeBodyWidget):
@@ -81,8 +80,7 @@ class InputFileBody(NodeBodyWidget):
         return {'file_path': self._edit.text()}
 
     def set_params(self, params: dict):
-        if params.get('file_path'):
-            self._edit.setText(params['file_path'])
+        self._edit.setText(str(params.get('file_path', '')))
 
 
 class VPYBody(NodeBodyWidget):
@@ -108,8 +106,7 @@ class VPYBody(NodeBodyWidget):
         return {'vpy_path': self._edit.text()}
 
     def set_params(self, params: dict):
-        if params.get('vpy_path'):
-            self._edit.setText(params['vpy_path'])
+        self._edit.setText(str(params.get('vpy_path', '')))
 
 
 class VSPipeBody(NodeBodyWidget):
@@ -124,12 +121,10 @@ class EncoderCLIBody(NodeBodyWidget):
         self._enc = encoder_type
         preset_names = {"x264": "x264", "x265": "x265", "svtav1": "SVTAV1"}
         enc_key = preset_names.get(encoder_type, encoder_type)
-        r1 = QHBoxLayout()
-        r1.setSpacing(4)
+        r1 = QHBoxLayout(); r1.setSpacing(4)
         r1.addWidget(BodyLabel("预设:", self))
         self._sw = SwitchButton(self)
-        self._sw.setChecked(True)
-        self._sw.setOnText(""); self._sw.setOffText("")
+        self._sw.setChecked(True); self._sw.setOnText(""); self._sw.setOffText("")
         r1.addWidget(self._sw)
         self._cb = ComboBox(self)
         self._cb.addItem("(无)")
@@ -137,34 +132,30 @@ class EncoderCLIBody(NodeBodyWidget):
             from app.services.setting.preset_service import preset_service
             for n in preset_service.get_presets_by_encoder(enc_key).keys():
                 self._cb.addItem(n)
-        except Exception:
-            pass
+        except Exception: pass
         r1.addWidget(self._cb, 1)
         self._layout.addLayout(r1)
-        r2 = QHBoxLayout()
-        r2.setSpacing(4)
-        r2.addWidget(BodyLabel("参数:", self))
-        self._cli = LineEdit(self)
-        self._cli.setPlaceholderText("自定义 CLI 参数...")
-        r2.addWidget(self._cli, 1)
-        self._layout.addLayout(r2)
+        self._cli = QTextEdit(self)
+        self._cli.setPlaceholderText("自定义 CLI 参数 (每行一个参数或空格分隔均可)")
+        self._cli.setMinimumHeight(60)
+        self._cli.setMaximumHeight(120)
+        self._cli.setStyleSheet("QTextEdit { border: 1px solid #555; border-radius: 4px; padding: 4px; }")
+        self._layout.addWidget(self._cli)
         self._sw.checkedChanged.connect(lambda c: self._cb.setEnabled(c))
-        for w in [self._sw, self._cb, self._cli]:
-            if hasattr(w, 'currentTextChanged'):
-                w.currentTextChanged.connect(lambda: self.param_changed.emit('all', self.get_params()))
-            elif hasattr(w, 'checkedChanged'):
-                w.checkedChanged.connect(lambda: self.param_changed.emit('all', self.get_params()))
-            elif hasattr(w, 'textChanged'):
-                w.textChanged.connect(lambda: self.param_changed.emit('all', self.get_params()))
+        self._cb.currentTextChanged.connect(lambda: self.param_changed.emit('preset', self._cb.currentText()))
+        self._sw.checkedChanged.connect(lambda c: self.param_changed.emit('use_preset', c))
+        self._cli.textChanged.connect(lambda: self.param_changed.emit('custom_cli', self._cli.toPlainText()))
 
     def get_params(self):
-        return {'use_preset': self._sw.isChecked(), 'preset': self._cb.currentText() if self._sw.isChecked() else '',
-                'custom_cli': self._cli.text()}
+        return {'use_preset': self._sw.isChecked(),
+                'preset': self._cb.currentText() if self._sw.isChecked() else '',
+                'custom_cli': self._cli.toPlainText()}
 
     def set_params(self, params: dict):
         self._sw.setChecked(params.get('use_preset', True))
+        self._cb.setEnabled(params.get('use_preset', True))
         if params.get('preset'): self._cb.setCurrentText(params['preset'])
-        self._cli.setText(params.get('custom_cli', ''))
+        self._cli.setPlainText(str(params.get('custom_cli', '')))
 
 
 class EncoderFFmpegVideoBody(NodeBodyWidget):
@@ -179,45 +170,52 @@ class EncoderFFmpegVideoBody(NodeBodyWidget):
         ]
         self._keys = [k for k,_ in self._codecs]
         self._names = [n for _,n in self._codecs]
-        for pair in [
-            ("编码器:", ComboBox, self._names),
-            ("码率控制:", ComboBox, ["CRF","ABR","CQP"]),
-            ("CRF/QP:", SpinBox, (0,63,23)),
-        ]:
-            r = QHBoxLayout(); r.setSpacing(4)
-            r.addWidget(BodyLabel(pair[0], self))
-            if pair[1] == ComboBox:
-                cb = ComboBox(self); cb.addItems(pair[2]); r.addWidget(cb, 1)
-            else:
-                sb = SpinBox(self); sb.setRange(*pair[2]); sb.setValue(pair[2][2]); r.addWidget(sb)
-            self._layout.addLayout(r)
+
+        r = QHBoxLayout(); r.setSpacing(4)
+        r.addWidget(BodyLabel("编码器:", self))
+        self._cb_codec = ComboBox(self); self._cb_codec.addItems(self._names); r.addWidget(self._cb_codec, 1)
+        self._layout.addLayout(r)
+
+        r2 = QHBoxLayout(); r2.setSpacing(4)
+        r2.addWidget(BodyLabel("码率控制:", self))
+        self._cb_rc = ComboBox(self); self._cb_rc.addItems(["CRF","ABR","CQP"]); r2.addWidget(self._cb_rc, 1)
+        self._layout.addLayout(r2)
+
+        r3 = QHBoxLayout(); r3.setSpacing(4)
+        r3.addWidget(BodyLabel("CRF/QP:", self))
+        self._q = SpinBox(self); self._q.setRange(0,63); self._q.setValue(23); r3.addWidget(self._q)
+        r3.addWidget(BodyLabel("码率:", self))
+        self._br = LineEdit(self); self._br.setPlaceholderText("5000k"); r3.addWidget(self._br)
+        self._layout.addLayout(r3)
+
         r4 = QHBoxLayout(); r4.setSpacing(4)
-        r4.addWidget(BodyLabel("码率:", self))
-        self._br = LineEdit(self); self._br.setPlaceholderText("5000k"); r4.addWidget(self._br)
         r4.addWidget(BodyLabel("速度:", self))
         self._preset = ComboBox(self)
         self._preset.addItems(["ultrafast","superfast","veryfast","faster","fast","medium","slow","slower","veryslow","placebo"])
         self._preset.setCurrentText("medium"); r4.addWidget(self._preset, 1)
         self._layout.addLayout(r4)
+
         r5 = QHBoxLayout(); r5.setSpacing(4)
         r5.addWidget(BodyLabel("扩展:", self))
         self._custom = LineEdit(self); self._custom.setPlaceholderText("自定义..."); r5.addWidget(self._custom, 1)
         self._layout.addLayout(r5)
 
     def get_params(self):
-        ci = self.findChild(ComboBox).currentIndex()
+        ci = self._cb_codec.currentIndex()
         return {'codec': self._keys[ci] if 0 <= ci < len(self._keys) else 'libx264',
-                'rc_mode': self.findChildren(ComboBox)[1].currentText().lower(),
-                'quality_val': self.findChild(SpinBox).value(),
-                'bitrate': self._br.text(), 'preset': self._preset.currentText(),
-                'custom_options': self._custom.text()}
+                'rc_mode': self._cb_rc.currentText().lower(),
+                'quality_val': self._q.value(), 'bitrate': self._br.text(),
+                'preset': self._preset.currentText(), 'custom_options': self._custom.text()}
 
     def set_params(self, params: dict):
-        if params.get('codec') and params['codec'] in self._keys:
-            self.findChild(ComboBox).setCurrentIndex(self._keys.index(params['codec']))
-        self._br.setText(params.get('bitrate', '5000k'))
-        self._preset.setCurrentText(params.get('preset', 'medium'))
-        self._custom.setText(params.get('custom_options', ''))
+        c = params.get('codec', 'libx264')
+        if c in self._keys: self._cb_codec.setCurrentIndex(self._keys.index(c))
+        rc = params.get('rc_mode', 'crf')
+        self._cb_rc.setCurrentText(rc.upper() if rc else 'CRF')
+        self._q.setValue(int(params.get('quality_val', 23)))
+        self._br.setText(str(params.get('bitrate', '5000k')))
+        self._preset.setCurrentText(str(params.get('preset', 'medium')))
+        self._custom.setText(str(params.get('custom_options', '')))
 
 
 class EncoderFFmpegAudioBody(NodeBodyWidget):
@@ -253,27 +251,31 @@ class EncoderFFmpegAudioBody(NodeBodyWidget):
                 'custom_options': self._custom.text()}
 
     def set_params(self, params: dict):
-        if params.get('codec') and params['codec'] in self._keys:
-            self._cb_c.setCurrentIndex(self._keys.index(params['codec']))
-        self._br.setText(params.get('bitrate', '192k'))
-        self._q.setValue(params.get('quality_val', 5))
-        self._custom.setText(params.get('custom_options', ''))
+        c = params.get('codec', 'aac')
+        if c in self._keys: self._cb_c.setCurrentIndex(self._keys.index(c))
+        rc = params.get('rc_mode', 'cbr')
+        self._cb_r.setCurrentText(rc.upper() if rc else 'CBR')
+        self._br.setText(str(params.get('bitrate', '192k')))
+        self._q.setValue(int(params.get('quality_val', 5)))
+        self._custom.setText(str(params.get('custom_options', '')))
 
 
 class FFmpegProcessorBody(NodeBodyWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        r = QHBoxLayout(); r.setSpacing(4)
-        r.addWidget(BodyLabel("FFmpeg:", self))
-        self._cli = LineEdit(self); self._cli.setPlaceholderText("-vf ..."); r.addWidget(self._cli, 1)
-        self._layout.addLayout(r)
-        self._cli.textChanged.connect(lambda t: self.param_changed.emit('cli_args', t))
+        self._layout.addWidget(BodyLabel("FFmpeg 参数:", self))
+        self._cli = QTextEdit(self)
+        self._cli.setPlaceholderText("-vf scale=1920:1080 ...")
+        self._cli.setMinimumHeight(60)
+        self._cli.setMaximumHeight(120)
+        self._cli.setStyleSheet("QTextEdit { border: 1px solid #555; border-radius: 4px; padding: 4px; }")
+        self._layout.addWidget(self._cli)
+        self._cli.textChanged.connect(lambda: self.param_changed.emit('cli_args', self._cli.toPlainText()))
 
     def get_params(self):
-        return {'cli_args': self._cli.text()}
-
+        return {'cli_args': self._cli.toPlainText()}
     def set_params(self, params: dict):
-        self._cli.setText(params.get('cli_args', ''))
+        self._cli.setPlainText(str(params.get('cli_args', '')))
 
 
 class MuxerMkvmergeBody(NodeBodyWidget):
@@ -325,4 +327,4 @@ class OutputBody(NodeBodyWidget):
     def get_params(self):
         return {'output_path': self._edit.text()}
     def set_params(self, params: dict):
-        if params.get('output_path'): self._edit.setText(params['output_path'])
+        self._edit.setText(str(params.get('output_path', '')))

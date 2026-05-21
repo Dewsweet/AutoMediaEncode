@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt, Signal, QPoint
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QGraphicsDropShadowEffect
 
-from qfluentwidgets import (PrimaryPushButton, ToolButton, FluentIcon as FIF,
+from qfluentwidgets import (PrimaryPushButton, ToolButton, TransparentToolButton, FluentIcon as FIF,
                             isDarkTheme, qconfig)
 
 
@@ -15,7 +15,7 @@ class FloatingToolbar(QFrame):
         super().__init__(parent)
         self.setObjectName("FloatingToolbar")
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setFixedSize(220, 42)
+        self.setFixedSize(200, 42)
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(12)
@@ -24,13 +24,13 @@ class FloatingToolbar(QFrame):
         self.setGraphicsEffect(shadow)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(10, 4, 5, 4)
+        layout.setSpacing(5)
 
         self._state = 'idle'
         self._drag_pos = None
 
-        self.start_btn = PrimaryPushButton(FIF.PLAY, "开始", self)
+        self.start_btn = PrimaryPushButton(FIF.PLAY, "开始任务", self)
         self.start_btn.setMinimumWidth(100)
 
         self.pause_btn = ToolButton(FIF.PAUSE, self)
@@ -79,7 +79,7 @@ class FloatingToolbar(QFrame):
             self.cancel_btn.setEnabled(True)
         else:
             self.start_btn.setEnabled(True)
-            self.start_btn.setText("开始")
+            self.start_btn.setText("开始任务")
             self.pause_btn.setEnabled(False)
             self.cancel_btn.setEnabled(False)
 
