@@ -4,7 +4,7 @@ from .._widgets import PresetSwitchWidget, CLITextWidget
 class EncoderX264Node(AMENodeBase):
     NODE_NAME = 'x264 编码'
     DESCRIPTION = 'x264 CLI 编码器'
-    CATEGORY = '编码'; CATEGORY_COLOR = C['编码']
+    CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
     INPUTS = [('input', P['video'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_x264'

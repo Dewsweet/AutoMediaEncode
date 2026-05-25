@@ -4,7 +4,7 @@ from .._base import AMENodeBase, C, P, HIDDEN
 class MuxerFFmpegNode(AMENodeBase):
     NODE_NAME = '封装 (FFmpeg)'
     DESCRIPTION = 'FFmpeg 封装器'
-    CATEGORY = '封装'; CATEGORY_COLOR = C['封装']
+    CATEGORY = '封装'; CATEGORY_COLOR = C['Green']
     INPUTS = [('video', P['video']), ('audio', P['audio'])]
     OUTPUTS = [('output', P['any'])]
     MENU_KEY = 'muxer_ffmpeg'

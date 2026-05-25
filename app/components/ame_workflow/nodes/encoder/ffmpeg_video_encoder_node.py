@@ -5,14 +5,14 @@ from .._widgets import FfmpegSimpleOptionsWidget
 class EncoderFFmpegVideoNode(AMENodeBase):
     NODE_NAME = 'ffmpeg 视频编码'
     DESCRIPTION = 'FFmpeg 视频编码器'
-    CATEGORY = '编码'; CATEGORY_COLOR = C['编码']
+    CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
     INPUTS = [('input', P['video'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_ffmpeg_video'
 
     def _setup_widgets(self):
         encoder_items = ['libx264', 'libx265', 'libsvtav1', 'libaom-av1', 'mpeg4', 'h264_nvenc', 'hevc_nvenc', 'qsv_h264', 'qsv_hevc']
-        self.add_custom_widget(FfmpegSimpleOptionsWidget(self.view, 'codec', encoder_items))
+        self.add_custom_widget(FfmpegSimpleOptionsWidget(self.view, 'Video_codec', encoder_items))
 
     def execute(self, inputs, temp_dir):
         src = (inputs.get('input') or [''])[0]

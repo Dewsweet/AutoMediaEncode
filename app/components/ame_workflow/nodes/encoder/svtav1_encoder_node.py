@@ -4,7 +4,7 @@ from .._widgets import PresetSwitchWidget, CLITextWidget
 class EncoderSvtAv1Node(AMENodeBase):
     NODE_NAME = 'SVT-AV1 编码'
     DESCRIPTION = 'SVT-AV1 CLI 编码器'
-    CATEGORY = '编码'; CATEGORY_COLOR = C['编码']
+    CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
     INPUTS = [('input', P['video'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_svtav1'

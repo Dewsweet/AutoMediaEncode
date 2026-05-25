@@ -9,12 +9,16 @@ NODE_PALETTE_STRUCTURE = [
         ('工作区', 'workspace'),
         ('输入文件', 'input_file'),
         ('多文件输入', 'input_multi'),
+        ('输出文件', 'output'),
     ]),
     ('工具', [
         ('分离器', 'splitter'),
-        ('vpy加载器', 'vpy_loader'),
-        ('vspipe', 'vspipe'),
+        ('vapoursynth', [
+            ('vpy加载器', 'vpy_loader'),
+            ('vspipe', 'vspipe'),
+        ]),
         ('ffmpeg处理器', 'ffmpeg_processor'),
+        ('自定义文件名', 'custom_name'),
     ]),
     ('编码', [
         ('视频编码', [
@@ -33,10 +37,6 @@ NODE_PALETTE_STRUCTURE = [
     ('封装', [
         ('mkvmerge', 'muxer_mkvmerge'),
         ('ffmpeg', 'muxer_ffmpeg'),
-    ]),
-    ('输出', [
-        ('输出文件', 'output'),
-        ('自定义文件名', 'custom_name'),
     ]),
 ]
 

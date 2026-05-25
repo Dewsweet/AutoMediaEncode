@@ -4,26 +4,17 @@ from app.services.tool_service import ToolService
 
 
 class SplitterNode(AMENodeBase):
-    # ── SECTION 1: Metadata ──
-    NODE_NAME       = '分离器'
-    DESCRIPTION     = '用 ffmpeg -i 探测输入文件轨道，执行时按连接端口用 -map 分离'
-    CATEGORY        = '处理'
-    CATEGORY_COLOR  = C['处理']
-    MENU_KEY        = 'splitter'
-
-    # ── SECTION 2: Port I/O ──
+    NODE_NAME = '分离器'
+    DESCRIPTION = '用 ffmpeg -i 探测输入文件轨道，执行时按连接端口用 -map 分离'
+    CATEGORY = '工具'
+    CATEGORY_COLOR = C['Orange']
+    MENU_KEY = 'splitter'
     INPUTS  = [('input', P['any'])]
     OUTPUTS = [('video', P['video']), ('audio', P['audio']), ('subtitle', P['subtitle'])]
 
-    # ── SECTION 3: __init__ — handled by AMENodeBase ──
-
-    # ── SECTION 4: Inline Widgets ──
     def _setup_widgets(self):
         self.create_property('cached_tracks', [], widget_type=HIDDEN, tab='')
 
-    # ── SECTION 5: Dynamic Ports — deferred ──
-
-    # ── SECTION 6: Execute ──
     def execute(self, inputs: dict, temp_dir: str) -> dict | None:
         src_files = inputs.get('input', [])
         if not src_files:

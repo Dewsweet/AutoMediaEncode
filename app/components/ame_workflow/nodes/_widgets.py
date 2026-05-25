@@ -59,23 +59,24 @@ class NodeComboBox(PushButton):
 
 
 class PathBrowseWidget(NodeBaseWidget):
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, btn_text='浏览'):
         super().__init__(parent, name)
-        self.name = name
+        self.btn_text = btn_text
         row = QWidget()
+        row.setMinimumWidth(240)
         layout = QVBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-        self._btn = PushButton(self.name, row)
+        layout.setSpacing(10)
+        self._btn = PushButton(self.btn_text, row)
         self._btn.setFixedHeight(32)
         self._btn.clicked.connect(self._browse)
 
         self._edit = LineEdit(row)
-        self._edit.setFixedHeight(44)
+        self._edit.setFixedHeight(32)
         # self._edit.setPlaceholderText('选择路径...')
         self._edit.textChanged.connect(lambda t: self.on_value_changed(t))
         layout.addWidget(self._btn)
-        layout.addWidget(self._edit, 1)
+        layout.addWidget(self._edit)
         self.set_custom_widget(row)
 
     def _browse(self):
@@ -89,8 +90,8 @@ class PathBrowseWidget(NodeBaseWidget):
             self._edit.setText(str(value))
 
 class DirBrowseWidget(PathBrowseWidget):
-    def __init__(self, parent, name):
-        super().__init__(parent, name)
+    def __init__(self, parent, name, btn_text='选择文件夹'):
+        super().__init__(parent, name, btn_text=btn_text)
 
     def _browse(self):
         p = QFileDialog.getExistingDirectory(None, '选择目录')
@@ -98,24 +99,24 @@ class DirBrowseWidget(PathBrowseWidget):
             self._edit.setText(p)
 
 class FileBrowseWidget(PathBrowseWidget):
-    def __init__(self, parent, name, exts=''):
+    def __init__(self, parent, name, btn_text='选择输入文件', exts=''):
         self._ext_filter = exts
-        super().__init__(parent, name)
+        super().__init__(parent, name, btn_text=btn_text)
 
     def _browse(self):
         p, _ = QFileDialog.getOpenFileName(None, '选择文件', '', self._ext_filter or 'All Files (*)')
         if p:
             self._edit.setText(p)
 
-class SaveBrowseWidget(PathBrowseWidget):
-    def __init__(self, parent, name, exts=''):
+class FilesBrowseWidget(PathBrowseWidget):
+    def __init__(self, parent, name, btn_text='选择多个输入文件', exts=''):
         self._ext_filter = exts
-        super().__init__(parent, name)
-
+        super().__init__(parent, name, btn_text=btn_text)
+        
     def _browse(self):
-        p, _ = QFileDialog.getSaveFileName(None, '保存路径', '', self._ext_filter or 'All Files (*)')
-        if p:
-            self._edit.setText(p)
+        paths, _ = QFileDialog.getOpenFileNames(None, '选择文件', '', self._ext_filter or 'All Files (*)')
+        if paths:
+            self._edit.setText('\n'.join(paths))
 
 
 class PresetSwitchWidget(NodeBaseWidget):
@@ -304,7 +305,7 @@ class CLITextWidget(NodeBaseWidget):
     def __init__(self, parent, name):
         super().__init__(parent, name)
         self._edit = TextEdit()
-        self._edit.setPlaceholderText('自定义 CLI 参数...')
+        self._edit.setPlaceholderText('自定义 CLI 参数(不含输入输出部分)...')
         self._edit.setMinimumHeight(48)
         self._edit.setMaximumHeight(100)
         self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))

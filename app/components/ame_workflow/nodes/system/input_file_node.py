@@ -16,7 +16,7 @@ class InputFileNode(AMENodeBase):
               "图片文件 (" + ' '.join(f'*{e}' for e in IMAGE_EXTS) + ');;' \
               "字幕文件 (" + ' '.join(f'*{e}' for e in SUBTITLE_EXTS) + ');;' \
               "所有文件 (*.*)"
-        self.add_custom_widget(FileBrowseWidget(self.view, '选择输入文件', EXT))
+        self.add_custom_widget(FileBrowseWidget(self.view, 'input_file',exts=EXT))
         self.create_property('file_type', 'auto', widget_type=HIDDEN, tab='')
 
     def execute(self, inputs, temp_dir):

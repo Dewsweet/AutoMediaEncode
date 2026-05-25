@@ -5,14 +5,14 @@ from .._widgets import FfmpegSimpleOptionsWidget
 class EncoderFFmpegAudioNode(AMENodeBase):
     NODE_NAME = 'ffmpeg 音频编码'
     DESCRIPTION = 'FFmpeg 音频编码器'
-    CATEGORY = '编码'; CATEGORY_COLOR = C['编码']
+    CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
     INPUTS = [('input', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]
     MENU_KEY = 'encoder_ffmpeg_audio'
 
     def _setup_widgets(self):
         encoder_items = ['copy', 'pcm_s16le', 'pcm_s24le', 'pcm_f32le', 'flac', 'alac', 'aac', 'libmp3lame', 'libopus', 'libvorbis', 'ac3']
-        self.add_custom_widget(FfmpegSimpleOptionsWidget(self.view, 'codec', encoder_items))
+        self.add_custom_widget(FfmpegSimpleOptionsWidget(self.view, 'Audio_codec', encoder_items))
 
     def execute(self, inputs, temp_dir):
         src = (inputs.get('input') or [''])[0]

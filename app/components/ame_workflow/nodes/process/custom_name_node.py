@@ -2,9 +2,9 @@ from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import CustomNameWidget
 
 class CustomNameNode(AMENodeBase):
-    NODE_NAME = '自定义名称'
-    DESCRIPTION = '自定义名称'
-    CATEGORY = '系统'; CATEGORY_COLOR = C['系统']
+    NODE_NAME = '自定义文件名'
+    DESCRIPTION = '自定义文件名'
+    CATEGORY = '系统'; CATEGORY_COLOR = C['Gray']
     INPUTS = [('input', P['any'])]
     OUTPUTS = [('output', P['any'])]
     MENU_KEY = 'custom_name'

@@ -6,7 +6,7 @@ from .._widgets import MkvInlineConfigButton
 class MuxerMkvmergeNode(AMENodeBase):
     NODE_NAME = '封装 (mkvmerge)'
     DESCRIPTION = 'mkvmerge 封装器'
-    CATEGORY = '封装'; CATEGORY_COLOR = C['封装']
+    CATEGORY = '封装'; CATEGORY_COLOR = C['Green']
     INPUTS = [('video', P['video']), 
               ('audio', P['audio']),
               ('subtitle', P['subtitle']), 
@@ -16,11 +16,10 @@ class MuxerMkvmergeNode(AMENodeBase):
     MENU_KEY = 'muxer_mkvmerge'
 
     def _setup_widgets(self):
-        # 添加初始类型的内联设置按钮（只对 video/audio/subtitle 开放添加操作）
         self._track_counters = {}
         for port_name, _ in self.INPUTS:
             if port_name not in ['chapter', 'attachment']:
-                # 初始计数为 1（已有的基础端口）
+                # 初始计数为 1(已有的基础端口)
                 if port_name in ('video', 'audio', 'subtitle'):
                     self._track_counters[port_name] = 1
                 w = MkvInlineConfigButton(self.view, f'track_setting_{port_name}', port_name, mode='base')
@@ -33,10 +32,9 @@ class MuxerMkvmergeNode(AMENodeBase):
         self._patch_mkvmerge_view_layout()
 
     def _add_new_track(self, track_type=None):
-        # only allow specific types
         if track_type not in ("video", "audio", "subtitle"):
             return
-        # increment per-type counter and create name like video_track2
+        # 根据 track_type 生成新的端口名，确保唯一性
         cur = self._track_counters.get(track_type, 1)
         n = cur + 1
         self._track_counters[track_type] = n
@@ -44,9 +42,9 @@ class MuxerMkvmergeNode(AMENodeBase):
         try:
             self.add_input(port_name, color=P.get(track_type, P['any']))
         except Exception:
-            # best-effort: if add_input not available, skip
+            # 可能在某些情况下（如端口已存在）会抛出异常，这时不添加新端口
             pass
-        # add widget for this dynamic port
+        # 添加一个新的内联设置按钮，关联到新端口
         w = MkvInlineConfigButton(self.view, f'track_setting_{port_name}', port_name, mode='added')
         self.add_custom_widget(w)
         self.view.draw_node()
