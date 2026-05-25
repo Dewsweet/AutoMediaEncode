@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFileDialog, QComboBox, QStyleFactory, QFrame
-from qfluentwidgets import PushButton, PrimaryPushButton, LineEdit, ComboBox, SwitchButton, BodyLabel, TextEdit, RoundMenu, Action, Slider, TransparentToolButton, FluentIcon as FIF
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFileDialog, QFrame, QApplication
+from qfluentwidgets import PushButton, PrimaryPushButton, LineEdit, ComboBox, SwitchButton, BodyLabel, TextEdit, RoundMenu, Action, Slider, TransparentPushButton, TransparentToolButton, MessageBoxBase, FluentIcon as FIF
 from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
 from app.services.setting.preset_service import preset_service
 
@@ -71,8 +71,8 @@ class PathBrowseWidget(NodeBaseWidget):
         self._btn.clicked.connect(self._browse)
 
         self._edit = LineEdit(row)
-        self._edit.setFixedHeight(32)
-        self._edit.setPlaceholderText('选择路径...')
+        self._edit.setFixedHeight(44)
+        # self._edit.setPlaceholderText('选择路径...')
         self._edit.textChanged.connect(lambda t: self.on_value_changed(t))
         layout.addWidget(self._btn)
         layout.addWidget(self._edit, 1)
@@ -317,79 +317,184 @@ class CLITextWidget(NodeBaseWidget):
         if value:
             self._edit.setPlainText(str(value))
 
-class mkvmergeWidget(NodeBaseWidget):
-    def __init__(self, parent, name):
-        super().__init__(parent, name)
-        self.mainbox = QWidget()
-        self.mainLayout = QVBoxLayout(self.mainbox)
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-        self.mainLayout.setSpacing(10)
-
-        self.moreSettingsBox = QFrame()
-        self.moreSettingsVLayout = QVBoxLayout(self.moreSettingsBox)
-        self.expanHLayout = QHBoxLayout()
+class MkvTrackConfigDialog(MessageBoxBase):
+    def __init__(self, parent=None, title='轨道设置', data=None):
+        super().__init__(parent)
+        self.titleLabel = BodyLabel(title, self)
 
         self.defaultTrackHLayout = QHBoxLayout()
-        self.trackLanguageHLayout = QHBoxLayout()
-        self.trackNameHLayout = QHBoxLayout()
-
-        self._expandLabel = BodyLabel('More', self.mainbox)
-        self._expandBtn = TransparentToolButton(FIF.RIGHT_ARROW, self.mainbox)
-        
-        self._defaultTrackLabel = BodyLabel('默认轨道:', self.mainbox)
-        self._defaultTrackSwitch = SwitchButton(self.mainbox)
-        self._defaultTrackSwitch.setOnText('启用')
-        self._defaultTrackSwitch.setOffText('禁用')
-
-        self._trackLanguageLabel = BodyLabel('轨道语言:', self.mainbox)
-        self._trackLanguageEdit = LineEdit(self.mainbox)
-
-        self._trackNameLabel = BodyLabel('轨道名称:', self.mainbox)
-        self._trackNameEdit = LineEdit(self.mainbox)
-
-        self._newTrackBtn = PushButton('添加新轨道', self.mainbox)
-
-        self.expanHLayout.addWidget(self._expandLabel)
-        self.expanHLayout.addStretch(1)
-        self.expanHLayout.addWidget(self._expandBtn)
-
+        self._defaultTrackLabel = BodyLabel('默认轨道:', self)
+        self._defaultTrackSwitch = SwitchButton(self)
+        self._defaultTrackSwitch.setOnText('是')
+        self._defaultTrackSwitch.setOffText('否')
         self.defaultTrackHLayout.addWidget(self._defaultTrackLabel)
         self.defaultTrackHLayout.addWidget(self._defaultTrackSwitch)
+        self.defaultTrackHLayout.addStretch(1)
 
+        self.trackLanguageHLayout = QHBoxLayout()
+        self._trackLanguageLabel = BodyLabel('语言:', self)
+        self._trackLanguageEdit = LineEdit(self)
+        self._trackLanguageEdit.setPlaceholderText('')
         self.trackLanguageHLayout.addWidget(self._trackLanguageLabel)
         self.trackLanguageHLayout.addWidget(self._trackLanguageEdit)
 
+        self.trackNameHLayout = QHBoxLayout()
+        self._trackNameLabel = BodyLabel('名称:', self)
+        self._trackNameEdit = LineEdit(self)
         self.trackNameHLayout.addWidget(self._trackNameLabel)
         self.trackNameHLayout.addWidget(self._trackNameEdit)
 
-        self.moreSettingsVLayout.addLayout(self.defaultTrackHLayout)
-        self.moreSettingsVLayout.addLayout(self.trackLanguageHLayout)
-        self.moreSettingsVLayout.addLayout(self.trackNameHLayout)
-        self.moreSettingsVLayout.addWidget(self._newTrackBtn)
-        self.moreSettingsBox.setVisible(False)
+        self.trackCustomVLayout = QVBoxLayout()
+        self._trackCustomLabel = BodyLabel('自定义轨道参数:', self)
+        self._trackCustomEdit = TextEdit(self)
+        self._trackCustomEdit.setPlaceholderText('输入轨道额外参数...')
+        self._trackCustomEdit.setMinimumHeight(80)
+        self._trackCustomEdit.setMaximumHeight(150)
+        self.trackCustomVLayout.addWidget(self._trackCustomLabel)
+        self.trackCustomVLayout.addWidget(self._trackCustomEdit)
+        
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(10)
+        self.viewLayout.addLayout(self.defaultTrackHLayout)
+        self.viewLayout.addLayout(self.trackLanguageHLayout)
+        self.viewLayout.addLayout(self.trackNameHLayout)
+        self.viewLayout.addLayout(self.trackCustomVLayout)
 
-        self.mainLayout.addLayout(self.expanHLayout)
-        self.mainLayout.addWidget(self.moreSettingsBox)
-        self.mainLayout.addStretch(1)
-        self.set_custom_widget(self.mainbox)
+        if parent:
+            target_w = 350
+            target_h = 250
+            self.widget.setMinimumSize(target_w, target_h)
+        
+        self.yesButton.setText("确认")
+        self.cancelButton.setText("取消")
 
-        self._connect_signals()
-    
-    def _connect_signals(self):
-        self._defaultTrackSwitch.checkedChanged.connect(lambda: self.on_value_changed(self.get_value()))
-        self._trackLanguageEdit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
-        self._trackNameEdit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
-        self._expandBtn.clicked.connect(lambda: self.moreSettingsBox.setVisible(not self.moreSettingsBox.isVisible()))
+        if data:
+            self._defaultTrackSwitch.setChecked(data.get('default_track', False))
+            self._trackLanguageEdit.setText(data.get('track_language', ''))
+            self._trackNameEdit.setText(data.get('track_name', ''))
 
-
-    def get_value(self):
+    def get_data(self):
         return {
             'default_track': self._defaultTrackSwitch.isChecked(),
             'track_language': self._trackLanguageEdit.text(),
             'track_name': self._trackNameEdit.text()
         }
+
+class MkvInlineConfigButton(NodeBaseWidget):
+    addRequested = Signal(str)
+
+    def __init__(self, parent, name, port_name, mode='base'):
+        super().__init__(parent, name)
+        self.port_name = port_name
+        self._mode = mode  
+        self.mainbox = QWidget()
+        self.mainbox.setAttribute(Qt.WA_TranslucentBackground, True) # 设置背景透明 
+        self.mainbox.setStyleSheet('background: transparent;') 
+        layout = QHBoxLayout(self.mainbox)
+        layout.setContentsMargins(0,0,0,0)
+        layout.setSpacing(4)
+
+        self.btn = TransparentPushButton('轨道设置', self.mainbox)
+        self.btn.clicked.connect(self._open_dialog)
+        layout.addWidget(self.btn)
+
+        if self._mode == 'base':
+            self._extra_btn = TransparentToolButton(FIF.ADD, self.mainbox)
+            self._extra_btn.setFixedSize(28, 28)
+            self._extra_btn.setAttribute(Qt.WA_TranslucentBackground, True)
+            self._extra_btn.setStyleSheet('background: transparent; border: none;')
+            self._extra_btn.clicked.connect(lambda: self.addRequested.emit(self.port_name))
+            layout.addWidget(self._extra_btn)
+
+        self.set_custom_widget(self.mainbox)
+        try:
+            group = self.widget()
+            group.setFlat(True)
+            group.setStyleSheet(
+                'QGroupBox { background: transparent; border: 0px; margin-top: 0px; padding: 0px; }'
+                'QGroupBox::title { color: transparent; background: transparent; }'
+            )
+        except Exception:
+            pass
+        self._value = {}
+
+    def _open_dialog(self):
+        title_map = {'video': '视频', 'audio': '音频', 'subtitle': '字幕', 'chapter': '章节', 'attachment': '附件'}
+
+        # 兼容 track_1_video 等动态命名格式
+        lookup_name = self.port_name
+        if "track_" in self.port_name:
+            lookup_name = self.port_name.split("_")[-1]
+
+        title_prefix = title_map.get(lookup_name, self.port_name)
+        dialog = MkvTrackConfigDialog(QApplication.activeWindow(), f'{title_prefix} 参数设置', self._value)
+        if dialog.exec():
+            self._value = dialog.get_data()
+            self.on_value_changed(self._value)
+
+    def get_value(self):
+        return self._value
+
     def set_value(self, value):
         if isinstance(value, dict):
-            self._defaultTrackSwitch.setChecked(value.get('default_track', False))
-            self._trackLanguageEdit.setText(value.get('track_language', ''))
-            self._trackNameEdit.setText(value.get('track_name', ''))
+            self._value = value
+
+class CustomNameWidget(NodeBaseWidget):
+    def __init__(self, parent, name):
+        super().__init__(parent, name)
+        self.mainbox = QWidget()
+        self.mainLaoyut = QVBoxLayout(self.mainbox)
+        self.mainLaoyut.setContentsMargins(0, 0, 0, 0)
+
+        self.btnHLayout = QHBoxLayout()
+
+        self._nameLabel = BodyLabel('自定义文件名称:', self.mainbox)
+        self._nameEdit = TextEdit(self.mainbox)
+        self._nameEdit.setPlaceholderText('输入自定义文件名称，支持使用 {{input_name}}、{{preset}} 等占位符...')
+        self._nameEdit.setMaximumHeight(60)
+        self._placeHolderBtn = PushButton('添加', self.mainbox)
+        self._clearBtn = PushButton('清除', self.mainbox)
+
+        self._placeHolderBtn.clicked.connect(self._add_placeholder)
+        self._clearBtn.clicked.connect(lambda: self._nameEdit.clear())
+
+        self.btnHLayout.addWidget(self._placeHolderBtn)
+        self.btnHLayout.addWidget(self._clearBtn)
+        
+        self.mainLaoyut.addWidget(self._nameLabel)
+        self.mainLaoyut.addWidget(self._nameEdit)
+        self.mainLaoyut.addLayout(self.btnHLayout)
+        self.set_custom_widget(self.mainbox)
+
+    def _add_placeholder(self):
+        menu = RoundMenu()
+        placeholders = {
+            '输入文件名': '{input_name}',
+            '视频编码器': '{video_encoder}',
+            '音频编码器': '{audio_encoder}',
+            '日期时间': '{datetime}'
+        }
+        for name, placeholder in placeholders.items():
+            action = Action(name)
+            action.triggered.connect(lambda checked=False, p=placeholder: self._insert_placeholder(p))
+            menu.addAction(action)
+        menu.exec(QCursor.pos())
+
+    def _insert_placeholder(self, placeholder):
+        cursor = self._nameEdit.textCursor()
+        cursor.insertText(placeholder)
+        self._nameEdit.setTextCursor(cursor)
+        self.on_value_changed(self.get_value())
+
+    def get_value(self):
+        return self._nameEdit.toPlainText()
+    
+    def set_value(self, value):
+        if value:
+            self._nameEdit.setPlainText(str(value))
+
+
+    
+        
+                                           
+

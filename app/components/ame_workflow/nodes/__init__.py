@@ -21,6 +21,7 @@ from .muxer.mkvmerge_muxer_node import MuxerMkvmergeNode
 from .muxer.ffmpeg_muxer_node import MuxerFFmpegNode
 
 from .system.output_node import OutputNode
+from .system.custom_name_node import CustomNameNode
 
 
 ALL_NODE_CLASSES = [
@@ -32,7 +33,7 @@ ALL_NODE_CLASSES = [
     EncoderFFmpegVideoNode, EncoderFFmpegAudioNode,
     EncoderAACNode, EncoderFLACNode, EncoderOPUSNode,
     MuxerMkvmergeNode, MuxerFFmpegNode,
-    OutputNode,
+    OutputNode, CustomNameNode,
 ]
 
 MENU_KEY_MAP = {cls.MENU_KEY: cls for cls in ALL_NODE_CLASSES if cls.MENU_KEY}

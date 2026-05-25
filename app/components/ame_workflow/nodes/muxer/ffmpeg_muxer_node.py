@@ -2,7 +2,7 @@ from .._base import AMENodeBase, C, P, HIDDEN
 
 
 class MuxerFFmpegNode(AMENodeBase):
-    NODE_NAME = '封装 MP4/MOV'
+    NODE_NAME = '封装 (FFmpeg)'
     DESCRIPTION = 'FFmpeg 封装器'
     CATEGORY = '封装'; CATEGORY_COLOR = C['封装']
     INPUTS = [('video', P['video']), ('audio', P['audio'])]
@@ -10,7 +10,7 @@ class MuxerFFmpegNode(AMENodeBase):
     MENU_KEY = 'muxer_ffmpeg'
 
     def _setup_widgets(self):
-        self.add_combo_menu('container', '容器', items=['mp4','mov'])
+        pass
 
     def execute(self, inputs, temp_dir):
         import os, subprocess, uuid
