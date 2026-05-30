@@ -10,7 +10,8 @@ class WorkspaceNode(AMENodeBase):
     MENU_KEY = 'workspace'
 
     def _setup_widgets(self):
-        self.add_custom_widget(DirBrowseWidget(self.view, 'workspace', btn_text='选择工作区目录'))
+        self.add_custom_widget(DirBrowseWidget(self.view, 'workspace', '选择工作区目录'))
 
     def execute(self, inputs, temp_dir):
-        return None
+        wd = self.property('workspace', '')
+        return {'path': [wd]} if wd else None

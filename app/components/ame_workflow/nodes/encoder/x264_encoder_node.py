@@ -1,5 +1,6 @@
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import PresetSwitchWidget, CLITextWidget
+from .._helpers import _do_cli_encode
 
 class EncoderX264Node(AMENodeBase):
     NODE_NAME = 'x264 编码'

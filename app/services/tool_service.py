@@ -64,6 +64,15 @@ class ToolService:
             "is_costom": False
         },
         {
+            "tool_name": "qaac",
+            "folder": "qaac",
+            "type": ".exe",
+            "title": "qaac",
+            "desc": "AAC 音频编码器，基于 Apple 的 CoreAudio", 
+            "url": "",
+            "is_costom": False
+        },
+        {
             "tool_name": "vspipe", 
             "folder": "",
             "type": ".exe",
@@ -130,9 +139,10 @@ class ToolService:
         if tool_name in ["mkvextract", "mkvmerge"]:
             folder = "mkvtoolnix"
         
-        local_path = PathService.get_tools_dir() / folder / tool_name
-        if local_path.is_file():
-            return str(local_path.resolve())    
+        if folder:
+            local_path = PathService.get_tools_dir() / folder / tool_name
+            if local_path.is_file():
+                return str(local_path.resolve())    
 
         system_path = shutil.which(tool_name)
         if system_path:

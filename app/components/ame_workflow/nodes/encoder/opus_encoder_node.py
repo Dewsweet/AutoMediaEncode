@@ -1,5 +1,6 @@
 from .._base import AMENodeBase, C, P
 from .._widgets import StapleAudioEncoderWidget
+from .._helpers import _do_ffmpeg_audio
 
 class EncoderOPUSNode(AMENodeBase):
     NODE_NAME = 'Opus 编码(ffmpeg)'
@@ -10,7 +11,7 @@ class EncoderOPUSNode(AMENodeBase):
     MENU_KEY = 'encoder_opus'
 
     def _setup_widgets(self):
-        self.add_custom_widget(StapleAudioEncoderWidget(self.view, 'OPUS_encoder', 'opus'))
+        self.add_custom_widget(StapleAudioEncoderWidget(self.view, 'Audio_codec', 'opus'))
 
     def execute(self, inputs, temp_dir):
-        pass
+        return _do_ffmpeg_audio(self, inputs, temp_dir, 'libopus', '.opus')

@@ -23,7 +23,7 @@ class NodeComboBox(PushButton):
         for item in items:
             self.addItem(item)
 
-    def addItem(self, text, user_data=None): # 这里的 user_data 暂不使用，但保留接口以便未来扩展
+    def addItem(self, text, user_data=None): 
         self._items.append({"text": text, "data": user_data})
         if not self._current_text:
             self.setCurrentText(text)
@@ -56,6 +56,21 @@ class NodeComboBox(PushButton):
     def _on_item_selected(self, text):
         self.setCurrentText(text)
         self.currentTextChanged.emit(text)
+
+class NodeComboBoxWidget(NodeBaseWidget):
+    def __init__(self, parent, name, items):
+        super().__init__(parent, name)
+        self._combo = NodeComboBox()
+        self._combo.addItems(items)
+        self._combo.currentTextChanged.connect(lambda t: self.on_value_changed(t))
+        self.set_custom_widget(self._combo)
+
+    def get_value(self):
+        return self._combo.currentText()
+
+    def set_value(self, value):
+        if value:
+            self._combo.setCurrentText(str(value))
 
 
 class PathBrowseWidget(NodeBaseWidget):
@@ -108,15 +123,42 @@ class FileBrowseWidget(PathBrowseWidget):
         if p:
             self._edit.setText(p)
 
-class FilesBrowseWidget(PathBrowseWidget):
+class FilesBrowseWidget(NodeBaseWidget):
     def __init__(self, parent, name, btn_text='选择多个输入文件', exts=''):
+        super().__init__(parent, name)
         self._ext_filter = exts
-        super().__init__(parent, name, btn_text=btn_text)
+        self.btn_text = btn_text
+        
+        row = QWidget()
+        row.setMinimumWidth(240)
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+        self._btn = PushButton(self.btn_text, row)
+        self._btn.setFixedHeight(32)
+        self._btn.clicked.connect(self._browse)
+
+        self._edit = TextEdit(row)
+        self._edit.setPlaceholderText('此处显示选择的多个路径，每行一个...')
+        self._edit.setMinimumHeight(64)
+        self._edit.setMaximumHeight(140)
+        self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
+        
+        layout.addWidget(self._btn)
+        layout.addWidget(self._edit)
+        self.set_custom_widget(row)
         
     def _browse(self):
         paths, _ = QFileDialog.getOpenFileNames(None, '选择文件', '', self._ext_filter or 'All Files (*)')
         if paths:
-            self._edit.setText('\n'.join(paths))
+            self._edit.setPlainText('\n'.join(paths))
+
+    def get_value(self):
+        return self._edit.toPlainText()
+
+    def set_value(self, value):
+        if value:
+            self._edit.setPlainText(str(value))
 
 
 class PresetSwitchWidget(NodeBaseWidget):
@@ -373,12 +415,14 @@ class MkvTrackConfigDialog(MessageBoxBase):
             self._defaultTrackSwitch.setChecked(data.get('default_track', False))
             self._trackLanguageEdit.setText(data.get('track_language', ''))
             self._trackNameEdit.setText(data.get('track_name', ''))
+            self._trackCustomEdit.setPlainText(data.get('track_custom', ''))
 
     def get_data(self):
         return {
             'default_track': self._defaultTrackSwitch.isChecked(),
             'track_language': self._trackLanguageEdit.text(),
-            'track_name': self._trackNameEdit.text()
+            'track_name': self._trackNameEdit.text(),
+            'track_custom': self._trackCustomEdit.toPlainText()
         }
 
 class MkvInlineConfigButton(NodeBaseWidget):
@@ -451,8 +495,9 @@ class CustomNameWidget(NodeBaseWidget):
 
         self._nameLabel = BodyLabel('自定义文件名称:', self.mainbox)
         self._nameEdit = TextEdit(self.mainbox)
-        self._nameEdit.setPlaceholderText('输入自定义文件名称，支持使用 {{input_name}}、{{preset}} 等占位符...')
+        self._nameEdit.setPlaceholderText('输入自定义文件名称, 不要输入扩展名')
         self._nameEdit.setMaximumHeight(60)
+        self._nameEdit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
         self._placeHolderBtn = PushButton('添加', self.mainbox)
         self._clearBtn = PushButton('清除', self.mainbox)
 
@@ -471,9 +516,7 @@ class CustomNameWidget(NodeBaseWidget):
         menu = RoundMenu()
         placeholders = {
             '输入文件名': '{input_name}',
-            '视频编码器': '{video_encoder}',
-            '音频编码器': '{audio_encoder}',
-            '日期时间': '{datetime}'
+            '日期时间': '{datetime}',
         }
         for name, placeholder in placeholders.items():
             action = Action(name)
@@ -494,8 +537,46 @@ class CustomNameWidget(NodeBaseWidget):
         if value:
             self._nameEdit.setPlainText(str(value))
 
+class ActionButtonWidget(NodeBaseWidget):
+    """内嵌按钮控件，点击时触发回调"""
+    def __init__(self, parent, name, label, on_click):
+        super().__init__(parent, name)
+        btn = PushButton(label)
+        btn.setFixedWidth(180)
+        btn.clicked.connect(on_click)
+        self.set_custom_widget(btn)
 
-    
-        
-                                           
+    def get_value(self):
+        return None
+    def set_value(self, v):
+        pass
+
+
+class SwitchButtonWidget(NodeBaseWidget):
+    """内嵌开关控件"""
+    def __init__(self, parent, name, label):
+        super().__init__(parent, name)
+        mainbox = QWidget()
+        mainLayout = QHBoxLayout(mainbox)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.setSpacing(10)
+
+        self._sw = SwitchButton()
+        self._sw.setChecked(False)
+        self._sw.setOnText('')
+        self._sw.setOffText('')
+        self.label_w = BodyLabel(label)
+
+        mainLayout.addWidget(self.label_w, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+        mainLayout.addWidget(self._sw)
+        mainLayout.addStretch(1)
+        self.set_custom_widget(mainbox)
+
+        self._sw.checkedChanged.connect(lambda v: self.on_value_changed(v))
+
+    def get_value(self):
+        return self._sw.isChecked()
+
+    def set_value(self, v):
+        self._sw.setChecked(bool(v))
 

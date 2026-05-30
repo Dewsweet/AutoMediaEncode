@@ -1,98 +1,146 @@
-import os, subprocess
+import subprocess
+from pathlib import Path
 from .._base import AMENodeBase, C, P, HIDDEN
+from .._widgets import ActionButtonWidget
 from app.services.tool_service import ToolService
+from app.common.logger import logger
 
 
 class SplitterNode(AMENodeBase):
     NODE_NAME = '分离器'
-    DESCRIPTION = '用 ffmpeg -i 探测输入文件轨道，执行时按连接端口用 -map 分离'
-    CATEGORY = '工具'
-    CATEGORY_COLOR = C['Orange']
+    DESCRIPTION = '默认 video_1 + audio_1。探测后按实际轨道动态追加 video_2/audio_2/subtitle_1 等'
+    CATEGORY = '工具'; CATEGORY_COLOR = C['Orange']
     MENU_KEY = 'splitter'
     INPUTS  = [('input', P['any'])]
-    OUTPUTS = [('video', P['video']), ('audio', P['audio']), ('subtitle', P['subtitle'])]
+    OUTPUTS = [('video_1', P['video']), ('audio_1', P['audio'])]
 
     def _setup_widgets(self):
+        self.add_custom_widget(ActionButtonWidget(self.view, 'probe_btn', '探测轨道', self._on_probe))
         self.create_property('cached_tracks', [], widget_type=HIDDEN, tab='')
 
+    def _on_probe(self):
+        """探测输入文件的轨道信息，动态调整输出端口"""
+        in_port = self.inputs().get('input')
+        if not in_port:
+            return
+        connected = in_port.connected_ports()
+        if not connected:
+            return
+        src_node = connected[0].node()
+        fp = src_node.property('input_file', '')
+        if not fp or not Path(fp).is_file():
+            fp = src_node.property('input_multi', '')
+            if fp: fp = fp.split('\n')[0].strip()
+            if not fp or not Path(fp).is_file():
+                logger.warning(f'[Splitter] 上游节点没有有效文件路径')
+                return
+
+        ff = ToolService.get_tool_path('ffmpeg')
+        if not ff: return
+
+        tracks = self._probe(ff, fp)
+        logger.info(f'[Splitter] 探测到 {len(tracks)} 条轨道: {[(t["type"], t["idx"]) for t in tracks]}')
+        self.set_property('cached_tracks', tracks, push_undo=False)
+
+        type_count = {}
+        for t in tracks:
+            tt = t['type']
+            type_count[tt] = type_count.get(tt, 0) + 1
+
+        for tt, count in type_count.items():
+            for i in range(1, count + 1):
+                pn = f"{tt}_{i}"
+                if pn not in self.outputs():
+                    self.add_output(pn, color=P.get(tt, P['any']))
+                    logger.info(f'[Splitter] 追加端口: {pn}')
+
+        self.view.draw_node()
+
     def execute(self, inputs: dict, temp_dir: str) -> dict | None:
+        logger.info('\n' * 2 + '=' * 40 + ' [Splitter] ' + '=' * 40)
         src_files = inputs.get('input', [])
         if not src_files:
             return None
         src = src_files[0]
         ff = ToolService.get_tool_path('ffmpeg')
-        if not ff:
-            return None
+        if not ff: return None
 
         tracks = self._probe(ff, src)
-        self.set_property('cached_tracks', tracks, push_undo=False)
+        logger.info(f'[Splitter] 执行探测: {len(tracks)} 条轨道')
 
         result = {}
-        cf = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-
+        type_idx = {}
         for t in tracks:
-            port_name = t['type']
-            if port_name not in self.outputs():
-                port_name = f"{t['type']}_{t['idx']}"
-            if port_name not in self.outputs():
-                continue
-            port = self.outputs()[port_name]
-            if not port.connected_ports():
+            tt = t['type']
+            ci = type_idx.get(tt, 0)
+            type_idx[tt] = ci + 1
+            pn = f"{tt}_{ci + 1}"
+            port = self.outputs().get(pn)
+            if not port or not port.connected_ports():
                 continue
 
             ext = _codec_ext(t['codec'])
-            dst = os.path.join(temp_dir, f"track_{port_name}{ext}")
-            cmd = [ff, '-i', src, '-map', f"0:{t['idx']}", '-c', 'copy', dst, '-y']
+            dst = Path(temp_dir) / f"track_{pn}{ext}"
+            codec_param = _resolve_codec(t['codec'], t.get('depth', ''))
+            cmd = [ff, '-i', src, '-map', f"0:{t['idx']}", *codec_param, dst, '-y']
+            logger.info(f'[Splitter] 提取: {" ".join(cmd)}')
             try:
-                r = subprocess.run(cmd, creationflags=cf, capture_output=True, timeout=300)
-                if r.returncode == 0 and os.path.isfile(dst) and os.path.getsize(dst) > 0:
-                    result.setdefault(port_name, []).append(dst)
-            except Exception:
-                pass
+                r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=300)
+                if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
+                    result.setdefault(pn, []).append(dst)
+                    logger.info(f'[Splitter] 提取成功: {dst}')
+            except Exception as e:
+                logger.error(f'[Splitter] 提取异常: {e}')
 
         return result if result else None
 
     def _probe(self, ff: str, src: str) -> list:
         tracks = []
         try:
-            cf = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            r = subprocess.run(
-                [ff, '-i', src, '-hide_banner'],
-                capture_output=True, text=True, creationflags=cf, timeout=60,
-            )
+            cmd = [ff, '-i', src, '-hide_banner']
+            r = subprocess.run(cmd, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=60)
             for ln in r.stderr.split('\n'):
-                if not ln.strip().startswith('  Stream'):
+                if 'Stream #0:' not in ln:
                     continue
-                part = ln.split('Stream #0:')[1]
-                s = part.split('[')[0].split('(')[0].strip().split(':')[0]
                 try:
-                    idx = int(s)
-                except ValueError:
+                    idx = int(ln.split('Stream #0:')[1].split('[')[0].split('(')[0].strip().split(':')[0])
+                except (IndexError, ValueError):
                     continue
                 if 'Video:' in ln:
                     codec = ln.split('Video:')[1].split()[0].split(',')[0]
                     tracks.append({'type': 'video', 'idx': idx, 'codec': codec})
                 elif 'Audio:' in ln:
                     codec = ln.split('Audio:')[1].split()[0].split(',')[0]
-                    tracks.append({'type': 'audio', 'idx': idx, 'codec': codec})
+                    depth = ''
+                    if 'pcm_bluray' in codec:
+                        if 's16' in ln: depth = 's16'
+                        elif 's32' in ln: depth = 's32'
+                        elif 's24' in ln: depth = 's24'
+                    tracks.append({'type': 'audio', 'idx': idx, 'codec': codec, 'depth': depth})
                 elif 'Subtitle:' in ln:
                     codec = ln.split('Subtitle:')[1].split()[0].split(',')[0]
                     tracks.append({'type': 'subtitle', 'idx': idx, 'codec': codec})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f'[Splitter] 探测失败: {e}')
         return tracks
+
+
+def _resolve_codec(codec: str, depth: str) -> list:
+    c = codec.lower().replace('_', '')
+    if 'pcm_bluray' in c or 'pcm' in c:
+        if depth == 's32': return ['-c:a', 'pcm_s32le']
+        elif depth == 's24': return ['-c:a', 'pcm_s24le']
+        else: return ['-c:a', 'pcm_s16le']
+    return ['-c', 'copy']
 
 
 def _codec_ext(codec: str) -> str:
     c = codec.lower().replace('_', '')
-    m = {
-        'h264': '.h264', 'avc': '.h264', 'hevc': '.h265', 'h265': '.h265',
-        'av1': '.ivf', 'vp9': '.ivf', 'aac': '.aac', 'flac': '.flac',
-        'opus': '.opus', 'vorbis': '.ogg', 'pcm': '.wav', 'mp3': '.mp3',
-        'ac3': '.ac3', 'eac3': '.eac3', 'dts': '.dts', 'ass': '.ass',
-        'srt': '.srt', 'vtt': '.vtt',
-    }
+    m = {'h264': '.h264', 'avc': '.h264', 'hevc': '.h265', 'h265': '.h265',
+         'av1': '.ivf', 'vp9': '.ivf', 'aac': '.aac', 'flac': '.flac',
+         'opus': '.opus', 'vorbis': '.ogg', 'pcm': '.wav', 'mp3': '.mp3',
+         'ac3': '.ac3', 'eac3': '.eac3', 'dts': '.dts', 'ass': '.ass',
+         'srt': '.srt', 'vtt': '.vtt'}
     for k, v in m.items():
-        if k in c:
-            return v
+        if k in c: return v
     return '.mkv'

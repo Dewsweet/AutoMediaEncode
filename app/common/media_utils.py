@@ -47,3 +47,21 @@ def classify_files(file_paths):
 def get_present_types(classified_dict):
     """返回非空的有效分类列表"""
     return [k for k, v in classified_dict.items() if v and k != 'unknown']
+
+def build_safe_filter(name: str, exts: set, chunk_size: int = 15) -> str:
+    """
+    将过长的后缀 set 拆分为以 chunk_size 为一组的多个过滤器。
+    避免触发 Windows QFileDialog 过滤器下拉菜单超长导致卡死的 Bug。
+    """
+    ext_list = sorted(list(exts))  # 排序以保证每次显示顺序一致，不再随机变化
+    groups = []
+    
+    for i in range(0, len(ext_list), chunk_size):
+        chunk = ext_list[i:i+chunk_size]
+        groups.append(" ".join(f"*{e}" for e in chunk))
+        
+    if len(groups) == 1:
+        return f"{name} ({groups[0]})"
+    
+    # 如果超过单组，划分为 '视频文件(1) (*.mp4...) ;; 视频文件(2) (*.ts...)'
+    return ";;".join(f"{name}({i+1}) ({g})" for i, g in enumerate(groups))

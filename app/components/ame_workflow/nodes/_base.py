@@ -84,16 +84,15 @@ class AMENodeBase(BaseNode):
             for port in self_view._input_items.keys():
                 if port.isVisible():
                     p_input_h += port.boundingRect().height() + 1
-                    p_input_w += port.boundingRect().width()
-                    
+                    p_input_w = max(p_input_w, port.boundingRect().width())
+
             p_output_h = 0.0
             p_output_w = 0.0
             for port in self_view._output_items.keys():
                 if port.isVisible():
                     p_output_h += port.boundingRect().height() + 1
-                    p_output_w += port.boundingRect().width()
-            
-            # 端口占据的最大高度
+                    p_output_w = max(p_output_w, port.boundingRect().width())
+
             port_height = max(p_input_h, p_output_h)
             widget_width = 0.0
             widget_height = 0.0
@@ -101,9 +100,7 @@ class AMENodeBase(BaseNode):
                 if widget.isVisible():
                     widget_width = max(widget_width, widget.boundingRect().width())
                     widget_height += widget.boundingRect().height() + 4
-            # 整体宽度：取端口排列宽 或 控件宽 的最大值
-            # 整体高度：端口高度 + 控件总高度 （上下堆叠）
-            width = max(p_input_w + p_output_w + 30, widget_width + 10)
+            width = max(p_input_w + p_output_w + 30, widget_width + 10, 200)
             height = port_height + widget_height + 10
             return width, height
 
@@ -148,29 +145,3 @@ class AMENodeBase(BaseNode):
             return v if v is not None else default
         except Exception:
             return default
-
-
-def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
-    import os, subprocess, shlex
-    src = (inputs.get('input') or [''])[0]
-    if not src: return None
-    dst = os.path.join(temp_dir, f'{tool_key}_{node.id}{ext}')
-    from app.services.tool_service import ToolService
-    cli = ToolService.get_tool_path(tool_key)
-    if not cli or not os.path.isfile(cli): return None
-    pcfg = node.property('preset_cfg', {})
-    use_p = pcfg.get('use_preset', True) if isinstance(pcfg, dict) else True
-    pname = pcfg.get('preset', '') if isinstance(pcfg, dict) and use_p else ''
-    cli_args = node.property('custom_cli', '')
-    if pname:
-        enc_map = {'x264':'x264','x265':'x265','SvtAv1':'SVTAV1'}
-        from app.services.setting.preset_service import preset_service
-        presets = preset_service.get_presets_by_encoder(enc_map.get(tool_key, tool_key))
-        cli_args = presets.get(pname, pname) if presets else pname
-    try: args = shlex.split(cli_args) if cli_args else []
-    except ValueError: args = cli_args.split() if cli_args else []
-    cmd = [cli, '--output', dst] if tool_key == 'SvtAv1' else [cli, '-o', dst]
-    cmd.extend(args); cmd.append(src)
-    cf = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-    subprocess.run(cmd, creationflags=cf, capture_output=True, timeout=14400)
-    return {'video': [dst]} if os.path.isfile(dst) and os.path.getsize(dst) > 0 else None

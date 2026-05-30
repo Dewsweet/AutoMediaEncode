@@ -1,13 +1,11 @@
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtWidgets import QWidget, QVBoxLayout
-from PySide6.QtGui import QCursor
 
 from qfluentwidgets import (ProgressBar, InfoBar, InfoBarPosition)
 
 from app.components.ame_workflow.ame_graph import AMEGraph
-from app.components.ame_workflow.ame_inspector import FloatingInspector
 from app.components.ame_workflow.floating_toolbar import FloatingToolbar
-from app.components.ame_workflow.nodes import MENU_KEY_MAP, TYPE_NAME_MAP
+from app.components.ame_workflow.nodes import MENU_KEY_MAP
 from app.components.ame_workflow.node_palette import NodePaletteMenu
 from app.common.style_sheet import StyleSheet
 
@@ -19,7 +17,6 @@ class AMEWorkflowInterface(QWidget):
 
         self._ame_graph = AMEGraph(self)
         self._toolbar = FloatingToolbar(self)
-        self._inspector = FloatingInspector(self)
         self._progress = ProgressBar(self)
         self._palette = NodePaletteMenu(self)
 
@@ -40,8 +37,7 @@ class AMEWorkflowInterface(QWidget):
 
     def _setup_signals(self):
         g = self._ame_graph.graph
-        g.node_selected.connect(self._on_node_selected)
-        g.node_selection_changed.connect(self._on_sel_changed)
+        g.node_selected.connect(lambda n: None)
 
         viewer = self._ame_graph.viewer()
         if viewer:
@@ -51,23 +47,16 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.cancel_clicked.connect(self._on_cancel)
         self._palette.node_selected.connect(self._on_palette_node)
 
-    def _on_node_selected(self, node):
-        self._inspector.set_node(node)
-
-    def _on_sel_changed(self, sel, desel):
-        pass
-
     def _on_viewer_menu(self, pos):
         self._palette.exec(self._ame_graph.viewer().mapToGlobal(pos))
 
     def _on_palette_node(self, menu_key, _):
         cls = MENU_KEY_MAP.get(menu_key)
-        if not cls: return
+        if not cls:
+            return
         tn = f'ame.{cls.__name__}'
         cur = self._ame_graph.graph.cursor_pos()
-        node = self._ame_graph.create_node(tn, pos=[cur[0], cur[1]])
-        if node:
-            self._inspector.set_node(node)
+        self._ame_graph.create_node(tn, pos=[cur[0], cur[1]])
 
     def _on_start(self):
         out_cls = self._find_output_class()
@@ -83,8 +72,9 @@ class AMEWorkflowInterface(QWidget):
         self._progress.setValue(0)
         edges = []
         for n in nodes:
-            for pn, cd in n.model.outputs.items():
-                for cid, cps in cd.items():
+            for pn, port_model in n.model.outputs.items():
+                conn = port_model.connected_ports if hasattr(port_model, 'connected_ports') else {}
+                for cid, cps in conn.items():
                     for cp in cps:
                         edges.append((n, pn, cid, cp))
         from app.services.ame_workflow.workflow_executor import AMEWorkflowExecutor
@@ -130,7 +120,5 @@ class AMEWorkflowInterface(QWidget):
         super().resizeEvent(event)
         w, h = self.width(), self.height()
         self._toolbar.setGeometry(20, 12, 220, 42)
-        self._inspector.reposition(w, h)
         self._progress.setGeometry(0, h - 6, w, 6)
         self._toolbar.raise_()
-        self._inspector.raise_()
