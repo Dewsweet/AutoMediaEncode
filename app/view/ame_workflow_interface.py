@@ -44,6 +44,7 @@ class AMEWorkflowInterface(QWidget):
             viewer.customContextMenuRequested.connect(self._on_viewer_menu)
 
         self._toolbar.start_clicked.connect(self._on_start)
+        self._toolbar.pause_clicked.connect(self._on_pause)
         self._toolbar.cancel_clicked.connect(self._on_cancel)
         self._palette.node_selected.connect(self._on_palette_node)
 
@@ -59,6 +60,10 @@ class AMEWorkflowInterface(QWidget):
         self._ame_graph.create_node(tn, pos=[cur[0], cur[1]])
 
     def _on_start(self):
+        if self._executor and self._running:
+            self._executor.resume()
+            self._toolbar.set_state('running')
+            return
         out_cls = self._find_output_class()
         nodes = self._ame_graph.all_nodes()
         if not any(isinstance(n, out_cls) for n in nodes):
@@ -80,7 +85,7 @@ class AMEWorkflowInterface(QWidget):
         from app.services.ame_workflow.workflow_executor import AMEWorkflowExecutor
         self._executor = AMEWorkflowExecutor(nodes, edges)
         self._executor.progress_updated.connect(lambda v: self._progress.setValue(v))
-        self._executor.node_status_changed.connect(lambda nid, s: None)
+        self._executor.node_status_changed.connect(self._on_node_status)
         self._executor.finished.connect(self._on_finished)
         self._executor.error_occurred.connect(self._on_error)
         self._executor.start()
@@ -90,11 +95,21 @@ class AMEWorkflowInterface(QWidget):
             self._executor.cancel()
         self._reset_ui()
 
+    def _on_pause(self):
+        if self._executor:
+            self._executor.pause()
+            self._toolbar.set_state('paused')
+
     def _reset_ui(self):
         self._running = False
         self._toolbar.set_state('idle')
         self._progress.setVisible(False)
         self._progress.setValue(0)
+
+    def _on_node_status(self, node_id: str, status: str):
+        node = self._ame_graph.get_node_by_id(node_id)
+        if node and hasattr(node, 'set_status'):
+            node.set_status(status)
 
     def _on_finished(self):
         self._running = False

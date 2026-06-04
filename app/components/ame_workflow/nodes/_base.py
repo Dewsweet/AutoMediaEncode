@@ -64,6 +64,7 @@ class AMENodeBase(BaseNode):
 
     def __init__(self):
         super().__init__()
+        self._status = 'idle'
         self.set_color(*self.CATEGORY_COLOR)
         for name, color in self.INPUTS:
             self.add_input(name, color=color)
@@ -72,6 +73,13 @@ class AMENodeBase(BaseNode):
             
         self._patch_view_layout()
         self._setup_widgets()
+
+    def set_status(self, status: str):
+        self._status = status
+        if status == 'running':
+            self.set_selected(True)
+        else:
+            self.set_selected(False)
 
     def _patch_view_layout(self):
         """将控件位置调整到端口下方并居中"""

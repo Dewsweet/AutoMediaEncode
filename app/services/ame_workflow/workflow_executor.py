@@ -1,3 +1,4 @@
+import uuid, time
 from pathlib import Path
 from collections import deque
 from PySide6.QtCore import QThread, Signal
@@ -14,18 +15,25 @@ class AMEWorkflowExecutor(QThread):
         self._nodes = list(nodes)
         self._edges = list(edges)
         self._cancelled = False
+        self._paused = False
         self._node_map = {n.id: n for n in self._nodes}
         self._temp_dir = ''
 
     def cancel(self):
         self._cancelled = True
 
+    def pause(self):
+        self._paused = True
+
+    def resume(self):
+        self._paused = False
+
     def run(self):
         logger.info('\n' * 10 + '=' * 100 + '\n' + '=' * 100)
         logger.info(f'[AME] 开始执行工作流, {len(self._nodes)} 个节点, {len(self._edges)} 条连线')
         if not self._nodes:
             return
-        order = self._topo_sort() # 拓扑排序，确保父节点在子节点前执行
+        order = self._topo_sort()
         if order is None:
             self.error_occurred.emit('工作流中存在循环依赖')
             return
@@ -40,10 +48,20 @@ class AMEWorkflowExecutor(QThread):
         self._resolve_temp_dir()
         logger.info(f'[AME] 临时目录: {self._temp_dir}')
         port_data = {}
+
         for i, node in enumerate(order):
-            if self._cancelled: return
+            if self._cancelled:
+                return
+            while self._paused:
+                time.sleep(0.1)
+                if self._cancelled:
+                    return
+
             logger.info(f'[AME] 执行节点: {node.name()} ({node.__class__.__name__})')
             self.node_status_changed.emit(node.id, 'running')
+            node._ame_cancelled = lambda: self._cancelled
+            node._ame_paused = lambda: self._paused
+
             inputs = self._collect(node, port_data)
             logger.info(f'[AME] 输入: {list(inputs.keys())}')
             result = None
@@ -53,7 +71,10 @@ class AMEWorkflowExecutor(QThread):
                 logger.error(f'[AME] 节点 {node.name()} 执行异常: {e}')
                 import traceback
                 logger.error(traceback.format_exc())
-            if self._cancelled: return
+
+            if self._cancelled:
+                return
+
             if result is not None or node.__class__.__name__ == 'OutputNode':
                 if result:
                     logger.info(f'[AME] 输出: {list(result.keys())}')
@@ -70,6 +91,7 @@ class AMEWorkflowExecutor(QThread):
                 self.error_occurred.emit(f'节点 {node.name()} 执行失败')
                 return
             self.progress_updated.emit(int((i + 1) / total * 100))
+
         logger.info(f'[AME] 工作流执行完成')
 
     def _collect(self, node, port_data):

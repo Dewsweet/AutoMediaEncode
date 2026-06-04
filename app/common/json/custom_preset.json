@@ -14,7 +14,7 @@
         "其他-存档": "--preset slower --ctu 32 --me star --subme 4 --merange 48 --max-merge 4 --early-skip --no-open-gop --keyint 220 --min-keyint 1 --ref 3 --fades --bframes 7 --b-adapt 2 --b-intra --crf 17 --cbqpoffs -3 --crqpoffs -2 --rd 3 --limit-modes --limit-refs 1 --rskip 1 --rc-lookahead 90 --splitrd-skip --deblock -1:-1 --tune grain" 
     },
     "SVTAV1": {
-        "通用": "--preset 4 --rc 0 --qp 30 --max-qp 55 --min-qp 8 --crf 23 --aq-mode 2 --keyint 300 --irefresh-type 2 --scd 1 --lookahead 80 --scm 2 --enable-tpl-la 1",
-        "动画": "--preset 3 --rc 0 --qp 25 --max-qp 50 --crf17 --aq-mode 2 --keyint 240 --irefresh-type 2 --scd 1 --lookahead 80 --scm 1 --enable-tpl-la 1"
+        "通用": "--preset 4 --rc 0 --qp 30 --max-qp 55 --min-qp 8 --crf 23 --aq-mode 2 --keyint 300 --irefresh-type 2 --scd 1 --lookahead 80 --scm 2",
+        "动画": "--preset 3 --rc 0 --qp 25 --max-qp 50 --crf17 --aq-mode 2 --keyint 240 --irefresh-type 2 --scd 1 --lookahead 80 --scm 1"
     }
 }

@@ -92,7 +92,16 @@ class FloatingToolbar(QFrame):
 
     def mouseMoveEvent(self, event):
         if self._drag_pos is not None:
-            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            new_pos = event.globalPosition().toPoint() - self._drag_pos
+            parent = self.parent()
+            if parent:
+                pw = parent.width(); ph = parent.height()
+                w = self.width(); h = self.height()
+                if new_pos.x() < 0: new_pos.setX(0)
+                if new_pos.y() < 0: new_pos.setY(0)
+                if new_pos.x() + w > pw: new_pos.setX(pw - w)
+                if new_pos.y() + h > ph: new_pos.setY(ph - h)
+            self.move(new_pos)
             event.accept()
             return
         super().mouseMoveEvent(event)

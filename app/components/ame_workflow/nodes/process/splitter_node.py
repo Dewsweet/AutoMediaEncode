@@ -83,7 +83,7 @@ class SplitterNode(AMENodeBase):
             dst = Path(temp_dir) / f"track_{pn}{ext}"
             codec_param = _resolve_codec(t['codec'], t.get('depth', ''))
             cmd = [ff, '-i', src, '-map', f"0:{t['idx']}", *codec_param, dst, '-y']
-            logger.info(f'[Splitter] 提取: {" ".join(cmd)}')
+            logger.info(f'[Splitter] 提取: {" ".join(str(c) for c in cmd)}')
             try:
                 r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=300)
                 if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:

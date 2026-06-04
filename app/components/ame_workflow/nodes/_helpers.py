@@ -1,11 +1,8 @@
-from math import log
-from re import sub
-import subprocess, shlex
+import subprocess, shlex, time
 from pathlib import Path
 from app.services.tool_service import ToolService
 from app.common.logger import logger
 from app.services.setting.preset_service import preset_service
-from app.services.recode.native_cli_parser import NativeCliParser
 
 def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     """x264/x265/SVTAV1 通用 CLI 编码（支持文件输入和管道输入）"""
@@ -35,6 +32,8 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     except ValueError:
         args = cli_args.split() if cli_args else []
     cf = subprocess.CREATE_NO_WINDOW
+    cancelled = getattr(node, '_ame_cancelled', lambda: False)
+    paused = getattr(node, '_ame_paused', None)
 
     # ── 管道模式 (vspipe → x264/x265/svtav1) ──
     is_pipe = isinstance(src_raw, dict) and src_raw.get('pipe')
@@ -49,22 +48,21 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
             enc_cmd.extend(args)
             enc_cmd.extend(['--output', str(dst)])
         else:
-            # x264
             enc_cmd = [cli_p, '--demuxer', 'y4m']
             enc_cmd.extend(args)
             enc_cmd.extend(['-o', str(dst), '-'])
 
         logger.info(f'[{node.NODE_NAME}] 编码命令: {" ".join(enc_cmd)}')
         try:
-            vs_proc = subprocess.Popen(pipe_cmd, shell=True, stdout=subprocess.PIPE,stderr=subprocess.PIPE, creationflags=cf)
-            enc_proc = subprocess.Popen(enc_cmd, stdin=vs_proc.stdout, creationflags=cf)
-            vs_proc.stdout.close() 
-            enc_proc.wait() 
-            if enc_proc.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
+            r = _run_pipe(pipe_cmd, {}, enc_cmd,
+                          {'stderr': subprocess.STDOUT, 'text': True, 'bufsize': 1},
+                          node)
+            if r is None: return None
+            if r == 0 and dst.is_file() and dst.stat().st_size > 0:
                 logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
                 return {'video': [str(dst)]}
             else:
-                logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={enc_proc.returncode}')
+                logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
                 return None
         except Exception as e:
             logger.error(f'[{node.NODE_NAME}] 管道编码异常: {e}')
@@ -81,17 +79,16 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
         av1_cmd.extend(['-b', str(dst)])
         logger.info(f'[{node.NODE_NAME}] FFmpeg 命令: {" ".join(ff_cmd)}')
         logger.info(f'[{node.NODE_NAME}] SvtAv1 命令: {" ".join(av1_cmd)}')
-
         try:
-            ff_proc = subprocess.Popen(ff_cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=cf)
-            av1_proc = subprocess.Popen(av1_cmd, stdin=ff_proc.stdout, creationflags=cf)
-            ff_proc.stdout.close()
-            av1_proc.wait()
-            if av1_proc.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
+            r = _run_pipe(ff_cmd, {'stderr': subprocess.DEVNULL},
+                          av1_cmd, {'stderr': subprocess.STDOUT, 'text': True, 'bufsize': 1},
+                          node)
+            if r is None: return None
+            if r == 0 and dst.is_file() and dst.stat().st_size > 0:
                 logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
                 return {'video': [str(dst)]}
             else:
-                logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={av1_proc.returncode}')
+                logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
                 return None
         except Exception as e:
             logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
@@ -101,18 +98,21 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
         cmd.extend(args)
         cmd.extend(['-o', str(dst), src])
 
-    logger.info(f'[{node.NODE_NAME}] 命令: {" ".join(str(c) for c in cmd)}')
-    try:
-        r = subprocess.run(cmd, creationflags=cf, capture_output=True, timeout=14400)
-        if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
-            logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
-            return {'video': [str(dst)]}
-        else:
-            logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r.returncode}, stderr={r.stderr[:200]}')
+        logger.info(f'[{node.NODE_NAME}] 命令: {" ".join(str(c) for c in cmd)}')
+        try:
+            r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+            if r is None:  # cancelled
+                logger.info(f'[{node.NODE_NAME}] 已取消')
+                return None
+            if r == 0 and dst.is_file() and dst.stat().st_size > 0:
+                logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
+                return {'video': [str(dst)]}
+            else:
+                logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
+                return None
+        except Exception as e:
+            logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
             return None
-    except Exception as e:
-        logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
-        return None
 
 def _do_qaac_encode(node, inputs, temp_dir, ext):
     """QAAC 通用 CLI 编码"""
@@ -129,7 +129,7 @@ def _do_qaac_encode(node, inputs, temp_dir, ext):
         logger.error(f'[AAC] 找不到 qaac 编码器')
         return None
     
-    dst = temp_dir / f'qaac_{node.id}{ext}'
+    dst = Path(temp_dir) / f'qaac_{node.id}{ext}'
     wdata = node.property('Audio_codec', {})
     if isinstance(wdata, dict):
         bitrate = wdata.get('bitrate', '192')
@@ -145,17 +145,20 @@ def _do_qaac_encode(node, inputs, temp_dir, ext):
 
     logger.info(f'[{node.NODE_NAME}] 命令: {" ".join(str(c) for c in cmd)}')
     try:
-        r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
-        if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
+        cancelled = getattr(node, '_ame_cancelled', lambda: False)
+        paused = getattr(node, '_ame_paused', None)
+        r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+        if r is None:
+            return None
+        if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
             return {'audio': [dst]}
         else:
-            logger.error(f'[{node.NODE_NAME}] 失败: {r.stderr[:200]}')
+            logger.error(f'[{node.NODE_NAME}] 失败: returncode={r}')
             return None
     except Exception as e:
         logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
         return None
-
 
 def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
     """通用 FFmpeg 音频编码"""
@@ -200,17 +203,20 @@ def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
             cmd[-3:-3] = ['-compression_level', str(compression_level)]
     logger.info(f'[{node.NODE_NAME}] 组装命令: {" ".join(str(c) for c in cmd)}')
     try:
-        r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
-        if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
+        cancelled = getattr(node, '_ame_cancelled', lambda: False)
+        paused = getattr(node, '_ame_paused', None)
+        r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+        if r is None:
+            return None
+        if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
             return {'audio': [dst]}
         else:
-            logger.error(f' [{node.NODE_NAME}] 编码失败: returncode={r.returncode}, stderr={r.stderr[:200]}')
+            logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
             return None
     except Exception as e:
         logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
         return None
-
 
 def _do_ffmpeg_video(node, inputs, temp_dir):
     """通用 FFmpeg 视频编码"""
@@ -243,16 +249,21 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
         cmd[-3:-3] = args
     logger.info(f'[{codec}] 组装命令: {" ".join(str(c) for c in cmd)}')
     try:
-        r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
-        if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
+        cancelled = getattr(node, '_ame_cancelled', lambda: False)
+        paused = getattr(node, '_ame_paused', None)
+        r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+        if r is None:
+            return None
+        if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{codec}] 编码成功: {dst}')
             return {'video': [dst]}
         else:
-            logger.error(f' [{codec}] 编码失败: returncode={r.returncode}, stderr={r.stderr[:200]}')
+            logger.error(f'[{codec}] 编码失败: returncode={r}')
             return None
     except Exception as e:
         logger.error(f'[{codec}] 编码异常: {e}')
         return None
+
 
 def _codec_to_ext(codec: str) -> str:
     c = codec.lower().replace('_', '')
@@ -271,6 +282,7 @@ def _codec_to_ext(codec: str) -> str:
             return v
     return '.mkv'
 
+
 def _build_cli_args(node, tool_key):
     """从节点属性中提取 CLI 参数 (preset/custom_cli)"""
     pcfg = node.property('preset_cfg', {})
@@ -281,3 +293,73 @@ def _build_cli_args(node, tool_key):
         presets = preset_service.get_presets_by_encoder(tool_key)
         cli_args = presets.get(pname, '')
     return cli_args
+
+
+def _run_with_progress(cmd, cancelled, paused=None, timeout=14400, text=True):
+    """Popen 轮询执行命令，支持取消和暂停检测"""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=text, creationflags=subprocess.CREATE_NO_WINDOW, bufsize=1)
+    start = time.time()
+    for line in proc.stdout:
+        if paused and paused():
+            while paused():
+                time.sleep(0.1)
+                if cancelled():
+                    proc.terminate()
+                    try: proc.wait(timeout=3)
+                    except subprocess.TimeoutExpired: proc.kill()
+                    return None
+        if cancelled():
+            proc.terminate()
+            try: proc.wait(timeout=3)
+            except subprocess.TimeoutExpired: proc.kill()
+            return None
+        if timeout and time.time() - start > timeout:
+            proc.terminate()
+            try: proc.wait(timeout=3)
+            except subprocess.TimeoutExpired: proc.kill()
+            return -1
+    proc.wait()
+    return proc.returncode
+
+
+def _run_pipe(cmd1, kw1, cmd2, kw2, node, timeout=14400):
+    """双进程管道: proc1 stdout → proc2 stdin. 支持取消/暂停. 返回 proc2.returncode 或 None"""
+    cancelled = getattr(node, '_ame_cancelled', lambda: False)
+    paused = getattr(node, '_ame_paused', None)
+    cf = subprocess.CREATE_NO_WINDOW
+
+    p1 = subprocess.Popen(cmd1, stdout=subprocess.PIPE, **(kw1 or {}), creationflags=cf) # kw1 是字典，
+    p2 = subprocess.Popen(cmd2, stdin=p1.stdout, **(kw2 or {}), creationflags=cf)
+    p1.stdout.close()
+
+    start = time.time()
+    while p2.poll() is None: # 轮询检测 p2 是否结束
+        if paused and paused():
+            while paused():
+                time.sleep(0.1)
+                if cancelled():
+                    p2.terminate(); p1.terminate()
+                    for p in (p2, p1):
+                        try: p.wait(timeout=3)
+                        except subprocess.TimeoutExpired: p.kill()
+                    return None
+        if cancelled():
+            p2.terminate(); p1.terminate()
+            for p in (p2, p1):
+                try: p.wait(timeout=3)
+                except subprocess.TimeoutExpired: p.kill()
+            return None
+        if timeout and time.time() - start > timeout:
+            p2.terminate(); p1.terminate()
+            for p in (p2, p1):
+                try: p.wait(timeout=3)
+                except subprocess.TimeoutExpired: p.kill()
+            return -1
+        time.sleep(0.1)
+
+    if p1.poll() is None:
+        p1.terminate()
+        try: p1.wait(timeout=5)
+        except subprocess.TimeoutExpired: p1.kill()
+    return p2.returncode
