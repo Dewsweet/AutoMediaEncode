@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QStackedWidget, QFileDialog
+from PySide6.QtGui import QShortcut, QKeySequence
 
 from qfluentwidgets import (ProgressBar, InfoBar, InfoBarPosition)
 
@@ -7,6 +8,8 @@ from app.components.ame_workflow.ame_graph import AMEGraph
 from app.components.ame_workflow.floating_toolbar import FloatingToolbar
 from app.components.ame_workflow.nodes import MENU_KEY_MAP
 from app.components.ame_workflow.ame_context_menu import AMEConextMenu
+from app.components.ame_workflow.ame_loader_page import AMELoaderPage, NameInputDialog
+from app.services.ame_workflow.ame_preset_service import preset_service
 from app.common.style_sheet import StyleSheet
 
 
@@ -19,21 +22,31 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar = FloatingToolbar(self)
         self._progress = ProgressBar(self)
         self._palette = AMEConextMenu(self._ame_graph.graph, self)
+        self._loader = AMELoaderPage(self)
 
         self._executor = None
         self._running = False
+        self._current_workflow_name = None
 
         self._progress.setRange(0, 100)
         self._progress.setValue(0)
         self._progress.setVisible(False)
         self._progress.setFixedHeight(6)
 
+        self._stack = QStackedWidget(self)
+        self._stack.addWidget(self._loader)
+        self._stack.addWidget(self._ame_graph.widget())
+        self._stack.setCurrentIndex(0)
+
         self._lay = QVBoxLayout(self)
         self._lay.setContentsMargins(0, 0, 0, 0)
-        self._lay.addWidget(self._ame_graph.widget())
+        self._lay.addWidget(self._stack)
+
+        self._toolbar.setVisible(False)
 
         self._setup_signals()
         StyleSheet.AME_WORKFLOW_INTERFACE.apply(self)
+        self._loader.load()
 
     def _setup_signals(self):
         g = self._ame_graph.graph
@@ -42,17 +55,98 @@ class AMEWorkflowInterface(QWidget):
         viewer = self._ame_graph.viewer()
         if viewer:
             viewer.customContextMenuRequested.connect(self._on_viewer_menu)
+            QShortcut(QKeySequence('Ctrl+S'), viewer, activated=self._on_save)
+            QShortcut(QKeySequence('Ctrl+O'), viewer, activated=self._on_back_to_loader)
 
         self._toolbar.start_clicked.connect(self._on_start)
         self._toolbar.pause_clicked.connect(self._on_pause)
         self._toolbar.cancel_clicked.connect(self._on_cancel)
         self._toolbar.save_clicked.connect(self._on_save)
-        self._toolbar.load_clicked.connect(self._on_load)
-        self._palette.node_selected.connect(self._on_palette_node)
+        self._toolbar.load_clicked.connect(self._on_import_json)
+        self._toolbar.back_clicked.connect(self._on_back_to_loader)
+
         self._palette.save_clicked.connect(self._on_save)
-        self._palette.load_clicked.connect(self._on_load)
-        self._palette.export_clicked.connect(self._on_export)
-        self._palette.import_clicked.connect(self._on_import)
+        self._palette.load_clicked.connect(self._on_back_to_loader)
+        self._palette.node_selected.connect(self._on_palette_node)
+        self._palette.export_clicked.connect(self._on_export_json)
+        self._palette.import_clicked.connect(self._on_import_json)
+
+        self._loader.workflow_selected.connect(self._on_load_workflow)
+        self._loader.new_requested.connect(self._on_new_workflow)
+
+    # ── 页面切换 ──
+    def _switch_to_canvas(self):
+        self._stack.setCurrentIndex(1)
+        self._toolbar.setVisible(True)
+        self._toolbar.raise_()
+
+    def _switch_to_loader(self):
+        self._stack.setCurrentIndex(0)
+        self._toolbar.setVisible(False)
+        self._loader.load()
+
+    def _on_back_to_loader(self):
+        if self._current_workflow_name:
+            preset_service.save(self._current_workflow_name, self._ame_graph.graph)
+        self._switch_to_loader()
+
+    # ── 新建 ──
+    def _on_new_workflow(self):
+        dlg = NameInputDialog("新建工作流", "输入名称:", self.window())
+        if dlg.exec():
+            name = dlg.get_text().strip()
+            if name:
+                self._current_workflow_name = name
+                self._ame_graph.graph.clear_session()
+                self._ame_graph.setup_default_nodes()
+                self._switch_to_canvas()
+
+    # ── 加载 ──
+    def _on_load_workflow(self, name: str):
+        if preset_service.load(name, self._ame_graph.graph):
+            self._current_workflow_name = name
+            self._switch_to_canvas()
+
+    # ── 保存 ──
+    def _on_save(self):
+        if self._current_workflow_name:
+            preset_service.save(self._current_workflow_name, self._ame_graph.graph)
+            InfoBar.success(title="已保存",
+                            content=f"保存到: {self._current_workflow_name}",
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=2000, parent=self)
+        else:
+            dlg = NameInputDialog("保存工作流", "输入名称:", self.window())
+            if dlg.exec():
+                name = dlg.get_text().strip()
+                if name:
+                    self._current_workflow_name = name
+                    preset_service.save(name, self._ame_graph.graph)
+                    InfoBar.success(title="已保存", content=f"保存到: {name}",
+                                    orient=Qt.Horizontal, isClosable=True,
+                                    position=InfoBarPosition.TOP, duration=2000, parent=self)
+
+    # ── 导入/导出 JSON ──
+    def _on_import_json(self):
+        path, _ = QFileDialog.getOpenFileName(self, "导入 JSON", "", "JSON (*.json)")
+        if path:
+            name = preset_service.import_file(path)
+            if name:
+                self._loader.load()
+                InfoBar.success(title="已导入", content=f"工作流: {name}",
+                                orient=Qt.Horizontal, isClosable=True,
+                                position=InfoBarPosition.TOP, duration=2000, parent=self)
+
+    def _on_export_json(self):
+        path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", "", "JSON (*.json)")
+        if path:
+            if self._current_workflow_name:
+                preset_service.export(self._current_workflow_name, path)
+            elif self._ame_graph.all_nodes():
+                self._ame_graph.save_session(path)
+            InfoBar.success(title="已导出", content=f"导出完成",
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=2000, parent=self)
 
     def _on_viewer_menu(self, pos):
         self._palette.set_scene_pos(self._ame_graph.viewer().mapToScene(pos))
@@ -62,7 +156,7 @@ class AMEWorkflowInterface(QWidget):
         if menu_key == 'vs_compound':
             cur = self._ame_graph.graph.cursor_pos()
             vpy = self._ame_graph.create_node('ame.VPYLoaderNode', pos=[cur[0], cur[1]])
-            vsp = self._ame_graph.create_node('ame.VSPipeNode', pos=[cur[0] + 25, cur[1] + 150])
+            vsp = self._ame_graph.create_node('ame.VSPipeNode', pos=[cur[0] + 250, cur[1]])
             vpy.set_output(0, vsp.input(0))
             return
         cls = MENU_KEY_MAP.get(menu_key)
@@ -108,42 +202,6 @@ class AMEWorkflowInterface(QWidget):
             self._executor.cancel()
         self._reset_ui()
 
-    def _on_save(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "保存工作流", "", "AME Workflow (*.json)")
-        if path:
-            self._ame_graph.save_session(path)
-            InfoBar.success(title="已保存", content=f"工作流保存到 {path}",
-                            orient=Qt.Horizontal, isClosable=True,
-                            position=InfoBarPosition.TOP, duration=2000, parent=self)
-
-    def _on_load(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "加载工作流", "", "AME Workflow (*.json)")
-        if path:
-            self._ame_graph.load_session(path)
-            InfoBar.success(title="已加载", content=f"工作流已加载",
-                            orient=Qt.Horizontal, isClosable=True,
-                            position=InfoBarPosition.TOP, duration=2000, parent=self)
-
-    def _on_export(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "导出 JSON", "", "AME Workflow (*.json)")
-        if path:
-            self._ame_graph.save_session(path)
-            InfoBar.success(title="已导出", content=f"工作流已导出",
-                            orient=Qt.Horizontal, isClosable=True,
-                            position=InfoBarPosition.TOP, duration=2000, parent=self)
-
-    def _on_import(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "导入 JSON", "", "AME Workflow (*.json)")
-        if path:
-            self._ame_graph.load_session(path)
-            InfoBar.success(title="已导入", content=f"工作流已导入",
-                            orient=Qt.Horizontal, isClosable=True,
-                            position=InfoBarPosition.TOP, duration=2000, parent=self)
-
     def _on_pause(self):
         if self._executor:
             self._executor.pause()
@@ -182,7 +240,8 @@ class AMEWorkflowInterface(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        w, h = self.width(), self.height()
-        self._toolbar.setGeometry(20, 12, 220, self._toolbar.height())
-        self._progress.setGeometry(0, h - 6, w, 6)
-        self._toolbar.raise_()
+        if self._stack.currentIndex() == 1:
+            w, h = self.width(), self.height()
+            self._toolbar.setGeometry(20, 12, 220, self._toolbar.height())
+            self._progress.setGeometry(0, h - 6, w, 6)
+            self._toolbar.raise_()

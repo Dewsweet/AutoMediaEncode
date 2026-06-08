@@ -12,6 +12,7 @@ class FloatingToolbar(QFrame):
     cancel_clicked = Signal()
     save_clicked = Signal()
     load_clicked = Signal()
+    back_clicked = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -60,34 +61,51 @@ class FloatingToolbar(QFrame):
         row1.addStretch()
         row1.addWidget(self.gear_btn)
 
-        # row 2: 功能按钮 (默认隐藏)
+        # row 2: 保存/加载 (默认隐藏)
         self._row2 = QWidget(self)
         self._row2.setVisible(False)
         row2_layout = QHBoxLayout(self._row2)
         row2_layout.setContentsMargins(0, 0, 0, 0)
         row2_layout.setSpacing(4)
 
-        self.save_btn = PushButton(FIF.SAVE, '保存', self)
+        self.save_btn = PushButton(FIF.SAVE, '保存Json', self)
         self.save_btn.setFixedHeight(32)
         self.save_btn.setToolTip("保存工作流")
 
-        self.load_btn = PushButton(FIF.FOLDER, '加载',self)
+        self.load_btn = PushButton(FIF.FOLDER, '打开Json', self)
         self.load_btn.setFixedHeight(32)
-        self.load_btn.setToolTip("加载工作流")
+        self.load_btn.setToolTip("打开工作流文件")
 
         row2_layout.addStretch()
         row2_layout.addWidget(self.save_btn)
         row2_layout.addWidget(self.load_btn)
         row2_layout.addStretch()
 
+        # row 3: 返回 (默认隐藏)
+        self._row3 = QWidget(self)
+        self._row3.setVisible(False)
+        row3_layout = QHBoxLayout(self._row3)
+        row3_layout.setContentsMargins(0, 0, 0, 0)
+        row3_layout.setSpacing(4)
+
+        self.back_btn = PushButton(FIF.HOME, '返回加载页', self)
+        self.back_btn.setFixedHeight(32)
+        self.back_btn.setToolTip("返回加载页")
+
+        row3_layout.addStretch()
+        row3_layout.addWidget(self.back_btn)
+        row3_layout.addStretch()
+
         self._main.addLayout(row1)
         self._main.addWidget(self._row2)
+        self._main.addWidget(self._row3)
 
         self.start_btn.clicked.connect(self.start_clicked.emit)
         self.pause_btn.clicked.connect(self.pause_clicked.emit)
         self.cancel_btn.clicked.connect(self.cancel_clicked.emit)
         self.save_btn.clicked.connect(self.save_clicked.emit)
         self.load_btn.clicked.connect(self.load_clicked.emit)
+        self.back_btn.clicked.connect(self.back_clicked.emit)
 
         self.set_state('idle')
         self._apply_bg()
@@ -96,8 +114,9 @@ class FloatingToolbar(QFrame):
     def _toggle_expand(self):
         self._expanded = not self._expanded
         self._row2.setVisible(self._expanded)
+        self._row3.setVisible(self._expanded)
         if self._expanded:
-            self.setFixedHeight(78)
+            self.setFixedHeight(110)
         else:
             self.setFixedHeight(46)
 

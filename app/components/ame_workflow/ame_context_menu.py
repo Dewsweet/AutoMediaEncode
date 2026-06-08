@@ -37,7 +37,7 @@ class AMEConextMenu(RoundMenu):
         m = RoundMenu("文件", self)
         m.addAction(Action("保存工作流", shortcut="Ctrl+S",
                             triggered=lambda: self.save_clicked.emit()))
-        m.addAction(Action("加载工作流", shortcut="Ctrl+O",
+        m.addAction(Action("返回加载页", shortcut="Ctrl+O",
                             triggered=lambda: self.load_clicked.emit()))
         m.addSeparator()
         m.addAction(Action("导出 JSON", triggered=lambda: self.export_clicked.emit()))

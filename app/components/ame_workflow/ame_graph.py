@@ -34,7 +34,37 @@ class AMEGraph:
 
         qconfig.themeChanged.connect(self._apply_theme)
         self._apply_theme()
-        self._create_default_nodes()
+
+    def setup_default_nodes(self):
+        ws_node = self.graph.create_node('ame.WorkspaceNode', pos=[100, 80], push_undo=False)
+        inp_node = self.graph.create_node('ame.InputFileNode', pos=[100, 300], push_undo=False)
+        out_node = self.graph.create_node('ame.OutputNode', pos=[1000, 220], push_undo=False)
+        for n in (ws_node, inp_node, out_node):
+            self._fix_node_view(n)
+            if isDarkTheme():
+                n.set_color(45, 45, 45)
+        ws_node.set_output(0, inp_node.input(0))
+
+    def _apply_theme(self):
+        dark = isDarkTheme()
+        if dark:
+            self.graph.set_background_color(26, 26, 26)
+            self.graph.set_grid_color(51, 51, 51)
+            text_c = (220, 220, 220, 255)
+            border_c = (85, 85, 85, 255)
+        else:
+            self.graph.set_background_color(240, 240, 240)
+            self.graph.set_grid_color(221, 221, 221)
+            text_c = (80, 80, 80, 255)
+            border_c = (200, 200, 200, 255)
+
+        for node in self.graph.all_nodes():
+            node.model.text_color = text_c
+            node.model.border_color = border_c
+            if dark:
+                node.set_color(45, 45, 45)
+            elif hasattr(node, '_original_color'):
+                node.set_color(*node._original_color)
 
     def viewer(self):
         return self._viewer
@@ -77,34 +107,3 @@ class AMEGraph:
 
     def get_node_by_id(self, nid):
         return self.graph.get_node_by_id(nid)
-
-    def _create_default_nodes(self):
-        ws_node = self.graph.create_node('ame.WorkspaceNode', pos=[100, 80], push_undo=False)
-        inp_node = self.graph.create_node('ame.InputFileNode', pos=[100, 300], push_undo=False)
-        out_node = self.graph.create_node('ame.OutputNode', pos=[1000, 220], push_undo=False)
-        for n in (ws_node, inp_node, out_node):
-            self._fix_node_view(n)
-            if isDarkTheme():
-                n.set_color(45, 45, 45)
-        ws_node.set_output(0, inp_node.input(0))
-
-    def _apply_theme(self):
-        dark = isDarkTheme()
-        if dark:
-            self.graph.set_background_color(26, 26, 26)
-            self.graph.set_grid_color(51, 51, 51)
-            text_c = (220, 220, 220, 255)
-            border_c = (85, 85, 85, 255)
-        else:
-            self.graph.set_background_color(240, 240, 240)
-            self.graph.set_grid_color(221, 221, 221)
-            text_c = (80, 80, 80, 255)
-            border_c = (200, 200, 200, 255)
-
-        for node in self.graph.all_nodes():
-            node.model.text_color = text_c
-            node.model.border_color = border_c
-            if dark:
-                node.set_color(45, 45, 45)
-            elif hasattr(node, '_original_color'):
-                node.set_color(*node._original_color)
