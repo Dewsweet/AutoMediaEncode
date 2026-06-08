@@ -36,10 +36,6 @@ def reset_zoom(graph):
     graph.reset_zoom()
 
 
-def toggle_search(graph):
-    graph.toggle_node_search()
-
-
 def save_session(graph):
     current = graph.current_session()
     if current:
@@ -47,7 +43,7 @@ def save_session(graph):
     else:
         from PySide6.QtWidgets import QFileDialog
         path, _ = QFileDialog.getSaveFileName(None, "保存工作流", "",
-                                               "AME Workflow (*.ame.json)")
+                                               "AME Workflow (*.json)")
         if path:
             graph.save_session(path)
 
@@ -55,7 +51,7 @@ def save_session(graph):
 def load_session(graph):
     from PySide6.QtWidgets import QFileDialog
     path, _ = QFileDialog.getOpenFileName(None, "加载工作流", "",
-                                           "AME Workflow (*.ame.json)")
+                                           "AME Workflow (*.json)")
     if path:
         graph.load_session(path)
 
@@ -75,7 +71,6 @@ def paste_nodes(graph):
 # ═══════════ 快捷键映射 ═══════════
 
 SHORTCUT_MAP = {
-    'Tab':            toggle_search,
     'Delete':         delete_selected,
     'Ctrl+A':         select_all,
     'Ctrl+D':         duplicate_selected,

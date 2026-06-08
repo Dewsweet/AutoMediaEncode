@@ -6,7 +6,7 @@ from qfluentwidgets import (ProgressBar, InfoBar, InfoBarPosition)
 from app.components.ame_workflow.ame_graph import AMEGraph
 from app.components.ame_workflow.floating_toolbar import FloatingToolbar
 from app.components.ame_workflow.nodes import MENU_KEY_MAP
-from app.components.ame_workflow.node_palette import NodePaletteMenu
+from app.components.ame_workflow.ame_context_menu import AMEConextMenu
 from app.common.style_sheet import StyleSheet
 
 
@@ -18,7 +18,7 @@ class AMEWorkflowInterface(QWidget):
         self._ame_graph = AMEGraph(self)
         self._toolbar = FloatingToolbar(self)
         self._progress = ProgressBar(self)
-        self._palette = NodePaletteMenu(self)
+        self._palette = AMEConextMenu(self._ame_graph.graph, self)
 
         self._executor = None
         self._running = False
@@ -49,11 +49,22 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.save_clicked.connect(self._on_save)
         self._toolbar.load_clicked.connect(self._on_load)
         self._palette.node_selected.connect(self._on_palette_node)
+        self._palette.save_clicked.connect(self._on_save)
+        self._palette.load_clicked.connect(self._on_load)
+        self._palette.export_clicked.connect(self._on_export)
+        self._palette.import_clicked.connect(self._on_import)
 
     def _on_viewer_menu(self, pos):
+        self._palette.set_scene_pos(self._ame_graph.viewer().mapToScene(pos))
         self._palette.exec(self._ame_graph.viewer().mapToGlobal(pos))
 
     def _on_palette_node(self, menu_key, _):
+        if menu_key == 'vs_compound':
+            cur = self._ame_graph.graph.cursor_pos()
+            vpy = self._ame_graph.create_node('ame.VPYLoaderNode', pos=[cur[0], cur[1]])
+            vsp = self._ame_graph.create_node('ame.VSPipeNode', pos=[cur[0] + 25, cur[1] + 150])
+            vpy.set_output(0, vsp.input(0))
+            return
         cls = MENU_KEY_MAP.get(menu_key)
         if not cls:
             return
@@ -99,7 +110,7 @@ class AMEWorkflowInterface(QWidget):
 
     def _on_save(self):
         path, _ = QFileDialog.getSaveFileName(
-            self, "保存工作流", "", "AME Workflow (*.ame.json)")
+            self, "保存工作流", "", "AME Workflow (*.json)")
         if path:
             self._ame_graph.save_session(path)
             InfoBar.success(title="已保存", content=f"工作流保存到 {path}",
@@ -108,10 +119,28 @@ class AMEWorkflowInterface(QWidget):
 
     def _on_load(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, "加载工作流", "", "AME Workflow (*.ame.json)")
+            self, "加载工作流", "", "AME Workflow (*.json)")
         if path:
             self._ame_graph.load_session(path)
             InfoBar.success(title="已加载", content=f"工作流已加载",
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=2000, parent=self)
+
+    def _on_export(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "导出 JSON", "", "AME Workflow (*.json)")
+        if path:
+            self._ame_graph.save_session(path)
+            InfoBar.success(title="已导出", content=f"工作流已导出",
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=2000, parent=self)
+
+    def _on_import(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "导入 JSON", "", "AME Workflow (*.json)")
+        if path:
+            self._ame_graph.load_session(path)
+            InfoBar.success(title="已导入", content=f"工作流已导入",
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=2000, parent=self)
 

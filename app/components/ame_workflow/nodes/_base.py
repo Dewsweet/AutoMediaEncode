@@ -65,6 +65,7 @@ class AMENodeBase(BaseNode):
     def __init__(self):
         super().__init__()
         self._status = 'idle'
+        self._original_color = self.CATEGORY_COLOR
         self.set_color(*self.CATEGORY_COLOR)
         for name, color in self.INPUTS:
             self.add_input(name, color=color)

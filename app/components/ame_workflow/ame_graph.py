@@ -45,6 +45,8 @@ class AMEGraph:
     def create_node(self, type_, name=None, pos=None):
         node = self.graph.create_node(type_, name=name, pos=pos, push_undo=False)
         self._fix_node_view(node)
+        if isDarkTheme():
+            node.set_color(45, 45, 45)
         return node
 
     def _fix_node_view(self, node):
@@ -82,7 +84,8 @@ class AMEGraph:
         out_node = self.graph.create_node('ame.OutputNode', pos=[1000, 220], push_undo=False)
         for n in (ws_node, inp_node, out_node):
             self._fix_node_view(n)
-        # 工作区.path → 输入文件.path
+            if isDarkTheme():
+                n.set_color(45, 45, 45)
         ws_node.set_output(0, inp_node.input(0))
 
     def _apply_theme(self):
@@ -97,6 +100,11 @@ class AMEGraph:
             self.graph.set_grid_color(221, 221, 221)
             text_c = (80, 80, 80, 255)
             border_c = (200, 200, 200, 255)
+
         for node in self.graph.all_nodes():
             node.model.text_color = text_c
             node.model.border_color = border_c
+            if dark:
+                node.set_color(45, 45, 45)
+            elif hasattr(node, '_original_color'):
+                node.set_color(*node._original_color)

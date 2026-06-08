@@ -13,10 +13,7 @@ NODE_PALETTE_STRUCTURE = [
     ]),
     ('工具', [
         ('分离器', 'splitter'),
-        ('vapoursynth', [
-            ('vpy加载器', 'vpy_loader'),
-            ('vspipe', 'vspipe'),
-        ]),
+        ('VapourSynth', 'vs_compound'),
         ('ffmpeg处理器', 'ffmpeg_processor'),
         ('自定义文件名', 'custom_name'),
     ]),
