@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog
 
 from qfluentwidgets import (ProgressBar, InfoBar, InfoBarPosition)
 
@@ -46,6 +46,8 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.start_clicked.connect(self._on_start)
         self._toolbar.pause_clicked.connect(self._on_pause)
         self._toolbar.cancel_clicked.connect(self._on_cancel)
+        self._toolbar.save_clicked.connect(self._on_save)
+        self._toolbar.load_clicked.connect(self._on_load)
         self._palette.node_selected.connect(self._on_palette_node)
 
     def _on_viewer_menu(self, pos):
@@ -95,6 +97,24 @@ class AMEWorkflowInterface(QWidget):
             self._executor.cancel()
         self._reset_ui()
 
+    def _on_save(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "保存工作流", "", "AME Workflow (*.ame.json)")
+        if path:
+            self._ame_graph.save_session(path)
+            InfoBar.success(title="已保存", content=f"工作流保存到 {path}",
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=2000, parent=self)
+
+    def _on_load(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "加载工作流", "", "AME Workflow (*.ame.json)")
+        if path:
+            self._ame_graph.load_session(path)
+            InfoBar.success(title="已加载", content=f"工作流已加载",
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=2000, parent=self)
+
     def _on_pause(self):
         if self._executor:
             self._executor.pause()
@@ -134,6 +154,6 @@ class AMEWorkflowInterface(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         w, h = self.width(), self.height()
-        self._toolbar.setGeometry(20, 12, 220, 42)
+        self._toolbar.setGeometry(20, 12, 220, self._toolbar.height())
         self._progress.setGeometry(0, h - 6, w, 6)
         self._toolbar.raise_()

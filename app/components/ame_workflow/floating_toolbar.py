@@ -1,8 +1,8 @@
 from PySide6.QtCore import Qt, Signal, QPoint
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QGraphicsDropShadowEffect
+from PySide6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect, QWidget
 
-from qfluentwidgets import (PrimaryPushButton, ToolButton, TransparentToolButton, FluentIcon as FIF,
+from qfluentwidgets import (PrimaryPushButton, ToolButton, TransparentToolButton, PushButton, FluentIcon as FIF,
                             isDarkTheme, qconfig)
 
 
@@ -10,12 +10,14 @@ class FloatingToolbar(QFrame):
     start_clicked = Signal()
     pause_clicked = Signal()
     cancel_clicked = Signal()
+    save_clicked = Signal()
+    load_clicked = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("FloatingToolbar")
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setFixedSize(200, 42)
+        self.setFixedSize(230, 46)
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(12)
@@ -23,12 +25,18 @@ class FloatingToolbar(QFrame):
         shadow.setColor(QColor(0, 0, 0, 60))
         self.setGraphicsEffect(shadow)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 4, 5, 4)
-        layout.setSpacing(5)
+        self._main = QVBoxLayout(self)
+        self._main.setContentsMargins(10, 4, 5, 4)
+        self._main.setSpacing(2)
+
+        # row 1: 操作按钮 + gear
+        row1 = QHBoxLayout()
+        row1.setContentsMargins(0, 0, 0, 0)
+        row1.setSpacing(4)
 
         self._state = 'idle'
         self._drag_pos = None
+        self._expanded = False
 
         self.start_btn = PrimaryPushButton(FIF.PLAY, "开始任务", self)
         self.start_btn.setMinimumWidth(100)
@@ -41,18 +49,57 @@ class FloatingToolbar(QFrame):
         self.cancel_btn.setFixedSize(32, 32)
         self.cancel_btn.setToolTip("取消")
 
-        layout.addWidget(self.start_btn)
-        layout.addWidget(self.pause_btn)
-        layout.addWidget(self.cancel_btn)
-        layout.addStretch()
+        self.gear_btn = ToolButton(FIF.SETTING, self)
+        self.gear_btn.setFixedSize(32, 32)
+        self.gear_btn.setToolTip("更多设置")
+        self.gear_btn.clicked.connect(self._toggle_expand)
+
+        row1.addWidget(self.start_btn)
+        row1.addWidget(self.pause_btn)
+        row1.addWidget(self.cancel_btn)
+        row1.addStretch()
+        row1.addWidget(self.gear_btn)
+
+        # row 2: 功能按钮 (默认隐藏)
+        self._row2 = QWidget(self)
+        self._row2.setVisible(False)
+        row2_layout = QHBoxLayout(self._row2)
+        row2_layout.setContentsMargins(0, 0, 0, 0)
+        row2_layout.setSpacing(4)
+
+        self.save_btn = PushButton(FIF.SAVE, '保存', self)
+        self.save_btn.setFixedHeight(32)
+        self.save_btn.setToolTip("保存工作流")
+
+        self.load_btn = PushButton(FIF.FOLDER, '加载',self)
+        self.load_btn.setFixedHeight(32)
+        self.load_btn.setToolTip("加载工作流")
+
+        row2_layout.addStretch()
+        row2_layout.addWidget(self.save_btn)
+        row2_layout.addWidget(self.load_btn)
+        row2_layout.addStretch()
+
+        self._main.addLayout(row1)
+        self._main.addWidget(self._row2)
 
         self.start_btn.clicked.connect(self.start_clicked.emit)
         self.pause_btn.clicked.connect(self.pause_clicked.emit)
         self.cancel_btn.clicked.connect(self.cancel_clicked.emit)
+        self.save_btn.clicked.connect(self.save_clicked.emit)
+        self.load_btn.clicked.connect(self.load_clicked.emit)
 
         self.set_state('idle')
         self._apply_bg()
         qconfig.themeChanged.connect(self._apply_bg)
+
+    def _toggle_expand(self):
+        self._expanded = not self._expanded
+        self._row2.setVisible(self._expanded)
+        if self._expanded:
+            self.setFixedHeight(78)
+        else:
+            self.setFixedHeight(46)
 
     def _apply_bg(self):
         dark = isDarkTheme()
@@ -91,6 +138,7 @@ class FloatingToolbar(QFrame):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        """实现拖拽移动浮动工具栏，自动限制在父窗口内"""
         if self._drag_pos is not None:
             new_pos = event.globalPosition().toPoint() - self._drag_pos
             parent = self.parent()
