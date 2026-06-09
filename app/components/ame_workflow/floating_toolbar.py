@@ -28,7 +28,7 @@ class FloatingToolbar(QFrame):
 
         self._main = QVBoxLayout(self)
         self._main.setContentsMargins(10, 4, 5, 4)
-        self._main.setSpacing(2)
+        self._main.setSpacing(4)
 
         # row 1: 操作按钮 + gear
         row1 = QHBoxLayout()
@@ -40,7 +40,7 @@ class FloatingToolbar(QFrame):
         self._expanded = False
 
         self.start_btn = PrimaryPushButton(FIF.PLAY, "开始任务", self)
-        self.start_btn.setMinimumWidth(100)
+        self.start_btn.setFixedWidth(105)
 
         self.pause_btn = ToolButton(FIF.PAUSE, self)
         self.pause_btn.setFixedSize(32, 32)
@@ -68,11 +68,11 @@ class FloatingToolbar(QFrame):
         row2_layout.setContentsMargins(0, 0, 0, 0)
         row2_layout.setSpacing(4)
 
-        self.save_btn = PushButton(FIF.SAVE, '保存Json', self)
+        self.save_btn = PushButton(FIF.SAVE, '导出Json', self)
         self.save_btn.setFixedHeight(32)
         self.save_btn.setToolTip("保存工作流")
 
-        self.load_btn = PushButton(FIF.FOLDER, '打开Json', self)
+        self.load_btn = PushButton(FIF.FOLDER, '导入Json', self)
         self.load_btn.setFixedHeight(32)
         self.load_btn.setToolTip("打开工作流文件")
 
@@ -116,7 +116,7 @@ class FloatingToolbar(QFrame):
         self._row2.setVisible(self._expanded)
         self._row3.setVisible(self._expanded)
         if self._expanded:
-            self.setFixedHeight(110)
+            self.setFixedHeight(120)
         else:
             self.setFixedHeight(46)
 
@@ -138,16 +138,22 @@ class FloatingToolbar(QFrame):
             self.start_btn.setText("运行中")
             self.pause_btn.setEnabled(True)
             self.cancel_btn.setEnabled(True)
+            self._row2.setEnabled(False)
+            self._row3.setEnabled(False)
         elif state == 'paused':
             self.start_btn.setEnabled(True)
             self.start_btn.setText("继续")
             self.pause_btn.setEnabled(False)
             self.cancel_btn.setEnabled(True)
+            self._row2.setEnabled(False)
+            self._row3.setEnabled(False)
         else:
             self.start_btn.setEnabled(True)
             self.start_btn.setText("开始任务")
             self.pause_btn.setEnabled(False)
             self.cancel_btn.setEnabled(False)
+            self._row2.setEnabled(True)
+            self._row3.setEnabled(True)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

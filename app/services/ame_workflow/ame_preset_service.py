@@ -3,6 +3,7 @@ import json, shutil, os
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass
+from ..path_service import PathService
 
 
 @dataclass
@@ -16,17 +17,19 @@ class WorkflowInfo:
 
 class AMEPresetService:
     def __init__(self):
-        self._template_dir = Path(__file__).parent.parent.parent / 'common' / 'json' / 'ame_preset'
-        self._user_dir = Path(__file__).parent.parent.parent / 'config' / 'ame_preset'
+        self._template_dir = PathService.get_common_dir() / "json" / "ame_preset"
+        self._user_dir = PathService.get_config_dir() / "ame_preset"
         self._init_dirs()
 
     def _init_dirs(self):
+        """确保用户预设目录存在，如果没有则从模板目录复制初始预设"""
         self._user_dir.mkdir(parents=True, exist_ok=True)
         if self._template_dir.exists() and not any(self._user_dir.glob('*.json')):
             for f in self._template_dir.glob('*.json'):
                 shutil.copy2(f, self._user_dir / f.name)
 
     def list_workflows(self) -> list:
+        """列出所有用户预设的工作流，按修改时间倒序"""
         result = []
         for f in sorted(self._user_dir.glob('*.json'), key=lambda x: x.stat().st_mtime, reverse=True):
             info = WorkflowInfo(
@@ -46,9 +49,17 @@ class AMEPresetService:
         return result
 
     def save(self, name: str, graph) -> Path:
+        """保存工作流到用户预设目录，返回 JSON 文件路径"""
         json_path = self._user_dir / f"{name}.json"
         graph.save_session(str(json_path))
-        self._save_thumbnail(graph, name)
+        return json_path
+
+    def save_with_thumbnail(self, name: str, graph) -> Path:
+        """保存并自动截图。如果已有自定义封面则不覆盖。"""
+        json_path = self.save(name, graph)
+        thumb_path = self._user_dir / f"{name}.png"
+        if not thumb_path.exists():
+            self._make_thumbnail(graph, name)
         return json_path
 
     def load(self, name: str, graph) -> bool:
@@ -95,7 +106,8 @@ class AMEPresetService:
         dst = self._user_dir / f"{name}.png"
         shutil.copy2(img_path, dst)
 
-    def _save_thumbnail(self, graph, name: str):
+    def _make_thumbnail(self, graph, name: str):
+        """尝试从 graph 截图并保存为预设缩略图，失败则静默忽略"""
         try:
             pixmap = graph.widget.grab()
             scaled = pixmap.scaled(320, 200,

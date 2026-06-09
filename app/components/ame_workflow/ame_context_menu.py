@@ -25,9 +25,10 @@ class AMEConextMenu(RoundMenu):
         self._built = False
         self._displays = []
         self._pnode_add = None
+        self._add_node_menu()
+        self.addSeparator()
         self._add_file_menu()
         self._add_edit_menu()
-        self._add_node_menu()
         self._add_view_menu()
 
     def set_scene_pos(self, pos: QPointF):
@@ -37,8 +38,8 @@ class AMEConextMenu(RoundMenu):
         m = RoundMenu("文件", self)
         m.addAction(Action("保存工作流", shortcut="Ctrl+S",
                             triggered=lambda: self.save_clicked.emit()))
-        m.addAction(Action("返回加载页", shortcut="Ctrl+O",
-                            triggered=lambda: self.load_clicked.emit()))
+        # m.addAction(Action("返回加载页", shortcut="Ctrl+O",
+        #                     triggered=lambda: self.load_clicked.emit()))
         m.addSeparator()
         m.addAction(Action("导出 JSON", triggered=lambda: self.export_clicked.emit()))
         m.addAction(Action("导入 JSON", triggered=lambda: self.import_clicked.emit()))

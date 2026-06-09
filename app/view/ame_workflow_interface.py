@@ -61,12 +61,12 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.start_clicked.connect(self._on_start)
         self._toolbar.pause_clicked.connect(self._on_pause)
         self._toolbar.cancel_clicked.connect(self._on_cancel)
-        self._toolbar.save_clicked.connect(self._on_save)
+        self._toolbar.save_clicked.connect(self._on_export_json)
         self._toolbar.load_clicked.connect(self._on_import_json)
         self._toolbar.back_clicked.connect(self._on_back_to_loader)
 
         self._palette.save_clicked.connect(self._on_save)
-        self._palette.load_clicked.connect(self._on_back_to_loader)
+        # self._palette.load_clicked.connect(self._on_back_to_loader)
         self._palette.node_selected.connect(self._on_palette_node)
         self._palette.export_clicked.connect(self._on_export_json)
         self._palette.import_clicked.connect(self._on_import_json)
@@ -78,11 +78,16 @@ class AMEWorkflowInterface(QWidget):
     def _switch_to_canvas(self):
         self._stack.setCurrentIndex(1)
         self._toolbar.setVisible(True)
+        self._progress.setVisible(True)
+        self._progress.setValue(0)
         self._toolbar.raise_()
+        self._progress.raise_()
+        self._reposition_overlays()
 
     def _switch_to_loader(self):
         self._stack.setCurrentIndex(0)
         self._toolbar.setVisible(False)
+        self._progress.setVisible(False)
         self._loader.load()
 
     def _on_back_to_loader(self):
@@ -109,8 +114,9 @@ class AMEWorkflowInterface(QWidget):
 
     # ── 保存 ──
     def _on_save(self):
+        """保存当前工作流，如果之前已保存过则覆盖，否则提示输入名称"""
         if self._current_workflow_name:
-            preset_service.save(self._current_workflow_name, self._ame_graph.graph)
+            preset_service.save_with_thumbnail(self._current_workflow_name, self._ame_graph.graph)
             InfoBar.success(title="已保存",
                             content=f"保存到: {self._current_workflow_name}",
                             orient=Qt.Horizontal, isClosable=True,
@@ -121,7 +127,7 @@ class AMEWorkflowInterface(QWidget):
                 name = dlg.get_text().strip()
                 if name:
                     self._current_workflow_name = name
-                    preset_service.save(name, self._ame_graph.graph)
+                    preset_service.save_with_thumbnail(name, self._ame_graph.graph)
                     InfoBar.success(title="已保存", content=f"保存到: {name}",
                                     orient=Qt.Horizontal, isClosable=True,
                                     position=InfoBarPosition.TOP, duration=2000, parent=self)
@@ -130,22 +136,17 @@ class AMEWorkflowInterface(QWidget):
     def _on_import_json(self):
         path, _ = QFileDialog.getOpenFileName(self, "导入 JSON", "", "JSON (*.json)")
         if path:
-            name = preset_service.import_file(path)
-            if name:
-                self._loader.load()
-                InfoBar.success(title="已导入", content=f"工作流: {name}",
-                                orient=Qt.Horizontal, isClosable=True,
+            self._ame_graph.load_session(path)
+            InfoBar.success(title="已导入", content=f"导入完成",
+                                orient=Qt.Horizontal, isClosable=False,
                                 position=InfoBarPosition.TOP, duration=2000, parent=self)
 
     def _on_export_json(self):
         path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", "", "JSON (*.json)")
         if path:
-            if self._current_workflow_name:
-                preset_service.export(self._current_workflow_name, path)
-            elif self._ame_graph.all_nodes():
-                self._ame_graph.save_session(path)
+            self._ame_graph.save_session(path)
             InfoBar.success(title="已导出", content=f"导出完成",
-                            orient=Qt.Horizontal, isClosable=True,
+                            orient=Qt.Horizontal, isClosable=False,
                             position=InfoBarPosition.TOP, duration=2000, parent=self)
 
     def _on_viewer_menu(self, pos):
@@ -156,7 +157,7 @@ class AMEWorkflowInterface(QWidget):
         if menu_key == 'vs_compound':
             cur = self._ame_graph.graph.cursor_pos()
             vpy = self._ame_graph.create_node('ame.VPYLoaderNode', pos=[cur[0], cur[1]])
-            vsp = self._ame_graph.create_node('ame.VSPipeNode', pos=[cur[0] + 250, cur[1]])
+            vsp = self._ame_graph.create_node('ame.VSPipeNode', pos=[cur[0] + 25, cur[1] + 200])
             vpy.set_output(0, vsp.input(0))
             return
         cls = MENU_KEY_MAP.get(menu_key)
@@ -240,8 +241,12 @@ class AMEWorkflowInterface(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self._reposition_overlays()
+
+    def _reposition_overlays(self):
         if self._stack.currentIndex() == 1:
             w, h = self.width(), self.height()
             self._toolbar.setGeometry(20, 12, 220, self._toolbar.height())
             self._progress.setGeometry(0, h - 6, w, 6)
             self._toolbar.raise_()
+            self._progress.raise_()
