@@ -3,6 +3,7 @@ from pathlib import Path
 from app.services.tool_service import ToolService
 from app.common.logger import logger
 from app.services.setting.preset_service import preset_service
+from app.services.error_service import ErrorService
 
 def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     """x264/x265/SVTAV1 通用 CLI 编码（支持文件输入和管道输入）"""
@@ -54,7 +55,10 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
 
         logger.info(f'[{node.NODE_NAME}] 编码命令: {" ".join(enc_cmd)}')
         try:
-            r = _run_pipe(pipe_cmd, {}, enc_cmd,
+            if dst.exists(): # 确保目标文件不存在，避免某些编码器拒绝覆盖
+                dst.unlink()
+            
+            r, err_msg = _run_pipe(pipe_cmd, {}, enc_cmd,
                           {'stderr': subprocess.STDOUT, 'text': True, 'bufsize': 1},
                           node)
             if r is None: return None
@@ -63,6 +67,7 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
                 return {'video': [str(dst)]}
             else:
                 logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
+                node._last_error = ErrorService.cli_error(tool_key, err_msg)
                 return None
         except Exception as e:
             logger.error(f'[{node.NODE_NAME}] 管道编码异常: {e}')
@@ -80,7 +85,10 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
         logger.info(f'[{node.NODE_NAME}] FFmpeg 命令: {" ".join(ff_cmd)}')
         logger.info(f'[{node.NODE_NAME}] SvtAv1 命令: {" ".join(av1_cmd)}')
         try:
-            r = _run_pipe(ff_cmd, {'stderr': subprocess.DEVNULL},
+            if dst.exists():
+                dst.unlink()
+
+            r, err_msg = _run_pipe(ff_cmd, {'stderr': subprocess.DEVNULL},
                           av1_cmd, {'stderr': subprocess.STDOUT, 'text': True, 'bufsize': 1},
                           node)
             if r is None: return None
@@ -89,6 +97,7 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
                 return {'video': [str(dst)]}
             else:
                 logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
+                node._last_error = ErrorService.cli_error(tool_key, err_msg)
                 return None
         except Exception as e:
             logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
@@ -100,8 +109,8 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
 
         logger.info(f'[{node.NODE_NAME}] 命令: {" ".join(str(c) for c in cmd)}')
         try:
-            r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
-            if r is None:  # cancelled
+            r, rstdout = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+            if r is None:  # 用户取消
                 logger.info(f'[{node.NODE_NAME}] 已取消')
                 return None
             if r == 0 and dst.is_file() and dst.stat().st_size > 0:
@@ -109,9 +118,11 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
                 return {'video': [str(dst)]}
             else:
                 logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
+                node._last_error = ErrorService.cli_error(tool_key, f'returncode={rstdout}')
                 return None
         except Exception as e:
             logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
+            node._last_error = ErrorService.cli_error(tool_key, str(rstdout))
             return None
 
 def _do_qaac_encode(node, inputs, temp_dir, ext):
@@ -147,18 +158,20 @@ def _do_qaac_encode(node, inputs, temp_dir, ext):
     try:
         cancelled = getattr(node, '_ame_cancelled', lambda: False)
         paused = getattr(node, '_ame_paused', None)
-        r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+        r, err_msg = _run_with_progress(cmd, cancelled, paused, timeout=14400)
         if r is None:
-            return None
+            return None  # 用户取消
         if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
             return {'audio': [dst]}
         else:
             logger.error(f'[{node.NODE_NAME}] 失败: returncode={r}')
+            node._last_error = ErrorService.cli_error('qaac', str(err_msg))
             return None
     except Exception as e:
         logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
         return None
+
 
 def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
     """通用 FFmpeg 音频编码"""
@@ -205,14 +218,15 @@ def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
     try:
         cancelled = getattr(node, '_ame_cancelled', lambda: False)
         paused = getattr(node, '_ame_paused', None)
-        r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+        r, err_msg = _run_with_progress(cmd, cancelled, paused, timeout=14400)
         if r is None:
-            return None
+            return None  # 用户取消
         if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
             return {'audio': [dst]}
         else:
             logger.error(f'[{node.NODE_NAME}] 编码失败: returncode={r}')
+            node._last_error = ErrorService.cli_error('ffmpeg', str(err_msg))
             return None
     except Exception as e:
         logger.error(f'[{node.NODE_NAME}] 编码异常: {e}')
@@ -251,14 +265,15 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
     try:
         cancelled = getattr(node, '_ame_cancelled', lambda: False)
         paused = getattr(node, '_ame_paused', None)
-        r = _run_with_progress(cmd, cancelled, paused, timeout=14400)
+        r, err_msg = _run_with_progress(cmd, cancelled, paused, timeout=14400)
         if r is None:
-            return None
+            return None  # 用户取消
         if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{codec}] 编码成功: {dst}')
             return {'video': [dst]}
         else:
             logger.error(f'[{codec}] 编码失败: returncode={r}')
+            node._last_error = ErrorService.ffmpeg_error(str(err_msg))
             return None
     except Exception as e:
         logger.error(f'[{codec}] 编码异常: {e}')
@@ -300,7 +315,12 @@ def _run_with_progress(cmd, cancelled, paused=None, timeout=14400, text=True):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=text, creationflags=subprocess.CREATE_NO_WINDOW, bufsize=1)
     start = time.time()
+
+    output_lines = []
+
     for line in proc.stdout:
+        output_lines.append(line)
+
         if paused and paused():
             while paused():
                 time.sleep(0.1)
@@ -320,7 +340,8 @@ def _run_with_progress(cmd, cancelled, paused=None, timeout=14400, text=True):
             except subprocess.TimeoutExpired: proc.kill()
             return -1
     proc.wait()
-    return proc.returncode
+    full_output = "".join(output_lines)
+    return proc.returncode, full_output
 
 
 def _run_pipe(cmd1, kw1, cmd2, kw2, node, timeout=14400):
@@ -329,12 +350,22 @@ def _run_pipe(cmd1, kw1, cmd2, kw2, node, timeout=14400):
     paused = getattr(node, '_ame_paused', None)
     cf = subprocess.CREATE_NO_WINDOW
 
+    kw2 = kw2 or {}
+    kw2['stdout'] = subprocess.PIPE
+    kw2['stderr'] = subprocess.STDOUT
+    kw2['text'] = True
+    kw2['bufsize'] = 1
+
     p1 = subprocess.Popen(cmd1, stdout=subprocess.PIPE, **(kw1 or {}), creationflags=cf) # kw1 是字典，
     p2 = subprocess.Popen(cmd2, stdin=p1.stdout, **(kw2 or {}), creationflags=cf)
     p1.stdout.close()
 
     start = time.time()
-    while p2.poll() is None: # 轮询检测 p2 是否结束
+    out_lines = []
+
+    for line in p2.stdout:
+        out_lines.append(line)
+        
         if paused and paused():
             while paused():
                 time.sleep(0.1)
@@ -362,4 +393,5 @@ def _run_pipe(cmd1, kw1, cmd2, kw2, node, timeout=14400):
         p1.terminate()
         try: p1.wait(timeout=5)
         except subprocess.TimeoutExpired: p1.kill()
-    return p2.returncode
+    full_output = "".join(out_lines)
+    return p2.returncode, full_output

@@ -4,6 +4,7 @@ from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import ActionButtonWidget
 from app.services.tool_service import ToolService
 from app.common.logger import logger
+from app.services.error_service import ErrorService
 
 
 class SplitterNode(AMENodeBase):
@@ -60,10 +61,13 @@ class SplitterNode(AMENodeBase):
         logger.info('\n' * 2 + '=' * 40 + ' [Splitter] ' + '=' * 40)
         src_files = inputs.get('input', [])
         if not src_files:
+            self._last_error = '分离器未接收到输入文件'
             return None
         src = src_files[0]
         ff = ToolService.get_tool_path('ffmpeg')
-        if not ff: return None
+        if not ff:
+            self._last_error = '分离器找不到 ffmpeg，请检查工具路径'
+            return None
 
         tracks = self._probe(ff, src)
         logger.info(f'[Splitter] 执行探测: {len(tracks)} 条轨道')
@@ -92,6 +96,8 @@ class SplitterNode(AMENodeBase):
             except Exception as e:
                 logger.error(f'[Splitter] 提取异常: {e}')
 
+        if not result:
+            self._last_error = ErrorService.cli_error('ffmpeg', '未能提取任何已连接的轨道')
         return result if result else None
 
     def _probe(self, ff: str, src: str) -> list:

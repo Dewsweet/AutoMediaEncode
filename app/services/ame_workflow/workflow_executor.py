@@ -88,7 +88,11 @@ class AMEWorkflowExecutor(QThread):
             else:
                 logger.error(f'[AME] 节点 {node.name()} 返回 None, 执行失败')
                 self.node_status_changed.emit(node.id, 'error')
-                self.error_occurred.emit(f'节点 {node.name()} 执行失败')
+                detail = getattr(node, '_last_error', '')
+                msg = f"节点 '{node.name()}' 执行失败"
+                if detail:
+                    msg += f"\n{detail[:200]}"
+                self.error_occurred.emit(msg)
                 return
             self.progress_updated.emit(int((i + 1) / total * 100))
 

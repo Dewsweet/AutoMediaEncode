@@ -56,7 +56,7 @@ class AMEWorkflowInterface(QWidget):
         if viewer:
             viewer.customContextMenuRequested.connect(self._on_viewer_menu)
             QShortcut(QKeySequence('Ctrl+S'), viewer, activated=self._on_save)
-            QShortcut(QKeySequence('Ctrl+O'), viewer, activated=self._on_back_to_loader)
+            # QShortcut(QKeySequence('Ctrl+O'), viewer, activated=self._on_back_to_loader)
 
         self._toolbar.start_clicked.connect(self._on_start)
         self._toolbar.pause_clicked.connect(self._on_pause)
@@ -233,7 +233,7 @@ class AMEWorkflowInterface(QWidget):
         self._progress.setVisible(False)
         InfoBar.error(title='工作流执行失败', content=msg,
                       orient=Qt.Horizontal, isClosable=True,
-                      position=InfoBarPosition.TOP, duration=8000, parent=self)
+                      position=InfoBarPosition.TOP, duration=15000, parent=self)
 
     def _find_output_class(self):
         from app.components.ame_workflow.nodes.system.output_node import OutputNode
