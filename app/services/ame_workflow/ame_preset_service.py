@@ -19,6 +19,7 @@ class AMEPresetService:
     def __init__(self):
         self._template_dir = PathService.get_common_dir() / "json" / "ame_preset"
         self._user_dir = PathService.get_config_dir() / "ame_preset"
+        self._manual_thumbs = set()  # 手动设置过封面的工作流名，不再自动截图
         self._init_dirs()
 
     def _init_dirs(self):
@@ -55,10 +56,9 @@ class AMEPresetService:
         return json_path
 
     def save_with_thumbnail(self, name: str, graph) -> Path:
-        """保存并自动截图。如果已有自定义封面则不覆盖。"""
+        """保存并自动截图。手动封面不为空时跳过自动截图"""
         json_path = self.save(name, graph)
-        thumb_path = self._user_dir / f"{name}.png"
-        if not thumb_path.exists():
+        if name not in self._manual_thumbs:
             self._make_thumbnail(graph, name)
         return json_path
 
@@ -105,6 +105,7 @@ class AMEPresetService:
     def set_thumbnail(self, name: str, img_path: str):
         dst = self._user_dir / f"{name}.png"
         shutil.copy2(img_path, dst)
+        self._manual_thumbs.add(name)  # 标记手动封面，不再自动截图
 
     def _make_thumbnail(self, graph, name: str):
         """尝试从 graph 截图并保存为预设缩略图，失败则静默忽略"""

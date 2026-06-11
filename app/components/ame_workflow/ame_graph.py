@@ -65,6 +65,7 @@ class AMEGraph:
                 node.set_color(45, 45, 45)
             elif hasattr(node, '_original_color'):
                 node.set_color(*node._original_color)
+        self._fix_all_node_views()
 
     def viewer(self):
         return self._viewer
@@ -90,6 +91,11 @@ class AMEGraph:
             except Exception:
                 pass
 
+    def _fix_all_node_views(self):
+        """遍历所有节点修复光标和文本交互"""
+        for node in self.graph.all_nodes():
+            self._fix_node_view(node)
+
     def selected_nodes(self):
         return self.graph.selected_nodes()
 
@@ -101,6 +107,7 @@ class AMEGraph:
 
     def load_session(self, path):
         self.graph.load_session(path)
+        self._fix_all_node_views()
 
     def delete_node(self, node):
         self.graph.delete_node(node)

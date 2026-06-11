@@ -77,8 +77,6 @@ SHORTCUT_MAP = {
     'Ctrl+C':         copy_nodes,
     'Ctrl+X':         cut_nodes,
     'Ctrl+V':         paste_nodes,
-    'Ctrl+Z':         undo,
-    'Ctrl+Shift+Z':   redo,
     'F':              fit_selection,
     'Ctrl+0':         reset_zoom,
     'H':              reset_zoom,

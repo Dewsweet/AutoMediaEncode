@@ -110,6 +110,7 @@ class AMEWorkflowInterface(QWidget):
     def _on_load_workflow(self, name: str):
         if preset_service.load(name, self._ame_graph.graph):
             self._current_workflow_name = name
+            self._ame_graph._fix_all_node_views()
             self._switch_to_canvas()
 
     # ── 保存 ──
