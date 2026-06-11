@@ -11,7 +11,7 @@ AME 是一款基于 PySide6 和 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo
 
 本项目~~是自用, 原本是不想记忆cli命令和反复查询文档, 用来快速处理日常编辑的视频文件~~。现旨在为不擅长使用命令行的用户提供快速简单的媒体处理功能，同时也为熟悉命令行操作的用户提供较复杂的工作流编辑体验。
 
-由于本人能有有限, 本项目部分代码使用 AI 编写, 有问题也可以提交 [issues](https://github.com/Dewsweet/AutoMediaEncode/issues)。
+由于本人能力有限, 本项目部分代码使用 AI 编写, 有问题也可以提交 [issues](https://github.com/Dewsweet/AutoMediaEncode/issues)。
 
 ## 主要特性
 - [x] **媒体信息**：调用 `Mediainfo` 获取输入文件的基本媒体信息，提供简易和详细两种展示文本。
