@@ -1,0 +1,19 @@
+<RCC>
+  <qresource prefix="app">
+    <file>images/default_project.png</file>
+    <file>images/icon/icon.ico</file>
+    <file>images/logo.png</file>
+    
+    <file>qss/dark/ame_workflow_interface.qss</file>
+    <file>qss/dark/recode_card_interface.qss</file>
+    <file>qss/dark/recode_interface.qss</file>
+    <file>qss/dark/setting_interface.qss</file>
+    <file>qss/dark/task_interface.qss</file>
+
+    <file>qss/light/ame_workflow_interface.qss</file>
+    <file>qss/light/recode_card_interface.qss</file>
+    <file>qss/light/recode_interface.qss</file>
+    <file>qss/light/setting_interface.qss</file>
+    <file>qss/light/task_interface.qss</file>
+  </qresource>
+</RCC>

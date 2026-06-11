@@ -2,13 +2,13 @@
 import os
 import shutil
 from pathlib import Path
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
 from qfluentwidgets import (ScrollArea, SettingCardGroup, ExpandGroupSettingCard, OptionsSettingCard, CustomColorSettingCard, PrimaryPushSettingCard, ComboBoxSettingCard, PushSettingCard, 
                             qconfig, setTheme, setThemeColor, 
-                            TitleLabel, CaptionLabel, BodyLabel, ToolButton, InfoBar, InfoBarPosition, ToolTipFilter)
+                            TitleLabel, CaptionLabel, BodyLabel, HyperlinkLabel, ToolButton, InfoBar, InfoBarPosition, ToolTipFilter)
 
 from qfluentwidgets import FluentIcon as FIF
 
@@ -173,17 +173,20 @@ class SettingInterface(QWidget):
         self.helpCard = ExpandGroupSettingCard(FIF.HELP, "帮助", "使用说明和常见问题", self.aboutCardGroup)
         self.helpNoteBox = QWidget()
         self.helpNoteBoxLayout = QVBoxLayout(self.helpNoteBox)
+        self.helpNoteBoxLayout.setContentsMargins(40, 10, 40, 10)
+        self.helpNoteBoxLayout.setSpacing(5)
 
-        self.helpNoteLineEdit = BodyLabel(self)
-        self.helpNoteLineEdit.setText(
-            "并非AI时代的一时兴起, 只是在AI时代下, 自己写点东西更佳简便   \n" \
-            "本软件适合有一点基础的用户上手, 但普通功能也尽量的方便理解使用  \n" \
-            "感谢VCB-Studio和谜之压制组的开源, 关于媒体处理和编码器可以参考他们的教程  \n" \
-            "VCB-Studio 公开教程: https://guides.vcb-s.com/  \n" \
-            "谜之压制组 压制教程: https://iavoe.github.io/"
-        )
+        self.helpNoteLine1 = BodyLabel('本软件旨在为不擅长使用命令行的用户提供快速简单的媒体处理功能，同时也为熟悉命令行操作的用户提供较复杂的工作流编辑体验', self)
+        self.helpNoteLine2 = BodyLabel('感谢VCB-Studio和谜之压制组的开源, 关于媒体处理和编码器可以参考他们的教程:', self)
+        self.helpNoteLine3 = HyperlinkLabel(QUrl('https://iavoe.github.io/'), '谜之压制组 压制教程: https://iavoe.github.io/', self)
+        self.helpNoteLine4 = HyperlinkLabel(QUrl('https://guides.vcb-s.com/'), 'VCB-Studio 公开教程: https://iavoe.github.io/', self)
+        for line in [self.helpNoteLine3, self.helpNoteLine4]:
+            line.setFixedHeight(line.sizeHint().height()) # 固定高度，防止被设置过大后挤压布局
 
-        self.helpNoteBoxLayout.addWidget(self.helpNoteLineEdit)
+        self.helpNoteBoxLayout.addWidget(self.helpNoteLine1)
+        self.helpNoteBoxLayout.addWidget(self.helpNoteLine2)
+        self.helpNoteBoxLayout.addWidget(self.helpNoteLine3)
+        self.helpNoteBoxLayout.addWidget(self.helpNoteLine4)
         self.helpCard.addGroupWidget(self.helpNoteBox)
 
         self.aboutCard = PrimaryPushSettingCard(

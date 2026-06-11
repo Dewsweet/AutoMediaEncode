@@ -9,7 +9,7 @@
     "reject_connection_types":"{}"
   },
   "nodes":{
-    "0x1d4d4b6f740":{
+    "0x229d7cdede0":{
       "type_":"ame.WorkspaceNode",
       "icon":null,
       "name":"\u5de5\u4f5c\u533a",
@@ -37,8 +37,8 @@
       "width":252.0,
       "height":144.0,
       "pos":[
-        100.0,
-        80.0
+        17.741685990348287,
+        516.3352698417191
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -47,7 +47,7 @@
         "workspace":""
       }
     },
-    "0x1d4d2ab9220":{
+    "0x2290db30380":{
       "type_":"ame.InputFileNode",
       "icon":null,
       "name":"\u8f93\u5165\u6587\u4ef6",
@@ -75,8 +75,8 @@
       "width":252.0,
       "height":144.0,
       "pos":[
-        100.0,
-        246.66518155628714
+        17.741685990348287,
+        683.0004513980061
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -86,7 +86,7 @@
         "file_type":"auto"
       }
     },
-    "0x1d4d4ba1790":{
+    "0x229d7d273b0":{
       "type_":"ame.OutputNode",
       "icon":null,
       "name":"\u8f93\u51fa\u6587\u4ef6",
@@ -114,8 +114,8 @@
       "width":252.0,
       "height":175.0,
       "pos":[
-        1936.376115023029,
-        332.09210134264123
+        1616.7359178725217,
+        817.3968270782109
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -125,7 +125,7 @@
         "clean_temp":false
       }
     },
-    "0x1d4d4ba0d10":{
+    "0x2290db33920":{
       "type_":"ame.SplitterNode",
       "icon":null,
       "name":"\u5206\u79bb\u5668",
@@ -153,8 +153,8 @@
       "width":200.0,
       "height":125.0,
       "pos":[
-        493.38861564453555,
-        394.35720892018435
+        356.0832187112876,
+        616.4875256461712
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -164,7 +164,7 @@
         "cached_tracks":[]
       }
     },
-    "0x1d3e53b0920":{
+    "0x229d5e8d670":{
       "type_":"ame.VPYLoaderNode",
       "icon":null,
       "name":"vpy\u52a0\u8f7d\u5668",
@@ -192,8 +192,8 @@
       "width":252.0,
       "height":144.0,
       "pos":[
-        475.8205643569205,
-        80.14892688656678
+        661.6176106708665,
+        413.5700851754759
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -202,7 +202,7 @@
         "vpy_path":""
       }
     },
-    "0x1d4d4bacc50":{
+    "0x229d7c84650":{
       "type_":"ame.VSPipeNode",
       "icon":null,
       "name":"vspipe",
@@ -230,14 +230,14 @@
       "width":200.0,
       "height":61.0,
       "pos":[
-        498.6938695761968,
-        270.5679505147453
+        684.490915890143,
+        603.9891088036545
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{}
     },
-    "0x1d4d2b83950":{
+    "0x2290db33620":{
       "type_":"ame.EncoderX264Node",
       "icon":null,
       "name":"x264 \u7f16\u7801",
@@ -265,8 +265,8 @@
       "width":268.0,
       "height":208.0,
       "pos":[
-        852.3774650203088,
-        122.02084042821843
+        950.0158740800737,
+        552.6213586423195
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -279,7 +279,7 @@
         "custom_cli":""
       }
     },
-    "0x1d4d4ba6510":{
+    "0x2290db31ee0":{
       "type_":"ame.EncoderFLACNode",
       "icon":null,
       "name":"FLAC \u7f16\u7801(ffmpeg)",
@@ -307,8 +307,8 @@
       "width":210.0,
       "height":121.0,
       "pos":[
-        882.4405706330581,
-        450.9465841912421
+        956.1454653782164,
+        854.0235609435451
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -321,7 +321,7 @@
         }
       }
     },
-    "0x1d3e53b0830":{
+    "0x229d7d5be00":{
       "type_":"ame.MuxerMkvmergeNode",
       "icon":null,
       "name":"\u5c01\u88c5 (mkvmerge)",
@@ -349,8 +349,8 @@
       "width":280.0,
       "height":153.0,
       "pos":[
-        1218.1911187071678,
-        311.0275196699152
+        1275.1194198439791,
+        698.3735482158783
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
@@ -362,7 +362,7 @@
         "tracks":[]
       }
     },
-    "0x1d3e53b2c30":{
+    "0x2290db33f20":{
       "type_":"ame.CustomNameNode",
       "icon":null,
       "name":"\u81ea\u5b9a\u4e49\u6587\u4ef6\u540d",
@@ -388,117 +388,156 @@
       "selected":false,
       "visible":true,
       "width":268.0,
-      "height":193.0,
+      "height":224.0,
       "pos":[
-        1571.087727563418,
-        299.06492275953394
+        1611.4775473565294,
+        569.3693910270061
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "custom":{
-        "custom_name":""
+        "custom_name":"",
+        "copy2_temp":false
+      }
+    },
+    "0x229d8043b60":{
+      "type_":"ame.TextNode",
+      "icon":null,
+      "name":"\u7eaf\u6587\u672c",
+      "color":[
+        96,
+        125,
+        139,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":268.0,
+      "height":247.0,
+      "pos":[
+        286.7839909055011,
+        245.80721647386608
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "text":"[\u89c6\u9891\u538b\u5236] \u5de5\u4f5c\u6d41\u8bf4\u660e\uff1a\n1. \u8bbe\u5b9a\u300c\u5de5\u4f5c\u533a\u300d\u4f1a\u6307\u5b9a\u201d\u7f13\u5b58\u201c\u6587\u4ef6\u5939\u7684\u4f4d\u7f6e\uff1b\n2. \u4f7f\u7528\u300c\u5206\u79bb\u5668\u300d\u53ef\u4ee5\u5206\u79bb\u5355\u72ec\u7684\u89c6\u9891\u3001\u97f3\u9891\u3001\u5b57\u5e55\u6587\u4ef6\u5230\u201d\u7f13\u5b58\u201c\u6587\u4ef6\u5939\uff0c\u70b9\u51fb\u201d\u63a2\u6d4b\u8f68\u9053\u201c\u53ef\u65b0\u589e\u5bf9\u4e8e\u7684\u8f68\u9053\u7684\u8f93\u51fa\u7aef\u53e3\uff08\u5982\u679c\u6709\uff09\uff1b\n3. \u300cVapoursynth\u300d\u73af\u8282\u4e0d\u662f\u5fc5\u987b\uff0c\u5982\u679c\u4e0d\u60f3\u518d\u590d\u5236\u4e00\u4efd\u89c6\u9891\u6587\u4ef6\u53ef\u4ee5\u76f4\u8fde\u8f93\u5165\u6587\u4ef6 \uff1b\n4. \u300c\u7f16\u7801\u5668\u300d\u8282\u70b9\u4f7f\u7528\u8ddf\u666e\u901a CLI \u7a0b\u5e8f\u5927\u81f4\u4e00\u6837\uff1b\n5. \u300c\u81ea\u5b9a\u4e49\u6587\u4ef6\u540d\u300d\u53ef\u4ee5\u91cd\u547d\u540d\u8f93\u5165\u6587\u4ef6\uff1b\n6. \u6ca1\u6709\u5de5\u4f5c\u6d41\u5fc5\u987b\u6709\u4e00\u4e2a\u8f93\u51fa\u8282\u70b9\uff0c\u5426\u5219\u65e0\u6cd5\u8fd0\u884c\u3002"
       }
     }
   },
   "connections":[
     {
       "out":[
-        "0x1d4d4b6f740",
+        "0x229d7cdede0",
         "path"
       ],
       "in":[
-        "0x1d4d2ab9220",
+        "0x2290db30380",
         "path"
       ]
     },
     {
       "out":[
-        "0x1d4d2ab9220",
+        "0x2290db30380",
         "file"
       ],
       "in":[
-        "0x1d3e53b0920",
-        "input"
-      ]
-    },
-    {
-      "out":[
-        "0x1d4d2ab9220",
-        "file"
-      ],
-      "in":[
-        "0x1d4d4ba0d10",
+        "0x2290db33920",
         "input"
       ]
     },
     {
       "in":[
-        "0x1d4d4ba1790",
+        "0x229d7d273b0",
         "input"
       ],
       "out":[
-        "0x1d3e53b2c30",
+        "0x2290db33f20",
         "output"
       ]
     },
     {
       "out":[
-        "0x1d4d4ba0d10",
+        "0x2290db33920",
+        "video_1"
+      ],
+      "in":[
+        "0x229d5e8d670",
+        "input"
+      ]
+    },
+    {
+      "out":[
+        "0x2290db33920",
         "audio_1"
       ],
       "in":[
-        "0x1d4d4ba6510",
+        "0x2290db31ee0",
         "input"
       ]
     },
     {
       "out":[
-        "0x1d3e53b0920",
+        "0x229d5e8d670",
         "script"
       ],
       "in":[
-        "0x1d4d4bacc50",
+        "0x229d7c84650",
         "script"
       ]
     },
     {
       "out":[
-        "0x1d4d4bacc50",
+        "0x229d7c84650",
         "video"
       ],
       "in":[
-        "0x1d4d2b83950",
+        "0x2290db33620",
         "input"
       ]
     },
     {
       "out":[
-        "0x1d4d2b83950",
+        "0x2290db33620",
         "video"
       ],
       "in":[
-        "0x1d3e53b0830",
+        "0x229d7d5be00",
         "video"
       ]
     },
     {
       "out":[
-        "0x1d4d4ba6510",
+        "0x2290db31ee0",
         "audio"
       ],
       "in":[
-        "0x1d3e53b0830",
+        "0x229d7d5be00",
         "audio"
       ]
     },
     {
       "out":[
-        "0x1d3e53b0830",
+        "0x229d7d5be00",
         "output"
       ],
       "in":[
-        "0x1d3e53b2c30",
+        "0x2290db33f20",
         "input"
       ]
     }

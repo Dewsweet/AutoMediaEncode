@@ -2,9 +2,7 @@
 import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
-
 from qfluentwidgets import FluentTranslator
-
 from app.view.main_window import MainWindow
 from app.services.task_manager import taskManager  # 导入并常驻后台
 

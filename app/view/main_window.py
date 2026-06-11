@@ -13,6 +13,7 @@ from .demuxing_interface import DeMuxingInterface
 from .muxing_interface import MuxingInterface
 from .ame_workflow_interface import AMEWorkflowInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
+from app.common import resource
 
 class MainWindow(FluentWindow):
     def __init__(self):
@@ -92,8 +93,9 @@ class MainWindow(FluentWindow):
 
     def initWindow(self):
         self.resize(900, 700)
-        self.setWindowTitle(WINDOW_NAME + " " + VERSION)
         self.setMinimumSize(600, 500)
+        self.setWindowIcon(QIcon(':/app/images/logo.png'))
+        self.setWindowTitle(WINDOW_NAME + " " + VERSION)
         
         # 强制将内部各层背景设为透明，否则主窗口画的背景图片会被覆盖
         # self.stackedWidget.setStyleSheet("background: transparent;")
