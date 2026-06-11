@@ -1,4 +1,5 @@
 from .system.workspace_node import WorkspaceNode
+from .system.text_node import TextNode
 
 from .system.input_file_node import InputFileNode
 from .system.input_files_node import InputFilesNode
@@ -27,7 +28,7 @@ from .muxer.ffmpeg_muxer_node import MuxerFFmpegNode
 
 
 ALL_NODE_CLASSES = [
-    WorkspaceNode,
+    WorkspaceNode, TextNode, 
     InputFileNode, InputFilesNode,
     SplitterNode,
     VPYLoaderNode, VSPipeNode, FFmpegProcessorNode,

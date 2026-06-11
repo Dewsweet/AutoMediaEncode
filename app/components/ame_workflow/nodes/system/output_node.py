@@ -14,7 +14,7 @@ class OutputNode(AMENodeBase):
 
     def _setup_widgets(self):
         self.add_custom_widget(DirBrowseWidget(self.view, 'output', '选择输出目录'))
-        self.add_custom_widget(SwitchButtonWidget(self.view, 'clean_temp', '缓存清理'))
+        self.add_custom_widget(SwitchButtonWidget(self.view, 'clean_temp', '运行后清理缓存文件夹'))
 
     def execute(self, inputs, temp_dir):
         logger.info('\n' * 2 + '=' * 40 + ' [OutputNode] ' + '=' * 40)

@@ -40,13 +40,16 @@ class VPYLoaderNode(AMENodeBase):
             return None
 
         # 复制输入文件到临时目录
-        upstream = Path(temp_dir) / inp.name
-        if upstream.resolve() != inp.resolve():
-            try:
-                shutil.copy2(inp, upstream) # 复制到临时目录，确保路径可访问且不锁定源文件
-            except Exception as e:
-                logger.error(f'[VPYLoader] 复制文件失败: {e}')
-                return None
+        # upstream = Path(temp_dir) / inp.name
+        # if upstream.resolve() != inp.resolve():
+        #     try:
+        #         shutil.copy2(inp, upstream) # 复制到临时目录，确保路径可访问且不锁定源文件
+        #     except Exception as e:
+        #         logger.error(f'[VPYLoader] 复制文件失败: {e}')
+        #         return None
+
+        # 直接使用输入文件的绝对路径
+        upstream = inp.resolve()
 
         vpy_path = Path(vpy_src)
         if not vpy_path.is_file():

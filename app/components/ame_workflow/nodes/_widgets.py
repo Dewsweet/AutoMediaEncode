@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFileDialog, QFrame, QApplication
-from qfluentwidgets import PushButton, PrimaryPushButton, LineEdit, ComboBox, SwitchButton, BodyLabel, TextEdit, RoundMenu, Action, Slider, TransparentPushButton, TransparentToolButton, MessageBoxBase, FluentIcon as FIF
+from qfluentwidgets import PushButton, PrimaryPushButton, LineEdit, ComboBox, SwitchButton, BodyLabel, CheckBox,TextEdit, RoundMenu, Action, Slider, TransparentPushButton, TransparentToolButton, MessageBoxBase, FluentIcon as FIF
 from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
 from app.services.setting.preset_service import preset_service
 
@@ -484,9 +484,11 @@ class MkvInlineConfigButton(NodeBaseWidget):
         if isinstance(value, dict):
             self._value = value
 
-class CustomNameWidget(NodeBaseWidget):
-    def __init__(self, parent, name):
+class CustomTextWidget(NodeBaseWidget):
+    def __init__(self, parent, name, placeholder: dict= {}):
         super().__init__(parent, name)
+        self._placeholder = placeholder
+        self.input_count = 0
         self.mainbox = QWidget()
         self.mainLaoyut = QVBoxLayout(self.mainbox)
         self.mainLaoyut.setContentsMargins(0, 0, 0, 0)
@@ -514,18 +516,18 @@ class CustomNameWidget(NodeBaseWidget):
 
     def _add_placeholder(self):
         menu = RoundMenu()
-        placeholders = {
-            '输入文件名': '{input_name}',
-            '日期时间': '{datetime}',
-        }
-        for name, placeholder in placeholders.items():
+        placeholders = self._placeholder
+        for name, ph in placeholders.items():
             action = Action(name)
-            action.triggered.connect(lambda checked=False, p=placeholder: self._insert_placeholder(p))
+            action.triggered.connect(lambda checked=False, p=ph: self._insert_placeholder(p))
             menu.addAction(action)
         menu.exec(QCursor.pos())
 
     def _insert_placeholder(self, placeholder):
         cursor = self._nameEdit.textCursor()
+        if placeholder == '{input}':
+            placeholder = f'{{input_{self.input_count}}}'
+            self.input_count += 1
         cursor.insertText(placeholder)
         self._nameEdit.setTextCursor(cursor)
         self.on_value_changed(self.get_value())
@@ -536,6 +538,26 @@ class CustomNameWidget(NodeBaseWidget):
     def set_value(self, value):
         if value:
             self._nameEdit.setPlainText(str(value))
+
+    def set_text(self, text: str=''):
+        self._nameEdit.setPlainText(text)
+
+    def set_text_placeholder(self, text: str=None):
+        self._nameEdit.setPlaceholderText(text)
+
+    def set_lebal_text(self, text: str='自定义文件名称:'):
+        self._nameLabel.setText(text)
+
+    def set_text_height(self, height: int=60):
+        self._nameEdit.setMaximumHeight(height)
+        self.mainbox.updateGeometry()
+
+    def set_btn_name(self, name1: str=None, name2: str=None):
+        if name1:
+            self._placeHolderBtn.setText(name1)
+        if name2:
+            self._clearBtn.setText(name2)
+
 
 class ActionButtonWidget(NodeBaseWidget):
     """内嵌按钮控件，点击时触发回调"""
@@ -567,16 +589,38 @@ class SwitchButtonWidget(NodeBaseWidget):
         self._sw.setOffText('')
         self.label_w = BodyLabel(label)
 
-        mainLayout.addWidget(self.label_w, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+        mainLayout.addWidget(self.label_w, alignment=Qt.AlignVCenter)
         mainLayout.addWidget(self._sw)
-        mainLayout.addStretch(1)
         self.set_custom_widget(mainbox)
 
         self._sw.checkedChanged.connect(lambda v: self.on_value_changed(v))
 
     def get_value(self):
-        return self._sw.isChecked()
+        return self._sw.isChecked() # 返回布尔值
 
     def set_value(self, v):
         self._sw.setChecked(bool(v))
+
+class CheckBoxWidget(NodeBaseWidget):
+    """内嵌复选框控件"""
+    def __init__(self, parent, name, label):
+        super().__init__(parent, name)
+        mainbox = QWidget()
+        mainLayout = QHBoxLayout(mainbox)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.setSpacing(10)
+
+        self._cb = CheckBox(label)
+        self._cb.setChecked(False)
+
+        mainLayout.addWidget(self._cb, alignment=Qt.AlignVCenter)
+        self.set_custom_widget(mainbox)
+
+        self._cb.stateChanged.connect(lambda state: self.on_value_changed(state == Qt.Checked))
+
+    def get_value(self):
+        return self._cb.isChecked() # 返回布尔值
+
+    def set_value(self, v):
+        self._cb.setChecked(bool(v))
 

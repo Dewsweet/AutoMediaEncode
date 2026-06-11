@@ -10,6 +10,7 @@ NODE_PALETTE_STRUCTURE = [
         ('输入文件', 'input_file'),
         ('多文件输入', 'input_multi'),
         ('输出文件', 'output'),
+        ('纯文本', 'text'),
     ]),
     ('工具', [
         ('分离器', 'splitter'),
