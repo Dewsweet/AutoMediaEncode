@@ -179,7 +179,7 @@ class SettingInterface(QWidget):
         self.helpNoteLine1 = BodyLabel('本软件旨在为不擅长使用命令行的用户提供快速简单的媒体处理功能，同时也为熟悉命令行操作的用户提供较复杂的工作流编辑体验', self)
         self.helpNoteLine2 = BodyLabel('感谢VCB-Studio和谜之压制组的开源, 关于媒体处理和编码器可以参考他们的教程:', self)
         self.helpNoteLine3 = HyperlinkLabel(QUrl('https://iavoe.github.io/'), '谜之压制组 压制教程: https://iavoe.github.io/', self)
-        self.helpNoteLine4 = HyperlinkLabel(QUrl('https://guides.vcb-s.com/'), 'VCB-Studio 公开教程: https://iavoe.github.io/', self)
+        self.helpNoteLine4 = HyperlinkLabel(QUrl('https://guides.vcb-s.com/'), 'VCB-Studio 公开教程: https://guides.vcb-s.com/', self)
         for line in [self.helpNoteLine3, self.helpNoteLine4]:
             line.setFixedHeight(line.sizeHint().height()) # 固定高度，防止被设置过大后挤压布局
 
