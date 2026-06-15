@@ -548,7 +548,6 @@ class OptionGroupBox(QWidget):
 
         self.view = QWidget(self)
         self.view.setObjectName("view")
-        self.view.setStyleSheet("""#view {border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 6px; background-color: transparent;}""")
         self.viewLayout = QVBoxLayout(self.view)
         self.viewLayout.setContentsMargins(10, 10, 10, 10)
         self.viewLayout.setSpacing(5)
@@ -688,13 +687,12 @@ class OptionCard(HeaderCardWidget):
         self.is_track_selected = False
 
         self.mainBox = QWidget()
-        self.mainBox.setStyleSheet("background-color: transparent;")
+        self.mainBox.setObjectName("mainBox")
         self.mainLayout = QVBoxLayout(self.mainBox)
         self.mainLayout.setContentsMargins(20, 10, 20, 10)
 
         self.scrollArea = ScrollArea()
         self.scrollArea.setObjectName("scrollArea")
-        self.scrollArea.setStyleSheet("""#scrollArea {background-color: transparent; border: none;}""")
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.mainBox)
 

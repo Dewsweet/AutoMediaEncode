@@ -64,7 +64,7 @@ class PresetEditDialog(MessageBoxBase):
         self.viewLayout.addSpacing(10)
         self.viewLayout.addWidget(self.nameLineEdit)
         self.viewLayout.addSpacing(10)
-        self.viewLayout.addWidget(self.paramTextEdit, 1) # 给 textedit 增加拉伸比例
+        self.viewLayout.addWidget(self.paramTextEdit, 1)
 
         # 调整自身尺寸为相对主窗口变大的动态尺寸
         if parent:
@@ -98,16 +98,12 @@ class PresetManagerDialog(MessageBoxBase):
         
         # 将数据拷贝为本地状态，点击"应用"时才真实保存
         self.local_presets = preset_service.get_presets_by_encoder(self.encoder_name).copy()
-
-        # 因为预设可能很多，需要一个滚动区域
         self.scrollArea = ScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setStyleSheet("background-color: transparent; border: none;")
-        # 移除固定高度，使其能随弹窗自适应
         # self.scrollArea.setFixedHeight(340)
 
         self.scrollWidget = QWidget()
-        self.scrollWidget.setStyleSheet("background-color: transparent;")
         self.scrollLayout = QVBoxLayout(self.scrollWidget)
         self.scrollLayout.setContentsMargins(20, 0, 20, 0)
         self.scrollArea.setWidget(self.scrollWidget)

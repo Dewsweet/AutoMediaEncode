@@ -20,7 +20,7 @@ class AMEGraph:
         w = self.graph.widget
         w.setParent(parent)
         w.show()
-        w.setStyleSheet('QTabWidget,QTabWidget::pane,QTabBar,QTabBar::tab{border:none;}')
+        w.setObjectName("ame_graph_widget")
 
         self._viewer = None
         for child in w.findChildren(QGraphicsView):
@@ -29,7 +29,7 @@ class AMEGraph:
         if self._viewer:
             self._viewer.setContextMenuPolicy(Qt.CustomContextMenu)
             self._viewer.setFrameShape(QGraphicsView.NoFrame)
-            self._viewer.setStyleSheet('QGraphicsView{border:none;background:transparent;}')
+            self._viewer.setObjectName("ame_graph_viewer")
             register_hotkeys(self._viewer, self.graph)
 
         qconfig.themeChanged.connect(self._apply_theme)

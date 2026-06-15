@@ -1,7 +1,7 @@
-scrollBox, #scrollBox{
+SettingInterface #scrollBox{
     background-color: transparent;
 }  
-scrollArea, ScrollArea{
+SettingInterface ScrollArea{
     background-color: transparent;
     border: none;
 }

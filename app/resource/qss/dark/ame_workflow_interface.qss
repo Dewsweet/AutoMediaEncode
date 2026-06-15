@@ -6,3 +6,24 @@ ameCanvas {
 QMenu {
     background-color: transparent;
 }
+AMEGraph #ame_graph_widget > QTabWidget,QTabWidget::pane,QTabBar,QTabBar::tab {
+    border: none;
+}
+AMEGraph #ame_graph_viewer {
+    background-color: transparent;
+    border: none;
+}
+
+AMELoaderPage #AMELoaderScroll {
+    background: transparent;
+    border: none;
+}
+AMELoaderPage #AMELoaderContainer {
+    background: transparent;
+}
+
+FloatingToolbar {
+    background: #2a2a2a; 
+    border-radius: 10px; 
+    border: 1px solid #3a3a3a; 
+}

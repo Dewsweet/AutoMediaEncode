@@ -108,8 +108,6 @@ class FloatingToolbar(QFrame):
         self.back_btn.clicked.connect(self.back_clicked.emit)
 
         self.set_state('idle')
-        self._apply_bg()
-        qconfig.themeChanged.connect(self._apply_bg)
 
     def _toggle_expand(self):
         self._expanded = not self._expanded
@@ -120,16 +118,6 @@ class FloatingToolbar(QFrame):
         else:
             self.setFixedHeight(46)
 
-    def _apply_bg(self):
-        dark = isDarkTheme()
-        if dark:
-            self.setStyleSheet(
-                "#FloatingToolbar { background: #2a2a2a; border-radius: 10px; border: 1px solid #3a3a3a; }"
-            )
-        else:
-            self.setStyleSheet(
-                "#FloatingToolbar { background: #fafafa; border-radius: 10px; border: 1px solid #ddd; }"
-            )
 
     def set_state(self, state: str):
         self._state = state

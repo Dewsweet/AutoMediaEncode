@@ -9,6 +9,7 @@ from qfluentwidgets import qrouter, StrongBodyLabel, InfoBar, InfoBarPosition
 from ..common.signal_bus import signalBus
 from ..common.task_types import MuxPayload
 from ..common.media_utils import MUXING_EXTS
+from ..common.style_sheet import StyleSheet
 from ..components.muxing_card_interface import InputFilesCard, TrackCard, OptionCard, OutputCard, AttachmentCard
 from ..components.fileload_interface import FileLoadInterface
 from ..components.hearder_widget import HeaderWidget
@@ -51,6 +52,7 @@ class MuxingInterface(QWidget):
         self._loadPage()
         self._initLayout()
         self._connect_signals()
+        StyleSheet.MUXING_INTERFACE.apply(self)
 
     def _initWidget(self):
         self.header = HeaderWidget('媒体混流', '对各种媒体工具进行混流, 封装成媒体文件', '开始混流', self)
@@ -71,7 +73,6 @@ class MuxingInterface(QWidget):
 
     def _initLayout(self):
         self.leftSplitter = QSplitter(Qt.Vertical)
-        self.leftSplitter.setStyleSheet("QSplitter::handle { background-color: transparent; }")
         self.leftSplitter.addWidget(self.inputFilesCard)
         self.leftSplitter.addWidget(self.trackCard)
         self.leftSplitter.setHandleWidth(5)
@@ -80,7 +81,6 @@ class MuxingInterface(QWidget):
         self.leftSplitter.setStretchFactor(1, 5)
 
         self.mainSplitter = QSplitter(Qt.Horizontal)
-        self.mainSplitter.setStyleSheet("QSplitter::handle { background-color: transparent; }")
         self.mainSplitter.addWidget(self.leftSplitter)
         self.mainSplitter.addWidget(self.optionCard)
         self.mainSplitter.setHandleWidth(5)
@@ -89,7 +89,6 @@ class MuxingInterface(QWidget):
         self.mainSplitter.setStretchFactor(1, 1)
 
         self.contentSplitter = QSplitter(Qt.Vertical)
-        self.contentSplitter.setStyleSheet("QSplitter::handle { background-color: transparent; }")
         self.contentSplitter.addWidget(self.mainSplitter)
         self.contentSplitter.addWidget(self.attachmentCard)
         self.contentSplitter.setHandleWidth(5)

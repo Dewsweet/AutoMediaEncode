@@ -13,9 +13,6 @@ from qfluentwidgets import (TitleLabel, BodyLabel, PrimaryPushButton, PushButton
 from app.services.ame_workflow.ame_preset_service import preset_service, WorkflowInfo
 
 
-DEFAULT_THUMB = 'app/resource/images/default_project.png'
-
-
 class NameInputDialog(MessageBoxBase):
     def __init__(self, title, label, parent=None):
         super().__init__(parent)
@@ -88,9 +85,7 @@ class WorkflowCard(ElevatedCardWidget):
         if self._info.thumbnail and self._info.thumbnail.exists():
             pix = QPixmap(str(self._info.thumbnail))
         if not pix or pix.isNull():
-            dp = Path(DEFAULT_THUMB)
-            if dp.exists():
-                pix = QPixmap(str(dp))
+            pix = QPixmap(':app/images/default_project.png')
         if pix and not pix.isNull():
             scaled = pix.scaled(tw, th, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
             sx = x + (tw - scaled.width()) // 2
@@ -133,11 +128,11 @@ class AMELoaderPage(QWidget):
         layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._scroll = ScrollArea(self)
+        self._scroll.setObjectName("AMELoaderScroll")
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scroll.setStyleSheet("ScrollArea{background:transparent;border:none;}")
         container = QWidget(self._scroll)
-        container.setStyleSheet("background:transparent;")
+        container.setObjectName("AMELoaderContainer")
         container.setContentsMargins(20, 0, 20, 0)
         self._flow = FlowLayout(container, needAni=False)
         self._flow.setSpacing(12)

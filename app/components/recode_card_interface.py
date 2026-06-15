@@ -10,7 +10,6 @@ from qfluentwidgets import (HeaderCardWidget, CardWidget, FlowLayout, TableWidge
 from ..services.hw_detect_service import hw_detect_service
 from ..services.mediainfo_service import MediaInfoService
 from ..services.path_service import PathService
-from ..common.style_sheet import StyleSheet
 
 class Frame(QFrame):
     def __init__(self, parent=None):
@@ -18,7 +17,6 @@ class Frame(QFrame):
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.setObjectName("frame")
-        StyleSheet.RECODE_CARD_INTERFACE.apply(self)
 
     def addWidget(self, widget):
         self.vBoxLayout.addWidget(widget)

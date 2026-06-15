@@ -42,9 +42,6 @@ class SettingInterface(QWidget):
         self.scrollArea = ScrollArea(self)
         self.scrollArea.setWidget(self.scrollBox) 
         self.scrollArea.setWidgetResizable(True)
-        StyleSheet.SETTING_INTERFACE.apply(self)
-
-
         self.titleLabel = TitleLabel("设置")
 
         self._toolsCardArea()
@@ -52,6 +49,7 @@ class SettingInterface(QWidget):
         self._aboutCardArea()
         self._initLayout()
         self._connectSignalToSlot()
+        StyleSheet.SETTING_INTERFACE.apply(self)
 
     def _toolsCardArea(self):
         self.toolsCardGroup = SettingCardGroup(self.tr("工具选项"), self.scrollBox)
@@ -83,7 +81,7 @@ class SettingInterface(QWidget):
             if tool["url"]:
                 card.setWebsite(tool["url"])
 
-            if tool["is_costom"]:
+            if tool["is_custom"]:
                 card.addVSpipe(True)
                 custom_path = qconfig.get(cfg.vspipe_path)
                 state = ToolService.check_tool_exists(tool["tool_name"], custom_path)
@@ -287,7 +285,7 @@ class SettingInterface(QWidget):
     def _show_preset_dialog(self, encoder_name):
         """展示编码器预设管理弹窗"""
         dialog = PresetManagerDialog(encoder_name, self.window())
-        dialog.exec()        
+        dialog.exec()
 
     def _on_export_presets_clicked(self):
         """将内置的 custom_preset.json 导出给用户"""

@@ -43,13 +43,13 @@ class RecodeInterface(QWidget):
         self.file_filter = f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}"
 
         self._videoParam_is_horizontal = True
-        StyleSheet.RECODE_INTERFACE.apply(self)
 
         self._srollArea()
         self.loadFilesPage()
 
         self._initLayout()
         self._connect_signal()
+        StyleSheet.RECODE_INTERFACE.apply(self)
 
     def _srollArea(self):
         # 添加布局

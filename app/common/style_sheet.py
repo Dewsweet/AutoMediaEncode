@@ -8,8 +8,8 @@ from ..services.path_service import PathService
 class StyleSheet(StyleSheetBase, Enum):
     """ Style sheet  """
 
-    RECODE_CARD_INTERFACE = "recode_card_interface"
     RECODE_INTERFACE = "recode_interface"
+    MUXING_INTERFACE = "muxing_interface"
     TASK_INTERFACE = "task_interface"
     SETTING_INTERFACE = "setting_interface"
     AME_WORKFLOW_INTERFACE = "ame_workflow_interface"
@@ -17,4 +17,5 @@ class StyleSheet(StyleSheetBase, Enum):
     def path(self, theme=Theme.AUTO):
         theme = qconfig.theme if theme == Theme.AUTO else theme 
         resource = PathService.get_resource_dir()
-        return f"{resource}/qss/{theme.value.lower()}/{self.value}.qss"
+        # return f"{resource}/qss/{theme.value.lower()}/{self.value}.qss"
+        return f":/app/qss/{theme.value.lower()}/{self.value}.qss"

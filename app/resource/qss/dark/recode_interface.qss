@@ -6,3 +6,8 @@ scrollArea, QScrollArea {
     background-color: transparent;
     border: none;
 }
+InputFilesCard #frame {
+    border: 1px solid rgba(222, 222, 222, 50);
+    border-radius: 5px;
+    background-color: transparent;
+}

@@ -142,9 +142,6 @@ class AMENodeBase(BaseNode):
     def _setup_widgets(self):
         pass
 
-    def get_inspector_widget(self):
-        return None
-
     def execute(self, inputs: dict, temp_dir: str) -> dict:
         return None
 
