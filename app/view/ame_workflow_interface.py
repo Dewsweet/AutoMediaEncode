@@ -1,13 +1,15 @@
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QStackedWidget, QFileDialog
 from PySide6.QtGui import QShortcut, QKeySequence
 
 from qfluentwidgets import (ProgressBar, InfoBar, InfoBarPosition)
 
+from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
+
 from app.components.ame_workflow.ame_graph import AMEGraph
 from app.components.ame_workflow.floating_toolbar import FloatingToolbar
 from app.components.ame_workflow.nodes import MENU_KEY_MAP
-from app.components.ame_workflow.ame_context_menu import AMEConextMenu
+from app.components.ame_workflow.ame_context_menu import AMEConextMenu, AMENodeContextMenu
 from app.components.ame_workflow.ame_loader_page import AMELoaderPage, NameInputDialog
 from app.services.ame_workflow.ame_preset_service import preset_service
 from app.common.style_sheet import StyleSheet
@@ -22,6 +24,7 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar = FloatingToolbar(self)
         self._progress = ProgressBar(self)
         self._palette = AMEConextMenu(self._ame_graph.graph, self)
+        self._node_menu = AMENodeContextMenu(self._ame_graph.graph, self)
         self._loader = AMELoaderPage(self)
 
         self._executor = None
@@ -70,6 +73,7 @@ class AMEWorkflowInterface(QWidget):
         self._palette.node_selected.connect(self._on_palette_node)
         self._palette.export_clicked.connect(self._on_export_json)
         self._palette.import_clicked.connect(self._on_import_json)
+        self._palette.add_group_clicked.connect(self._on_add_group)
 
         self._loader.workflow_selected.connect(self._on_load_workflow)
         self._loader.new_requested.connect(self._on_new_workflow)
@@ -150,9 +154,40 @@ class AMEWorkflowInterface(QWidget):
                             orient=Qt.Horizontal, isClosable=False,
                             position=InfoBarPosition.TOP, duration=2000, parent=self)
 
+    # ── 右键菜单 ──
+    def _find_node_at(self, scene_pos):
+        """检测场景位置下是否有节点，返回 NodeObject 或 None"""
+        rect = QRectF(scene_pos.x() - 10, scene_pos.y() - 10, 20, 20)
+        viewer = self._ame_graph.viewer()
+        if not viewer:
+            return None
+        for item in viewer.scene().items(rect):
+            if isinstance(item, AbstractNodeItem):
+                return self._ame_graph.graph.get_node_by_id(item.id)
+        return None
+
     def _on_viewer_menu(self, pos):
-        self._palette.set_scene_pos(self._ame_graph.viewer().mapToScene(pos))
-        self._palette.exec(self._ame_graph.viewer().mapToGlobal(pos))
+        viewer = self._ame_graph.viewer()
+        scene_pos = viewer.mapToScene(pos)
+        global_pos = viewer.mapToGlobal(pos)
+
+        node = self._find_node_at(scene_pos)
+        if node:
+            self._ame_graph.graph.clear_selection()
+            node.set_selected(True)
+            self._node_menu.exec(global_pos)
+        else:
+            self._palette.set_scene_pos(scene_pos)
+            self._palette.exec(global_pos)
+
+    def _on_add_group(self):
+        g = self._ame_graph.graph
+        cur = g.cursor_pos()
+        backdrop = g.create_node('nodeGraphQt.nodes.BackdropNode',
+                                 name='组', pos=[cur[0], cur[1]], push_undo=False)
+        selected = g.selected_nodes()
+        if selected:
+            backdrop.wrap_nodes(selected)
 
     def _on_palette_node(self, menu_key, _):
         if menu_key == 'vs_compound':

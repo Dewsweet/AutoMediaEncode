@@ -1,4 +1,4 @@
-"""AME 画布右键菜单 — 文件/编辑/节点/视图 四级结构"""
+"""AME 画布右键菜单 — 文件/编辑/节点/视图 四级结构 + 节点右键菜单"""
 from PySide6.QtCore import Qt, QPointF, Signal
 
 from qfluentwidgets import RoundMenu, Action
@@ -17,6 +17,7 @@ class AMEConextMenu(RoundMenu):
     export_clicked = Signal()
     import_clicked = Signal()
     node_selected = Signal(str, QPointF)
+    add_group_clicked = Signal()
 
     def __init__(self, graph, parent=None):
         super().__init__(parent=parent)
@@ -67,6 +68,8 @@ class AMEConextMenu(RoundMenu):
     def _add_node_menu(self):
         m = RoundMenu("节点", self)
         self._build_palette_tree(m, NODE_PALETTE_STRUCTURE)
+        m.addSeparator()
+        m.addAction(Action("添加组", triggered=lambda: self.add_group_clicked.emit()))
         self.addMenu(m)
 
     def _build_palette_tree(self, parent_menu, items):
@@ -103,3 +106,45 @@ class AMEConextMenu(RoundMenu):
 
     def exec(self, *args, **kwargs):
         super().exec(*args, **kwargs)
+
+
+class AMENodeContextMenu(RoundMenu):
+    """节点右键菜单 — 节点编辑操作"""
+
+    def __init__(self, graph, parent=None):
+        super().__init__(parent=parent)
+        self._graph = graph
+
+        self.addAction(Action("复制", shortcut="Ctrl+C",
+                              triggered=lambda: copy_nodes(graph)))
+        self.addAction(Action("剪切", shortcut="Ctrl+X",
+                              triggered=lambda: cut_nodes(graph)))
+        self.addAction(Action("删除", shortcut="Delete",
+                              triggered=lambda: delete_selected(graph)))
+        self.addAction(Action("复制选中", shortcut="Ctrl+D",
+                              triggered=lambda: duplicate_selected(graph)))
+        self.addSeparator()
+        self._disable_action = Action("禁用", triggered=self._toggle_disable)
+        self.addAction(self._disable_action)
+        self.addSeparator()
+        self.addAction(Action("全选", shortcut="Ctrl+A",
+                              triggered=lambda: select_all(graph)))
+        self.addAction(Action("适应选中", shortcut="F",
+                              triggered=lambda: fit_selection(graph)))
+
+    def exec(self, *args, **kwargs):
+        nodes = self._graph.selected_nodes()
+        if not nodes:
+            self._disable_action.setText("禁用")
+        else:
+            all_disabled = all(n.disabled() for n in nodes)
+            self._disable_action.setText("启用" if all_disabled else "禁用")
+        super().exec(*args, **kwargs)
+
+    def _toggle_disable(self):
+        nodes = self._graph.selected_nodes()
+        if not nodes:
+            return
+        any_enabled = any(not n.disabled() for n in nodes)
+        for n in nodes:
+            n.set_disabled(any_enabled)
