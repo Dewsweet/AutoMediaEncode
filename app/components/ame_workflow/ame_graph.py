@@ -1,13 +1,132 @@
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.constants import PipeLayoutEnum
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QGraphicsView
+from PySide6.QtCore import Qt, QEvent, QObject, QPoint
+from PySide6.QtWidgets import QGraphicsView, QGraphicsProxyWidget, QAbstractScrollArea
 
 from qfluentwidgets import isDarkTheme, qconfig
 
 from .nodes import ALL_NODE_CLASSES
 from .ame_hotkeys import register as register_hotkeys
 
+
+class _ProxyEventFilter(QObject):
+    """拦截 viewer 的滚轮/鼠标事件，直接操作内嵌可滚动控件的 ScrollBar"""
+
+    def __init__(self, viewer):
+        super().__init__()
+        self._viewer = viewer
+        self._drag_info = None  # (scrollbar, press_scene_y, init_val, widget_scene_h)
+
+    def eventFilter(self, obj, event):
+        et = event.type()
+        if et == QEvent.Type.Wheel:
+            return self._forward_wheel(event)
+        if et in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease, QEvent.Type.MouseMove):
+            return self._forward_mouse(event, et)
+        return False
+
+    def _get_event_pos(self, event):
+        """兼容获取事件的 viewport 坐标"""
+        try:
+            return event.position().toPoint()
+        except AttributeError:
+            return event.pos()
+
+    def _find_scroll_area(self, event):
+        """返回光标下第一个可滚动的 QAbstractScrollArea，以及它所在的 QGraphicsProxyWidget"""
+        vp_pos = self._get_event_pos(event)
+        items = self._viewer.items(vp_pos)
+        for item in items:
+            if isinstance(item, QGraphicsProxyWidget):
+                w = item.widget()
+                for sa in w.findChildren(QAbstractScrollArea):
+                    return sa, item
+        return None, None
+
+    def _is_over_scrollbar(self, proxy_item, scene_pos):
+        """判断场景坐标是否在代理控件的右侧滚动条区域"""
+        rect = proxy_item.sceneBoundingRect()
+        local = proxy_item.mapFromScene(scene_pos)
+        return local.x() >= rect.width() - 18 # 滚动条在控件右侧的大致宽度
+
+    # ── 滚轮 ──
+    def _forward_wheel(self, event):
+        sa, _ = self._find_scroll_area(event)
+        if not sa:
+            return False
+        sb = sa.verticalScrollBar()
+        if not sb or sb.maximum() == 0:
+            return False
+        delta = event.angleDelta().y()
+        if delta == 0:
+            return False
+        
+        # 将滚轮的物理滚动量转换为滚动条的值
+        step = max(1, sb.singleStep())
+        scroll_amount = -delta * step // 40  # 一个滚轮凹槽(通常为120) ≈ 3个step
+        
+        # 边界保护
+        new_val = max(0, min(sb.maximum(), sb.value() + scroll_amount))
+        sb.setValue(new_val)
+        return True
+
+    # ── 鼠标（拦截滚动条区域的按下/拖拽/释放） ──
+    def _forward_mouse(self, event, et):
+        if et == QEvent.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.LeftButton:
+                return self._on_press(event)
+            return False
+
+        if et == QEvent.Type.MouseMove:
+            return self._on_move(event)
+
+        if et == QEvent.Type.MouseButtonRelease:
+            if self._drag_info:
+                self._drag_info = None
+                return True # 消费释放事件，防止触发画布的其他操作
+            return False
+
+        return False
+
+    def _on_press(self, event):
+        vp_pos = self._get_event_pos(event)
+        scene_pos = self._viewer.mapToScene(vp_pos)
+        
+        for item in self._viewer.items(vp_pos):
+            if isinstance(item, QGraphicsProxyWidget):
+                w = item.widget()
+                for sa in w.findChildren(QAbstractScrollArea):
+                    sb = sa.verticalScrollBar()
+                    # 只有当文本超出可视区域(maximum > 0) 且点在滚动条上时才拦截
+                    if sb and sb.maximum() > 0 and self._is_over_scrollbar(item, scene_pos):
+                        rect = item.sceneBoundingRect()
+                        self._drag_info = (sb, scene_pos.y(), sb.value(), rect.height())
+                        return True
+                break
+        return False
+
+    def _on_move(self, event):
+        if not self._drag_info:
+            return False
+        
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
+            # 每次移动时，检查鼠标左键是否还按着。如果没有，强制解除拖拽状态
+            self._drag_info = None
+            return False
+            
+        sb, press_y, init_val, widget_h = self._drag_info
+        scene_pos = self._viewer.mapToScene(self._get_event_pos(event))
+        dy = scene_pos.y() - press_y
+        
+        # 【优化计算比例】：刨除滑块本身的大致高度，让鼠标拖拽到底部时能真正滑到底
+        # 真实可视比例 = pageStep / (maximum + pageStep)
+        track_height = max(10, widget_h - 20) # 减去 20px 预留给上下边缘
+        ratio = sb.maximum() / track_height
+        
+        new_val = int(init_val + (dy * ratio))
+        # 边界保护
+        sb.setValue(max(0, min(sb.maximum(), new_val)))
+        return True
 
 class AMEGraph:
     def __init__(self, parent=None):
@@ -31,6 +150,8 @@ class AMEGraph:
             self._viewer.setFrameShape(QGraphicsView.NoFrame)
             self._viewer.setObjectName("ame_graph_viewer")
             register_hotkeys(self._viewer, self.graph)
+            self._proxy_filter = _ProxyEventFilter(self._viewer)
+            self._viewer.viewport().installEventFilter(self._proxy_filter)
 
         qconfig.themeChanged.connect(self._apply_theme)
         self._apply_theme()
