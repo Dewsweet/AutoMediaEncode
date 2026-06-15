@@ -18,20 +18,18 @@ NODE_PALETTE_STRUCTURE = [
         ('ffmpeg处理器', 'ffmpeg_processor'),
         ('自定义文件名', 'custom_name'),
     ]),
-    ('编码', [
-        ('视频编码', [
-            ('x264', 'encoder_x264'),
-            ('x265', 'encoder_x265'),
-            ('svtav1', 'encoder_svtav1'),
-            ('ffmpeg(视频)', 'encoder_ffmpeg_video'),
+    ('视频编码', [
+        ('x264', 'encoder_x264'),
+        ('x265', 'encoder_x265'),
+        ('svtav1', 'encoder_svtav1'),
+        ('ffmpeg (视频)', 'encoder_ffmpeg_video'),
         ]),
-        ('音频编码', [
-            ('flac', 'encoder_flac'),            
-            ('aac', 'encoder_aac'),
-            ('opus', 'encoder_opus'),
-            ('ffmpeg(音频)', 'encoder_ffmpeg_audio'),
+    ('音频编码', [
+        ('flac', 'encoder_flac'),            
+        ('aac', 'encoder_aac'),
+        ('opus', 'encoder_opus'),
+        ('ffmpeg (音频)', 'encoder_ffmpeg_audio'),
         ]),
-    ]),
     ('封装', [
         ('mkvmerge', 'muxer_mkvmerge'),
         ('ffmpeg', 'muxer_ffmpeg'),

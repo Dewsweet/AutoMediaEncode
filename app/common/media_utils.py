@@ -1,8 +1,8 @@
 from pathlib import Path
 
-VIDEO_EXTS = {'.mp4', '.m4v', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.f4v', '.webm', '.mpg', '.mpeg', '.m1v', '.m2v', '.mpv', '.evo', '.evob', '.vob', '.ts', '.m2ts', '.mts', '.vob', '.divx', '.xvid', '.ogm', '.ogv', '.ram', '.rm', '.rmvb', '.rv'}
-AUDIO_EXTS = {'.mp2', '.mp3', '.aac', '.wav', '.flac', '.ogg', '.caf', '.m4a', '.wma', '.opus', '.alac', '.pcm', '.mka', '.tta', '.tak', '.wv', '.ape', '.ra', '.ac3'}
-IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.webp', '.heif', '.avif', '.j2k', '.jp2', '.jpx', '.j2c', '.jxl'}
+VIDEO_EXTS = {'.mp4', '.m4v', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.f4v', '.webm', '.mpg', '.mpeg', '.evo', '.vob', '.ts', '.m2ts', '.mts', '.rmvb'}
+AUDIO_EXTS = {'.mp3', '.aac', '.wav', '.flac', '.ogg', '.m4a', '.wma', '.opus', '.alac', '.pcm', '.mka', '.tta', '.tak', '.wv', '.ape', '.ac3'}
+IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.webp', '.heif', '.avif', '.j2k', '.j2c', '.jxl'}
 SUBTITLE_EXTS = {'.srt', '.ass', '.ssa', '.vtt', '.sub'}
 
 BDMV = {'.bdmv', '.mpls', '.m2ts'}

@@ -368,6 +368,7 @@ class MkvTrackConfigDialog(MessageBoxBase):
         self.defaultTrackHLayout = QHBoxLayout()
         self._defaultTrackLabel = BodyLabel('默认轨道:', self)
         self._defaultTrackSwitch = SwitchButton(self)
+        self._defaultTrackSwitch.setChecked(True) # 默认就是默认轨道
         self._defaultTrackSwitch.setOnText('是')
         self._defaultTrackSwitch.setOffText('否')
         self.defaultTrackHLayout.addWidget(self._defaultTrackLabel)
