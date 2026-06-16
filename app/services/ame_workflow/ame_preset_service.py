@@ -17,7 +17,7 @@ class WorkflowInfo:
 
 class AMEPresetService:
     def __init__(self):
-        self._template_dir = PathService.get_common_dir() / "json" / "ame_preset"
+        self._template_dir = PathService.get_json_dir() / "ame_preset"
         self._user_dir = PathService.get_config_dir() / "ame_preset"
         self._manual_thumbs = set()  # 手动设置过封面的工作流名，不再自动截图
         self._init_dirs()

@@ -1,5 +1,6 @@
 # coding:utf-8
 from qfluentwidgets import ConfigItem, qconfig, Theme, QConfig, OptionsConfigItem, OptionsValidator
+from ..services.path_service import PathService
 
 class Config(QConfig):
     """ 存放应用的全局配置，继承或利用 qconfig """
@@ -18,5 +19,6 @@ VERSION = "0.9.0 - Beta"
 
 cfg = Config()
 qconfig.themeMode.value = Theme.AUTO
-qconfig.load('app/config/config.json', cfg)
+config_path = str(PathService.get_config_dir() / "config.json")
+qconfig.load(config_path, cfg)
 

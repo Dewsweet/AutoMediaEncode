@@ -4,13 +4,15 @@ import sys
 
 class PathService:
     @staticmethod
+    def is_compiled() -> bool:
+        """判断当前环境是否为打包后的环境"""
+        return "__compiled__" in globals() or getattr(sys, 'frozen', False)
+
+    @staticmethod
     def get_base_dir() -> Path:
-        """获取项目的根目录，兼容开发环境和打包后的环境"""
-        if "__compiled__" in globals():
+        """获取项目的根目录"""
+        if PathService.is_compiled():
             return Path(sys.argv[0]).resolve().parent
-        elif getattr(sys, 'frozen', False):
-            # 兼容一下 PyInstaller
-            return Path(sys.executable).resolve().parent
         else:
             return Path(__file__).resolve().parent.parent.parent
         
@@ -46,7 +48,19 @@ class PathService:
         """获取 resource 目录的路径"""
         return PathService.get_app_dir() / "resource"
     
+    # 动态路径管理
     @staticmethod
     def get_config_dir() -> Path:
         """获取 config 目录的路径"""
-        return PathService.get_app_dir() / "config"
+        if PathService.is_compiled():
+            return PathService.get_base_dir() / "config"
+        else:
+            return PathService.get_app_dir() / "config"
+    
+    @staticmethod
+    def get_json_dir() -> Path:
+        """获取 json 目录的路径"""
+        if PathService.is_compiled():
+            return PathService.get_base_dir() / "data" / "json"
+        else:
+            return PathService.get_common_dir() / "json"
