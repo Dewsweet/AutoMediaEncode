@@ -1,4 +1,5 @@
 from pymediainfo import MediaInfo
+from pathlib import Path
 import math
 
 from app.services.tool_service import ToolService
@@ -74,12 +75,17 @@ class MediaInfoService:
             return dar
 
 
-    def get_info(self, file_path: str) -> tuple[dict, str]: 
+    def get_info(self, file_path: str) -> tuple[dict | str | None, str | None]: 
         """
         调用 mediainfo CLI 获取媒体信息
         参数:
         file_path: 媒体文件路径
         """
+        # 文件检查
+        if not Path(file_path).exists() or not Path(file_path).is_file():
+            return "文件不存在，请检查路径是否正确。", "文件不存在，请检查路径是否正确。"
+        if Path(file_path).stat().st_size == 0:
+            return "文件为空，请检查文件是否损坏。", "文件为空，请检查文件是否损坏。"
         if getattr(self, "_cache", None) is not None and file_path in self._cache:
             return self._cache[file_path]
 
@@ -94,7 +100,7 @@ class MediaInfoService:
         videos = media_info.video_tracks
         audios = media_info.audio_tracks
         texts = media_info.text_tracks
-        iamges = media_info.image_tracks
+        images = media_info.image_tracks
 
         general_info = {}
         if general:
@@ -139,7 +145,7 @@ class MediaInfoService:
                 "title": t.title,
             })
         image_info = []
-        for i in iamges:
+        for i in images:
             image_info.append({
                 "format": i.format,
                 "width": i.width,
@@ -167,8 +173,10 @@ class MediaInfoService:
     def view_info(self, file_path: str) -> str:
         """组装并返回基础信息的 Markdown 文本输出"""
         base_info, _ = self.get_info(file_path)
+        if isinstance(base_info, str):
+            return base_info
         if base_info is None:
-            return "MediaInfo 解析失败，无法获取媒体信息。"
+            return "未添加 MediaInfo DLL, 请确认相关工具路径"
         
 
         general = base_info.get("general", {})
@@ -237,8 +245,10 @@ class MediaInfoService:
     def full_info(self, file_path: str) -> str:
         """组装并返回完整的原始媒体文本（便于作为完整信息查看）"""
         _, full_text = self.get_info(file_path)
+        if isinstance(full_text, str):
+            return full_text
         if full_text is None:
-            return "MediaInfo 解析失败，无法获取完整媒体信息。"
+            return "未添加 MediaInfo DLL, 请确认相关工具路径"
 
         cleaned_lines = []
         for line in str(full_text).splitlines():
@@ -256,9 +266,9 @@ class MediaInfoService:
 
         return "\n".join(cleaned_lines).strip()
 
-    def image_size_info(self, file_path: str) -> dict:
+    def image_size_info(self, file_path: str) -> dict | None:
         base_info, _ = self.get_info(file_path)
-        if base_info is None:
+        if not isinstance(base_info, dict):
             return None
         image = base_info.get("image", [])
         if not image:

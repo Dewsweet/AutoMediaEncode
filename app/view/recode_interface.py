@@ -226,6 +226,8 @@ class RecodeInterface(QWidget):
             return
         mis = MediaInfoService()
         file = mis.image_size_info(files[0])
+        if file is None:
+            return
         width = file.get("width")
         height = file.get("height")
         if width and height:
