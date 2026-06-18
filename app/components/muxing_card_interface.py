@@ -860,7 +860,7 @@ class OutputCard(SimpleCardWidget):
         self.output_path_label = BodyLabel('输出路径: ')
         self.output_path_lineEdit = LineEdit()
 
-        self.output_path_view_button = PrimaryPushButton('浏览')
+        self.output_path_view_button = PushButton('浏览')
 
         self.OutputPathLayout.addWidget(self.output_path_label)
         self.OutputPathLayout.addWidget(self.output_path_lineEdit)

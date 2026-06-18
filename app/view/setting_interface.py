@@ -61,14 +61,20 @@ class SettingInterface(QWidget):
         self.toolsCheckCardFuncBtnBoxLayout = QHBoxLayout(self.toolsCheckCardFuncBtnBox)
         self.toolsCheckCardFuncBtnBoxLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.download_Tools_Button = ToolButton(FIF.DOWNLOAD, self.toolsCheckCard)
-        self.download_Tools_Button.setToolTip("下载工具")
-        self.download_Tools_Button.installEventFilter(ToolTipFilter(self.download_Tools_Button))
+        self.refresh_tools_btn = ToolButton(FIF.SYNC, self.toolsCheckCard)
+        self.refresh_tools_btn.setToolTip("刷新工具状态")
+        self.refresh_tools_btn.installEventFilter(ToolTipFilter(self.refresh_tools_btn))
+
+        # self.download_Tools_Button = ToolButton(FIF.DOWNLOAD, self.toolsCheckCard)
+        # self.download_Tools_Button.setToolTip("下载工具")
+        # self.download_Tools_Button.installEventFilter(ToolTipFilter(self.download_Tools_Button))
+
         self.open_tools_folder_button = ToolButton(FIF.FOLDER, self.toolsCheckCard)
         self.open_tools_folder_button.setToolTip("打开工具文件夹")
         self.open_tools_folder_button.installEventFilter(ToolTipFilter(self.open_tools_folder_button))
 
-        self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.download_Tools_Button)
+        # self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.download_Tools_Button)
+        self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.refresh_tools_btn)
         self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.open_tools_folder_button)
         self.toolsCheckCardFuncBtnBoxLayout.setSpacing(10)
 
@@ -227,8 +233,9 @@ class SettingInterface(QWidget):
         self.themeColorCard.colorChanged.connect(lambda c: setThemeColor(c))
 
         # 绑定工具目录按钮
+        self.refresh_tools_btn.clicked.connect(self.update_tools_state)
         self.open_tools_folder_button.clicked.connect(self._on_open_tools_folder_clicked)
-        self.download_Tools_Button.clicked.connect(self._on_download_tools_clicked)
+        # self.download_Tools_Button.clicked.connect(self._on_download_tools_clicked)
 
         # 绑定导出预设按钮
         self.exportPresetBtn.clicked.connect(self._on_export_presets_clicked)
@@ -256,7 +263,7 @@ class SettingInterface(QWidget):
         
     def _on_download_tools_clicked(self):
         """下载工具(预留位)"""
-        # TODO: 这里之后可以写个弹窗，利用 QThread 或 QNetworkAccessManager 从后台下载压缩包
+        # TODO: 这里可以写个弹窗，利用 QThread 从后台下载压缩包
         # 流程：下载 -> 解压 -> 将文件移入 PathService.get_tools_dir()
         # 下载和解压成功后，可以调用 self.update_tools_state() 重新检查图标
         pass
@@ -346,7 +353,7 @@ class SettingInterface(QWidget):
         # 当把工具下好，或者把文件拖入之后，只要调用这个方法，即可更新前面的圆圈
         # 排除掉特殊需要自定义路径的 vspipe (也可以传参强制更新)
         for t in ToolService.TOOLS_METADATA:
-            if t["is_costom"]:
+            if t["is_custom"]:
                 continue
             card = self.tool_widgets.get(t["tool_name"])
             if card:

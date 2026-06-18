@@ -304,7 +304,7 @@ class OutputCard(HeaderCardWidget):
         self.output_path_lineEdit = LineEdit()
 
         self.using_source_dir_checkbox = CheckBox('使用源目录')
-        self.output_path_view_button = PrimaryPushButton('浏览')
+        self.output_path_view_button = PushButton('浏览')
 
         self.OutputPathLayout.addWidget(self.output_path_label)
         self.OutputPathLayout.addWidget(self.output_path_lineEdit)

@@ -1190,7 +1190,7 @@ class OutputCard(HeaderCardWidget):
 
         self.output_path_label = BodyLabel("输出路径:")
         self.output_path_lineEdit = LineEdit()
-        self.output_browse_button = PrimaryPushButton("浏览")
+        self.output_browse_button = PushButton("浏览")
 
         self._initLayout()
         self._connect_signals()
