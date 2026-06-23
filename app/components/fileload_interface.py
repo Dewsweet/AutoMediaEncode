@@ -2,7 +2,7 @@
 from PySide6.QtCore import Qt, Signal, QEvent, QCoreApplication
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QFileDialog, QVBoxLayout
-from qfluentwidgets import SimpleCardWidget, IconWidget, FluentIcon, SubtitleLabel, CaptionLabel, PrimaryPushButton
+from qfluentwidgets import SimpleCardWidget, IconWidget, FluentIcon, SubtitleLabel, CaptionLabel, PrimaryPushButton, TitleLabel, BodyLabel, ToolTipFilter
 
 class FileLoadInterface(SimpleCardWidget):
     """
@@ -13,40 +13,38 @@ class FileLoadInterface(SimpleCardWidget):
     # 定义信号：发送包含文件完整路径的列表
     filesReady = Signal(list)
 
-    def __init__(self, file_filter="所有文件 (*)", title="📌 点击 or 拖放载入文件🙄", icon=FluentIcon.FOLDER_ADD, parent=None):
+    def __init__(self, file_filter: str="所有文件 (*)", title: str="", desc: str="", parent=None):
         super().__init__(parent)
         self.file_filter = file_filter
         # 设置组件属性
         self.setAcceptDrops(True) # 允许拖放
         self.setMinimumSize(360, 200)
         self.setCursor(Qt.PointingHandCursor)
+        self.setToolTip("点击或拖放文件到此区域")
+        # self.installEventFilter(ToolTipFilter(self)) 
 
         
         #主要布局
         self.vBoxLayout = QVBoxLayout(self)
-        self.vBoxLayout.setAlignment(Qt.AlignCenter)
+        self.titleLabel = SubtitleLabel(title, self)
+        self.descLabel = CaptionLabel(desc, self)
         
-        # 使用图标
-        # self.iconWidget = IconWidget(icon, self)
-        # self.iconWidget.setFixedSize(80, 80) # 稍微调大一点更有识别度
-
-        # 使用主题按钮
         self.inputButton = PrimaryPushButton('选择文件', self, FluentIcon.FOLDER_ADD)
         self.inputButton.setMinimumSize(120, 40)
-
         self.inputButton.clicked.connect(self._open_file_dialog) 
         
-        self.label = SubtitleLabel(title, self)
-        self.label.setAlignment(Qt.AlignCenter)
+        # self.label = SubtitleLabel("📌 点击 or 拖放载入文件 😇", self)
         
         # 添加布局
         self.vBoxLayout.addStretch(1)
-        #self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignCenter)
-
-        self.vBoxLayout.addWidget(self.label, 0, Qt.AlignCenter)
-        self.vBoxLayout.addSpacing(20)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignCenter)
+        self.vBoxLayout.addSpacing(0)
+        self.vBoxLayout.addWidget(self.descLabel, 0, Qt.AlignCenter)
+        self.vBoxLayout.addSpacing(10)
+        # self.vBoxLayout.addWidget(self.label, 0, Qt.AlignCenter)
+        # self.vBoxLayout.addSpacing(20)
         self.vBoxLayout.addWidget(self.inputButton, 0, Qt.AlignCenter)
-        self.vBoxLayout.addSpacing(20)
+        self.vBoxLayout.addSpacing(10)
         self.vBoxLayout.addStretch(1)
 
         # 如果父组件存在，安装事件过滤器以劫持父组件的拖放事件

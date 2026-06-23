@@ -64,7 +64,7 @@ class MediaifInterface(QWidget):
         self.buttonHBoxLayout = QHBoxLayout()
 
         self.titleLabel = TitleLabel('媒体信息', self)
-        self.subTitleLabel = CaptionLabel('调用 MediaInfo 查询媒体信息', self)
+        self.subTitleLabel = CaptionLabel('使用 MediaInfo 查询媒体信息', self)
         self.subTitleLabel.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
 
         self.reLoadButton = PushButton('重新载入文件', self)
@@ -112,10 +112,8 @@ class MediaifInterface(QWidget):
         self.loadPage = QWidget() 
         self.loadPage.setObjectName("loadPage")
         self.loadLayout = QVBoxLayout(self.loadPage)
-        self.loaderComponent = FileLoadInterface(
-            parent=self.loadPage,
-        )
-        self.loaderComponent.setFixedSize(360, 200)
+        self.loaderComponent = FileLoadInterface(title="📌 媒体信息查询 😇", desc="使用 MediaInfo 查询媒体信息", parent=self.loadPage)
+        self.loaderComponent.setFixedWidth(360)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
         
     def _connect_signals(self):
