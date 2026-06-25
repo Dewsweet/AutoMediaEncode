@@ -31,7 +31,7 @@ class RecodeInterface(QWidget):
         self.vBoxLayout.addWidget(self.stackedWidget)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.hearder = HeaderWidget('媒体重编码', '调用 ffmpeg 对媒体文件进行简单的重编码', '开始转码', self)
+        self.hearder = HeaderWidget('媒体重编码', '使用 FFMpeg 对视频、音频、图片、字幕进行简单的重编码', '开始转码', self)
         self.hearder.mainLayout.setContentsMargins(0, 0, 25, 0)
 
 
@@ -93,7 +93,7 @@ class RecodeInterface(QWidget):
         self.loadPage.setObjectName("loadPage")
         self.loadLayout = QVBoxLayout(self.loadPage)
 
-        self.loaderComponent = FileLoadInterface(self.file_filter, title="📌 点击 or 拖放载入文件😇", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(self.file_filter, title="📌 媒体文件重编码 😇", desc="对媒体文件进行简单重编码", parent=self.loadPage)
         self.loaderComponent.setFixedSize(360, 200)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
@@ -151,7 +151,8 @@ class RecodeInterface(QWidget):
         self.hearder.start_button.clicked.connect(self.emit_builder_output)
 
     def on_files_loaded(self, files: list):
-        if not files or Path(files[0]).suffix.lower() not in VIDEO_EXTS | AUDIO_EXTS | IMAGE_EXTS | SUBTITLE_EXTS:
+        # 文件大小为0 or 文件格式不在支持范围内 or 文件不存在
+        if not files or Path(files[0]).suffix.lower() not in VIDEO_EXTS | AUDIO_EXTS | IMAGE_EXTS | SUBTITLE_EXTS or Path(files[0]).stat().st_size == 0:
             InfoBar.warning(
                 title='载入文件失败',
                 content='未检测到有效的媒体文件, 请重新选择',
@@ -246,8 +247,8 @@ class RecodeInterface(QWidget):
         
         # 空文件列表检查
         if not files:
-            InfoBar.error(
-                title='运行错误',
+            InfoBar.warning(
+                title='注意',
                 content='文件列表为空, 请检查输入文件',
                 orient=Qt.Horizontal,
                 isClosable=False,
@@ -260,8 +261,8 @@ class RecodeInterface(QWidget):
         # 文件存在性和有效性检查
         for f in files:
             if not Path(f).exists() or not Path(f).is_file():
-                InfoBar.error(
-                    title='运行错误',
+                InfoBar.warning(
+                    title='注意',
                     content=f'文件不存在或已被删除:\n{f}',
                     orient=Qt.Horizontal,
                     isClosable=False,
@@ -280,17 +281,17 @@ class RecodeInterface(QWidget):
                     title='注意',
                     content=f'输入文件容器与输出容器设置冲突: {f}\n请检查或者启用输出自定义后缀设置',
                     orient=Qt.Horizontal,
-                    isClosable=True,
+                    isClosable=False,
                     position=InfoBarPosition.TOP_RIGHT,
-                    duration=-1,
+                    duration=5000,
                     parent=self
                 )
                 return
         
         # 输出目录设置检查
         if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
-            InfoBar.error(
-                title='运行错误',
+            InfoBar.warning(
+                title='注意',
                 content='输出目录未设置, 请检查输出设置',
                 orient=Qt.Horizontal,
                 isClosable=False,
@@ -334,7 +335,7 @@ class RecodeInterface(QWidget):
                 title='任务执行成功',
                 content='进入「任务进度」可查看详情',
                 orient=Qt.Horizontal,
-                isClosable=True,
+                isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=3000,
                 parent=self

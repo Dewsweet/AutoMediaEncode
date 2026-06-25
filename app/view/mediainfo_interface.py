@@ -112,7 +112,7 @@ class MediaifInterface(QWidget):
         self.loadPage = QWidget() 
         self.loadPage.setObjectName("loadPage")
         self.loadLayout = QVBoxLayout(self.loadPage)
-        self.loaderComponent = FileLoadInterface(title="📌 媒体信息查询 😇", desc="使用 MediaInfo 查询媒体信息", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(title="📌 媒体文件信息 😇", desc="查询媒体文件相关信息", parent=self.loadPage)
         self.loaderComponent.setFixedWidth(360)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
         

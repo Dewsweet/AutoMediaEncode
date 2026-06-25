@@ -154,7 +154,7 @@ class TaskInterface(QWidget):
             
         InfoBar.success(
             title='任务完成',
-            content='你添加的任务已全部执行完毕！',
+            content='你添加的任务已全部执行完毕！\n 请手动关闭此弹窗！',
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,

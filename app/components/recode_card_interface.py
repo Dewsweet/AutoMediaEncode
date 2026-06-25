@@ -295,7 +295,7 @@ class VideoParamCard(HeaderCardWidget):
         self.encoder_option_more_button.setVisible(False) 
 
         self.custom_options_textEdit = TextEdit()
-        self.custom_options_textEdit.setPlaceholderText("在此输入 ffmpeg 视频相关参数(填入后将覆盖上方设置)")
+        self.custom_options_textEdit.setPlaceholderText("自定义 FFMpeg 相关视频参数, 例如: -x264-params \"key1=value1:key2=value2\"")
 
 
     def _initLayout(self):
@@ -1181,14 +1181,14 @@ class OutputCard(HeaderCardWidget):
         self.hBoxLayout1 = QHBoxLayout()
         self.hBoxLayout2 = QHBoxLayout()
 
-        self.custom_output_file_name_checkBox = CheckBox("自定义文件名后缀")
+        self.custom_output_file_name_checkBox = CheckBox("文件名后缀: ")
         self.custom_output_file_name_lineEdit = LineEdit()
-        self.custom_output_file_name_lineEdit.setPlaceholderText("例如: \"_encoded\", 留空保持原文件名")
         self.custom_output_file_name_lineEdit.setFixedWidth(250)
+        self.custom_output_file_name_lineEdit.setEnabled(False)
 
-        self.using_default_output_path_checkBox = CheckBox("使用源目录: ")
+        self.using_default_output_path_checkBox = CheckBox("使用源目录")
 
-        self.output_path_label = BodyLabel("输出路径:")
+        self.output_path_label = BodyLabel("输出路径: ")
         self.output_path_lineEdit = LineEdit()
         self.output_browse_button = PushButton("浏览")
 
@@ -1214,8 +1214,15 @@ class OutputCard(HeaderCardWidget):
         self.viewLayout.setContentsMargins(20, 10, 10, 10)
 
     def _connect_signals(self):
+        self.custom_output_file_name_checkBox.stateChanged.connect(self.cheack_custom_output_file_name)
         self.using_default_output_path_checkBox.stateChanged.connect(self.using_default_output_path)
         self.output_browse_button.clicked.connect(self.browse_output_path)
+
+    def cheack_custom_output_file_name(self, state):
+        if state == self.custom_output_file_name_checkBox.isChecked():
+            self.custom_output_file_name_lineEdit.setEnabled(False)
+        else:
+            self.custom_output_file_name_lineEdit.setEnabled(True)
 
     def using_default_output_path(self, state):
         if state == self.using_default_output_path_checkBox.isChecked():

@@ -27,6 +27,11 @@ class RecodeWorker(QThread):
         # 保存由 FfmpegProgress 返回的迭代器引用，以便中途强杀进程
         self._current_ff_process = None 
 
+        self._popen_kwargs = {}
+        if os.name == 'nt':
+            self._popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+            self._popen_kwargs['stdin'] = subprocess.DEVNULL
+
     def stop(self):
         """外部调用以强制停止任务"""
         self._is_cancelled = True
@@ -42,7 +47,7 @@ class RecodeWorker(QThread):
         total_files = len(files)
         task_start_time = time.time()
         
-        # 任务之间增加明显的分隔空白符
+        # 开始执行
         logger.info(f"\n\n\n{'='*20} 任务开始编排: {task_id} {'='*20}")
         logger.info(f"包含文件数: {total_files}")
         
@@ -169,17 +174,21 @@ class RecodeWorker(QThread):
                 logger.info(f"[Task {task_id}] Subprocess FFmpeg:\n" + shlex.join(cmd_list))
                 
                 # 图片字幕任务极快，直接使用 subprocess 丢后台
-                creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
                 try:
-                    subprocess.run(cmd_list, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL, creationflags=creation_flags, text=True, encoding='utf-8', errors='replace')
+                    subprocess.run(cmd_list, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60, **self._popen_kwargs)
+                except subprocess.TimeoutExpired:
+                    if self._is_cancelled:
+                        return
+                    logger.error(f"[Task {task_id}] Subprocess timed out after 60s")
+                    signalBus.taskError.emit(task_id, f"文件 [{file_path.name}] 处理超时(60s)")
+                    self.stop()
+                    return
                 except subprocess.CalledProcessError as e:
                     if self._is_cancelled:
                         return
-                    error_out = e.stderr if e.stderr else str(e)
-                    logger.error(f"[Task {task_id}] Subprocess execution failed: {error_out}")
-                    logger.exception("发生异常时 Subprocess 的完整追踪信息:")
-
-                    main_error = ErrorService.ffmpeg_error(error_out)
+                    stderr_text = e.stderr.decode('utf-8', errors='replace') if e.stderr else str(e)
+                    logger.error(f"[Task {task_id}] Subprocess execution failed: {stderr_text}")
+                    main_error = ErrorService.ffmpeg_error(stderr_text)
                     error_msg = f"文件 [{file_path.name}] 处理失败\n[可能因为]: {main_error}"
                     signalBus.taskError.emit(task_id, error_msg)
                     self.stop()
@@ -210,12 +219,7 @@ class RecodeWorker(QThread):
         start_time = time.time()
         
         try:
-            popen_kwargs = {}
-            if os.name == 'nt':
-                popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
-                popen_kwargs['stdin'] = subprocess.DEVNULL
-                
-            for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=popen_kwargs): 
+            for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=self._popen_kwargs): 
                 if self._is_cancelled:
                     self._current_ff_process.quit()
                     break
