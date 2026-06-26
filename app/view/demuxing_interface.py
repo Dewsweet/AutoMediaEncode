@@ -30,7 +30,7 @@ class DeMuxingInterface(QWidget):
         self.Hbox = QWidget(self)
         self.HboxLayout = QHBoxLayout(self.Hbox)
 
-        self.header = HeaderWidget('媒体抽流', '从视频文件中提取各种音频、视频、字幕流……', '开始抽流', self)
+        self.header = HeaderWidget('媒体抽流', '使用 MkvExtract 和 FFMpeg 从视频文件中提取各种音频、视频、字幕流……', '开始抽流', self)
         self.inputFilesCard = InputFilesCard(self)
         self.optionCard = MuxingOptionCard(self)
         self.outputCard = OutputCard(self)
@@ -45,7 +45,7 @@ class DeMuxingInterface(QWidget):
         self.loadPage.setObjectName('LoadPage')
         self.loadLayout = QVBoxLayout(self.loadPage)
 
-        self.loaderComponent = FileLoadInterface(self.file_filter, "📌 点击 or 拖放载入文件😋", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(self.file_filter, title="📌 媒体文件抽流 😇",desc="提取视频文件中的各个轨道", parent=self.loadPage)
         self.loaderComponent.setFixedSize(360, 200)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
@@ -93,7 +93,7 @@ class DeMuxingInterface(QWidget):
         if not files or Path(files[0]).suffix.lower() not in DEMUXING_EXTS:
             InfoBar.warning(
                 title='载入文件失败',
-                content='该类型不再抽流列表内, 请重新选择',
+                content='未检测到有效的媒体文件, 请重新选择',
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -122,8 +122,8 @@ class DeMuxingInterface(QWidget):
         files = list(tracks_state.keys())
         
         if not files:
-            InfoBar.error(
-                title='无法开始',
+            InfoBar.warning(
+                title='注意',
                 content='文件列表为空，或未选择任何需要抽取的轨道！',
                 orient=Qt.Horizontal,
                 isClosable=False,
@@ -134,8 +134,8 @@ class DeMuxingInterface(QWidget):
             return
 
         if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
-            InfoBar.error(
-                title='无法开始',
+            InfoBar.warning(
+                title='注意',
                 content='未设置输出目录，请选择输出路径或勾选"使用源目录"!',
                 orient=Qt.Horizontal,
                 isClosable=False,
@@ -195,8 +195,8 @@ class DeMuxingInterface(QWidget):
             self.header.start_button.setText('开始抽流')
             self.header.start_button.setEnabled(True)
             InfoBar.error(
-                title='运行错误',
-                content=f'执行任务期间发生错误:\n{error_msg}',
+                title='执行失败',
+                content=error_msg,
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP_RIGHT,

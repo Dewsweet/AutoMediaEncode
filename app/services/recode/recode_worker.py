@@ -23,6 +23,7 @@ class RecodeWorker(QThread):
         self.payload = payload
         self.builder = FFmpegBuilder()
         self._is_cancelled = False
+        self._has_error = False
         
         # 保存由 FfmpegProgress 返回的迭代器引用，以便中途强杀进程
         self._current_ff_process = None 
@@ -63,7 +64,7 @@ class RecodeWorker(QThread):
                 
             self._process_single_file(task_id, f_path, idx, total_files)
 
-        if not self._is_cancelled:
+        if not self._is_cancelled and not self._has_error:
             run_duration = time.time() - task_start_time
             logger.info(f"{'='*20} 任务全部完成: {task_id}, 总耗时: {run_duration:.2f}s {'='*20}\n")
             signalBus.taskCompleted.emit(task_id)
@@ -120,7 +121,11 @@ class RecodeWorker(QThread):
         ffmpeg_bin_path = ToolService.get_tool_path('ffmpeg')
         if not ffmpeg_bin_path:
             ffmpeg_bin_path = 'ffmpeg' # fallback
-            logger.warning("未在配置或Path中找到ffmpeg对应的程序文件, 回退使用系统指令'ffmpeg'")
+            logger.warning("未在配置或Path中找到ffmpeg对应的程序文件, 停止运行")
+            signalBus.taskError.emit(task_id, "未找到 FFMpeg 程序文件 \n请检查相关设置或查看 log")
+            self._has_error = True
+            return
+
 
         try:
             if is_video:

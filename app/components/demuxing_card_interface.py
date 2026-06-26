@@ -61,7 +61,7 @@ class InputFilesCard(HeaderCardWidget):
         if not files or Path(files[0]).suffix.lower() not in DEMUXING_EXTS:
             InfoBar.warning(
                 title='载入文件失败',
-                content='该类型不再抽流列表内, 请重新选择',
+                content='未检测到有效的媒体文件, 请重新选择',
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -304,6 +304,7 @@ class OutputCard(HeaderCardWidget):
         self.output_path_lineEdit = LineEdit()
 
         self.using_source_dir_checkbox = CheckBox('使用源目录')
+        self.using_source_dir_checkbox.stateChanged.connect(self.on_using_source_dir_changed)
         self.output_path_view_button = PushButton('浏览')
 
         self.OutputPathLayout.addWidget(self.output_path_label)
@@ -316,6 +317,14 @@ class OutputCard(HeaderCardWidget):
 
         self.viewLayout.addWidget(self.mainBox)
         self.viewLayout.setContentsMargins(10, 10, 10, 10)
+
+    def on_using_source_dir_changed(self, state):
+        if state == self.using_source_dir_checkbox.isChecked():
+            self.output_path_lineEdit.setEnabled(True)
+            self.output_path_view_button.setEnabled(True)
+        else:
+            self.output_path_lineEdit.setEnabled(False)
+            self.output_path_view_button.setEnabled(False)
 
     def get_state(self) -> dict:
         """获取当前选项卡的状态"""

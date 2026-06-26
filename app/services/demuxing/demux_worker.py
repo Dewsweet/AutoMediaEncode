@@ -20,6 +20,7 @@ class DemuxWorker(QThread):
         super().__init__(parent)
         self.payload = payload
         self._is_cancelled = False
+        self._has_error = False
         self._current_ff_process = None
 
         self._codec_ext_map = {
@@ -59,7 +60,7 @@ class DemuxWorker(QThread):
                 
             self._process_single_file(task_id, f_path, idx, total_files)
 
-        if not self._is_cancelled:
+        if not self._is_cancelled and not self._has_error:
             run_duration = time.time() - task_start_time
             logger.info(f"{'='*20} 抽流任务全部完成: {task_id}, 总耗时: {run_duration:.2f}s {'='*20}\n")
             signalBus.taskCompleted.emit(task_id)
@@ -89,15 +90,21 @@ class DemuxWorker(QThread):
         in_ext = file_path.suffix.lower()
         
         is_matroska = in_ext in ['.mkv', '.mka', '.mks']
-        mkvextract_path = ToolService.get_tool_path('mkvextract')
         
-        if is_matroska and mkvextract_path:
-            self._extract_with_mkvextract(task_id, file_path, fname, out_dir_path, tracks, option_state, idx, total_files, mkvextract_path)
+        if is_matroska:
+            self._extract_with_mkvextract(task_id, file_path, fname, out_dir_path, tracks, option_state, idx, total_files)
         else:
             self._extract_with_ffmpeg(task_id, file_path, fname, out_dir_path, tracks, option_state, idx, total_files)
 
-    def _extract_with_mkvextract(self, task_id: str, file_path: Path, fname: str, out_dir_path: Path, tracks: list, option_state: dict, idx: int, total_files: int, mkvextract_path: str):
+    def _extract_with_mkvextract(self, task_id: str, file_path: Path, fname: str, out_dir_path: Path, tracks: list, option_state: dict, idx: int, total_files: int):
         """mkvextract 组装参数"""
+        mkvextract_path = ToolService.get_tool_path('mkvextract')
+        if not mkvextract_path:
+            logger.error(f"[{task_id}] 未找到 MkvExtract 可执行文件, 停止运行")
+            signalBus.taskError.emit(task_id, "未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log")
+            self._has_error = True
+            return
+
         logger.info(f"[{task_id}] 检测到 Matroska 格式，使用 mkvextract 处理: {file_path.name}")
         
         cmd_list = [mkvextract_path, file_path.as_posix()]
@@ -177,21 +184,32 @@ class DemuxWorker(QThread):
         """Fmpeg 组装参数"""
         ffmpeg_bin_path = ToolService.get_tool_path('ffmpeg')
         if not ffmpeg_bin_path:
-            ffmpeg_bin_path = 'ffmpeg'
-            logger.warning("未在配置或Path中找到ffmpeg对应的程序文件, 回退使用系统指令'ffmpeg'")
+            logger.error(f"[{task_id}] 未找到 ffmpeg 可执行文件, 停止运行")
+            signalBus.taskError.emit(task_id, "未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log")
+            self._has_error = True
+            return
 
         cmd_list = [ffmpeg_bin_path, "-y", "-i", file_path.as_posix()]
 
         generated_ass_files = []
+        chapter_ffmeta = None
+        chapter_out = None
+        ch_format = None
         type_map = {"video": "v", "audio": "a", "subtitle": "s"}
-        
 
         for track in tracks:
             t_type = track.get("type")
             t_idx = track.get("idx", 0)
             t_codec = track.get("codec", "").lower()
             
-            # 不处理附加在此处的章节事件
+            if t_type == "chapter":
+                ch_format = option_state.get("chapter_suffix", "XML").lower()
+                ch_ext = f".{ch_format}"
+                chapter_ffmeta = out_dir_path / f"{fname}_chapters_ffmeta.txt"
+                chapter_out = out_dir_path / f"{fname}_chapters{ch_ext}"
+                cmd_list.extend(["-f", "ffmetadata", chapter_ffmeta.as_posix()])
+                continue
+
             if t_type not in type_map:
                 continue
 
@@ -223,11 +241,93 @@ class DemuxWorker(QThread):
             if t_type == "subtitle" and option_state.get("desubsetting"):
                 generated_ass_files.append(out_posix)
 
-        logger.info(f"[Task {task_id}] FFmpeg command:\n" + shlex.join(cmd_list))
+        has_valid_tracks = chapter_ffmeta is not None or any(t.get("type") in ("video", "audio", "subtitle") for t in tracks)
 
-        self._run_cli_with_progress(task_id, idx, total_files, file_path.name, cmd_list, "ffmpeg")
+        if has_valid_tracks:
+            # 
+            logger.info(f"[Task {task_id}] FFmpeg command:\n" + shlex.join(cmd_list))
+            self._run_cli_with_progress(task_id, idx, total_files, file_path.name, cmd_list, "ffmpeg")
+
+        if chapter_ffmeta is not None and chapter_ffmeta.exists() and not self._is_cancelled:
+            chapters_raw = []
+            cur = None
+            for line in chapter_ffmeta.read_text("utf-8").splitlines():
+                stripped = line.strip()
+                if stripped == "[CHAPTER]":
+                    cur = {}
+                    chapters_raw.append(cur)
+                elif cur is not None and "=" in stripped:
+                    k, v = stripped.split("=", 1)
+                    cur[k.strip()] = v.strip()
+
+            if chapters_raw:
+                if ch_format == "xml":
+                    DemuxWorker._write_chapters_xml(chapters_raw, chapter_out)
+                else:
+                    DemuxWorker._write_chapters_txt(chapters_raw, chapter_out)
+                logger.info(f"[{task_id}] 章节提取成功: {chapter_out.name}")
+
+            chapter_ffmeta.unlink(missing_ok=True)
+
         self._post_process_subtitles(generated_ass_files)
-        
+
+    @staticmethod
+    def _write_chapters_xml(chapters: list, out_path: Path):
+        import xml.etree.ElementTree as ET
+
+        def _ms_to_ts(ms: int) -> str:
+            h, r = divmod(ms, 3600000)
+            m, r = divmod(r, 60000)
+            s, ms_p = divmod(r, 1000)
+            return f"{h:02d}:{m:02d}:{s:02d}.{ms_p:03d}"
+
+        def _value_to_ms(value_str: str, timebase_str: str) -> int:
+            value = int(value_str)
+            parts = timebase_str.split("/")
+            num = int(parts[0])
+            den = int(parts[1])
+            return int(value * 1000 * num / den)
+
+        root = ET.Element("Chapters")
+        edition = ET.SubElement(root, "EditionEntry")
+
+        for ch in chapters:
+            atom = ET.SubElement(edition, "ChapterAtom")
+            tb = ch.get("TIMEBASE", "1/1000")
+            start_ms = _value_to_ms(ch.get("START", "0"), tb)
+            end_ms = _value_to_ms(ch.get("END", "0"), tb)
+            ET.SubElement(atom, "ChapterTimeStart").text = _ms_to_ts(start_ms)
+            ET.SubElement(atom, "ChapterTimeEnd").text = _ms_to_ts(end_ms)
+            display = ET.SubElement(atom, "ChapterDisplay")
+            ET.SubElement(display, "ChapterString").text = ch.get("title", "")
+
+        tree = ET.ElementTree(root)
+        tree.write(out_path, encoding="utf-8", xml_declaration=True)
+
+    @staticmethod
+    def _write_chapters_txt(chapters: list, out_path: Path):
+        def _ms_to_ts(ms: int) -> str:
+            h, r = divmod(ms, 3600000)
+            m, r = divmod(r, 60000)
+            s, ms_p = divmod(r, 1000)
+            return f"{h:02d}:{m:02d}:{s:02d}.{ms_p:03d}"
+
+        def _value_to_ms(value_str: str, timebase_str: str) -> int:
+            value = int(value_str)
+            parts = timebase_str.split("/")
+            num = int(parts[0])
+            den = int(parts[1])
+            return int(value * 1000 * num / den)
+
+        lines = []
+        for i, ch in enumerate(chapters, start=1):
+            tb = ch.get("TIMEBASE", "1/1000")
+            start_ms = _value_to_ms(ch.get("START", "0"), tb)
+            lines.append(f"CHAPTER{i:02d}={_ms_to_ts(start_ms)}")
+            lines.append(f"CHAPTER{i:02d}NAME={ch.get('title', '')}")
+
+        out_path.write_text("\n".join(lines), encoding="utf-8")
+
     def _post_process_subtitles(self, generated_ass_files: list):
         if not self._is_cancelled and generated_ass_files:
             for ass_f in generated_ass_files:
@@ -300,7 +400,9 @@ class DemuxWorker(QThread):
             if not self._is_cancelled:
                 error_msg = f"处理时发生错误: {str(e)}\n{traceback.format_exc()}"
                 logger.error(error_msg)
-                signalBus.taskError.emit(task_id, str(e))
+                main_error = ErrorService.cli_error("mkvextract", str(error_msg))
+                main_error_msg = f"文件 [{file_name}] 处理失败\n[可能因为]: {main_error}"
+                signalBus.taskError.emit(task_id, main_error_msg)
         finally:
             self._current_ff_process = None
 
