@@ -55,7 +55,7 @@ class MuxingInterface(QWidget):
         StyleSheet.MUXING_INTERFACE.apply(self)
 
     def _initWidget(self):
-        self.header = HeaderWidget('媒体混流', '对各种媒体工具进行混流, 封装成媒体文件', '开始混流', self)
+        self.header = HeaderWidget('媒体混流', '使用 MkvMerge 和 FFMpeg 对各种媒体文件进行混流 封装成视频文件', '开始混流', self)
         self.inputFilesCard = InputFilesCard(self)
         self.trackCard = TrackCard(self)
         self.optionCard = OptionCard(self)
@@ -67,7 +67,7 @@ class MuxingInterface(QWidget):
         self.loadPage = QWidget()
         self.loadPage.setObjectName('LoadPage')
         self.loadLayout = QVBoxLayout(self.loadPage)
-        self.loaderComponent = FileLoadInterface(self.mux_ext_filter, "📌 点击 or 拖放载入文件🥱", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(self.mux_ext_filter, title="📌 媒体文件混流 😇",desc="封装成视频", parent=self.loadPage)
         self.loaderComponent.setFixedSize(360, 200)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
@@ -148,7 +148,7 @@ class MuxingInterface(QWidget):
     def on_files_loaded(self, files: list):
         if not files or Path(files[0]).suffix.lower() not in MUXING_EXTS:
             InfoBar.warning(
-                title='提示',
+                title='载入文件失败',
                 content='请选择支持的媒体文件进行混流',
                 orient=Qt.Horizontal,
                 isClosable=False,
@@ -159,7 +159,8 @@ class MuxingInterface(QWidget):
             return
     
         if self.stackedWidget.currentIndex() != 1:
-            self.stackedWidget.setCurrentWidget(self.mainPage)
+            qrouter.push(self.stackedWidget, self.mainPage.objectName())
+            self.stackedWidget.setCurrentIndex(1)
         self._handle_files_added(files)
 
     def _cleanup_worker(self, worker):
@@ -300,7 +301,7 @@ class MuxingInterface(QWidget):
         if target_container in ('mp4', 'mov'):
             if enabled_sub_tracks or has_chapter_tracks:
                 InfoBar.warning(
-                    title='提示',
+                    title='注意',
                     content='MP4 / MOV 不会封装软字幕和章节，请关闭对应轨道。',
                     parent=self,
                     isClosable=False,
@@ -309,8 +310,8 @@ class MuxingInterface(QWidget):
                 return
 
             if len(enabled_video_tracks) > 1 or len(enabled_audio_tracks) > 1:
-                InfoBar.error(
-                    title='错误',
+                InfoBar.warning(
+                    title='注意',
                     content='MP4 / MOV 仅支持一个视频轨和一个音频轨，请减少启用的轨道数量。',
                     parent=self,
                     isClosable=False,
@@ -319,8 +320,8 @@ class MuxingInterface(QWidget):
                 return
 
             if len(enabled_video_tracks) + len(enabled_audio_tracks) == 0:
-                InfoBar.error(
-                    title='错误',
+                InfoBar.warning(
+                    title='注意',
                     content='MP4 / MOV 至少需要启用一个视频轨或一个音频轨。',
                     parent=self,
                     isClosable=False,
@@ -332,9 +333,9 @@ class MuxingInterface(QWidget):
         for track in enabled_video_tracks + enabled_audio_tracks + enabled_sub_tracks:
             language = track.get('language', '')
             if language.lower() != 'und' and not language in bcp47.tags:
-                InfoBar.error(
-                    title='提示',
-                    content=f'语言标签 "{language}" 不合法, 请修改为合法 BCP 47 语言标签',
+                InfoBar.warning(
+                    title='注意',
+                    content=f'语言标签 "[{language}]" 不合法, 请修改为合法 BCP 47 语言标签',
                     parent=self,
                     isClosable=False,
                     duration=3000,
@@ -344,7 +345,7 @@ class MuxingInterface(QWidget):
 
         if not input_files:
             InfoBar.warning(
-                title='错误', 
+                title='注意', 
                 content='请至少保留一个启用的轨道', 
                 parent=self, 
                 isClosable=False,
@@ -354,7 +355,7 @@ class MuxingInterface(QWidget):
             
         if not output_state.get('output_path'):
             InfoBar.warning(
-                title='错误', 
+                title='注意', 
                 content='请确保输出路径和输入参数正确', 
                 parent=self,
                 isClosable=False,
@@ -411,7 +412,7 @@ class MuxingInterface(QWidget):
             self.header.start_button.setEnabled(True)
             InfoBar.error(
                 title='运行错误',
-                content=f'执行任务期间发生错误, 请检查相关设置',
+                content=error_msg,
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP_RIGHT,

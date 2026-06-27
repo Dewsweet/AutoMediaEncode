@@ -173,7 +173,8 @@ class InputFilesCard(HeaderCardWidget):
         if invalid_files:
             InfoBar.warning(
                 title="载入文件失败",
-                content=f"已过滤 {len(invalid_files)} 个不在支持列表中的文件。",
+                # content=f"已过滤 {len(invalid_files)} 个不在混流支持列表中的文件。",
+                content="请选择支持的媒体文件进行混流",
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,

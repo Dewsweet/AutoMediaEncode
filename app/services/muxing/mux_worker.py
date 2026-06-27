@@ -17,6 +17,7 @@ class MuxWorker(QThread):
         self.payload = payload
         self.task_id = payload.get('task_id')
         self._is_cancelled = False
+        self._has_error = False
         self._current_ff_process = None
         self._current_subprocess = None
 
@@ -68,9 +69,10 @@ class MuxWorker(QThread):
             elif container_str == 'mkv':
                 self._run_mkvmerge_mux(output_path, tracks_state, chapter_files, attachments, attachment_state, ordered_tracks)
             else:
-                signalBus.taskError.emit(self.task_id, f"封装格式异常: {container_str}")
+                signalBus.taskError.emit(self.task_id, f"不支持的封装格式: {container_str}")
+                logger.error(f"[Task {self.task_id}] 不支持的封装格式: {container_str}")
 
-            if not self._is_cancelled:
+            if not self._is_cancelled and not self._has_error:
                 run_duration = time.time() - task_start_time
                 logger.info(f"{'='*20} 混流任务全部完成: {self.task_id}, 总耗时: {run_duration:.2f}s {'='*20}\n")
                 signalBus.taskCompleted.emit(self.task_id)
@@ -78,12 +80,14 @@ class MuxWorker(QThread):
         except Exception as e:
             if not self._is_cancelled:
                 logger.exception("混流执行异常")
-                signalBus.taskError.emit(self.task_id, str(e))
 
     def _run_mkvmerge_mux(self, output_path: str, tracks_state: dict, chapter_files: list, attachments: list, attachment_state: bool, ordered_tracks: list):
         mkvmerge_path = ToolService.get_tool_path('mkvmerge')
         if not mkvmerge_path:
-            mkvmerge_path = 'mkvmerge'
+            logger.error(f"[Task {self.task_id}] 未找到 MkvMerge 可执行文件, 停止运行")
+            signalBus.taskError.emit(self.task_id, "未找到 MkvMerge 可执行文件, 请检查相关设置或查看 log")
+            self._has_error = True
+            return
 
         cmd = [mkvmerge_path, '-o', output_path]
 
@@ -216,12 +220,16 @@ class MuxWorker(QThread):
             signalBus.taskProgressUpdated.emit(self.task_id, 1, 1, "Muxing(MKVMerge)", 100.0, "00:00:00")
         elif not self._is_cancelled:
             stderr_text = self._current_subprocess.stderr.read() if self._current_subprocess and self._current_subprocess.stderr else ""
-            signalBus.taskError.emit(self.task_id, f"混流失败 (code {returncode}):\n{stderr_text}")
+            main_error = ErrorService.cli_error('mkvmerge', stderr_text)
+            signalBus.taskError.emit(self.task_id, f"混流失败 (code {returncode}):\n{main_error}")
 
     def _run_ffmpeg_mux(self, output_path: str, tracks_state: dict, chapter_files: list, attachments: list):
         ffmpeg_path = ToolService.get_tool_path('ffmpeg')
         if not ffmpeg_path:
-            ffmpeg_path = 'ffmpeg'
+            logger.error(f"[Task {self.task_id}] 未找到 FFMpeg 可执行文件, 停止运行")
+            signalBus.taskError.emit(self.task_id, "未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log")
+            self._has_error = True
+            return
 
         cmd = [ffmpeg_path, '-y']
         file_paths = list(tracks_state.keys())
