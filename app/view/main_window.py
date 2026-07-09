@@ -92,8 +92,8 @@ class MainWindow(FluentWindow):
 
 
     def initWindow(self):
-        self.resize(900, 700)
-        self.setMinimumSize(600, 500)
+        self.resize(1050, 720)
+        self.setMinimumSize(900, 700)
         self.setWindowIcon(QIcon(':/app/images/logo.png'))
         self.setWindowTitle(WINDOW_NAME + " " + VERSION)
         
@@ -108,13 +108,13 @@ class MainWindow(FluentWindow):
 
     def initNavigation(self):
         # 添加子页面到侧边导航栏
-        self.addSubInterface(self.mediaInfoInterface, FIF.INFO, 'Media Info')
-        self.addSubInterface(self.recodeInterface, FIF.VIDEO, 'Recode')
-        self.addSubInterface(self.demuxingInterface, FIF.MOVIE, 'Demuxing')
-        self.addSubInterface(self.muxingInterface, FIF.MEDIA, 'Muxing')
-        self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME')
+        self.addSubInterface(self.mediaInfoInterface, FIF.INFO, '媒体信息')
+        self.addSubInterface(self.recodeInterface, FIF.VIDEO, '媒体重编码')
+        self.addSubInterface(self.demuxingInterface, FIF.MOVIE, '媒体抽流')
+        self.addSubInterface(self.muxingInterface, FIF.MEDIA, '媒体混流')
+        self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME 工作流')
 
-        self.addSubInterface(self.taskInterface, FIF.MESSAGE, 'Task Progress', NavigationItemPosition.BOTTOM)
-        self.addSubInterface(self.settingInterface, FIF.SETTING, 'Setting', NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.taskInterface, FIF.MESSAGE, '任务进度', NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.settingInterface, FIF.SETTING, '设置', NavigationItemPosition.BOTTOM)
 
 
