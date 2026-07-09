@@ -12,11 +12,11 @@ class FFmpegProcessorWidget(CustomTextWidget):
         self.set_lebal_text('FFmpeg 命令行参数: ')
         self.set_btn_name('插入')
         self.set_text('-i {input} -c:v libx264 -preset veryslow -crf 18 {output}.mkv')
-        self.set_text_placeholder()
+        self.set_text_placeholder('在这输入 FFmpeg 命令行参数，使用 插入 来添加输入/输出占位符')
         self.set_text_height(120)
 
 class FFmpegProcessorNode(AMENodeBase):
-    NODE_NAME = 'Ffmpeg CLI'
+    NODE_NAME = 'FFmpeg CLI'
     DESCRIPTION = '自定义 FFmpeg 命令行处理'
     CATEGORY = '工具'; CATEGORY_COLOR = C['Orange']
     INPUTS = [('input_1', P['any']), ('input_2', P['any']), ('input_3', P['any'])]

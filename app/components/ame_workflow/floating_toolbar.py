@@ -88,7 +88,7 @@ class FloatingToolbar(QFrame):
         row3_layout.setContentsMargins(0, 0, 0, 0)
         row3_layout.setSpacing(4)
 
-        self.back_btn = PushButton(FIF.HOME, '返回加载页', self)
+        self.back_btn = PushButton(FIF.HOME, '返回首页', self)
         self.back_btn.setFixedHeight(32)
         self.back_btn.setToolTip("返回加载页")
 

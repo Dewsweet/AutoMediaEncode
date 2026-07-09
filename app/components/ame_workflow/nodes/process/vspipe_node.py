@@ -7,7 +7,7 @@ from app.common.config import cfg, qconfig
 
 
 class VSPipeNode(AMENodeBase):
-    NODE_NAME = 'vspipe'
+    NODE_NAME = 'vspipe 加载器'
     DESCRIPTION = 'VapourSynth 管道输出。检测 vspipe API 版本后组装管道命令连接编码器'
     CATEGORY = '工具'; CATEGORY_COLOR = C['Purple']
     INPUTS = [('script', P['script'])]

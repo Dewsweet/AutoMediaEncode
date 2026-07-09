@@ -5,7 +5,7 @@ from PySide6.QtGui import QPixmap, QColor, QFont, QPainter, QMouseEvent
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                 QLabel, QFileDialog)
 
-from qfluentwidgets import (TitleLabel, BodyLabel, PrimaryPushButton, PushButton,
+from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel,PrimaryPushButton, PushButton,
                             RoundMenu, Action, InfoBar, InfoBarPosition,
                             isDarkTheme, FluentIcon as FIF, FlowLayout,
                             MessageBoxBase, LineEdit, ElevatedCardWidget, ScrollArea)
@@ -124,8 +124,12 @@ class AMELoaderPage(QWidget):
         layout.setContentsMargins(0, 20, 0, 20)
         layout.setSpacing(10)
 
-        title = TitleLabel("AME 工作流", self)
+        title = TitleLabel("节点式工作流", self)
+        # desc = CaptionLabel("可视化编辑节点 快速搭建编码工作流", self)
+
         layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
+        # layout.addWidget(desc, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addSpacing(5)
 
         self._scroll = ScrollArea(self)
         self._scroll.setObjectName("AMELoaderScroll")

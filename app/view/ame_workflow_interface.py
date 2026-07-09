@@ -101,7 +101,7 @@ class AMEWorkflowInterface(QWidget):
 
     # ── 新建 ──
     def _on_new_workflow(self):
-        dlg = NameInputDialog("新建工作流", "输入名称:", self.window())
+        dlg = NameInputDialog("新建工作流", "输入工作流名称:", self.window())
         if dlg.exec():
             name = dlg.get_text().strip()
             if name:

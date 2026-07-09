@@ -139,7 +139,7 @@ class FilesBrowseWidget(NodeBaseWidget):
         self._btn.clicked.connect(self._browse)
 
         self._edit = TextEdit(row)
-        self._edit.setPlaceholderText('此处显示选择的多个路径，每行一个...')
+        # self._edit.setPlaceholderText('文件路径, 默认每行一个文件路径...')
         self._edit.setMinimumHeight(64)
         self._edit.setMaximumHeight(140)
         self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
@@ -347,7 +347,7 @@ class CLITextWidget(NodeBaseWidget):
     def __init__(self, parent, name):
         super().__init__(parent, name)
         self._edit = TextEdit()
-        self._edit.setPlaceholderText('自定义 CLI 参数(不含输入输出部分)...')
+        self._edit.setPlaceholderText('自定义 CLI 参数...')
         self._edit.setMinimumHeight(48)
         self._edit.setMaximumHeight(100)
         self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
