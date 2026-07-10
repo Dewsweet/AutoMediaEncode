@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from PySide6.QtCore import Qt, Signal, QSettings
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QShortcut, QKeySequence
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QCompleter, QFileDialog
 
 from qfluentwidgets import (HeaderCardWidget, SimpleCardWidget, TableWidget, ScrollArea, HorizontalSeparator, SmoothMode, RoundMenu, Action, CheckableMenu, ToolTipFilter,
@@ -62,6 +62,8 @@ class InputFilesCard(HeaderCardWidget):
         self.table.customContextMenuRequested.connect(self.show_content_menu)
         self.header.sectionMoved.connect(self._save_table_state)
         self.header.sectionResized.connect(self._save_table_state)
+
+        QShortcut(QKeySequence(Qt.Key_Delete), self.table).activated.connect(self.on_remove_selected_files)
 
     def _save_table_state(self, *args):
         settings = QSettings("AutoMediaEncode", "MuxingInputFilesCard")

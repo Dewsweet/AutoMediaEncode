@@ -158,7 +158,7 @@ class InputFilesCard(HeaderCardWidget):
         load_action = Action('载入文件', triggered=lambda: self.load_files_requested.emit())
         
         select_all = Action('全选所有项', triggered=self.select_all_items)
-        deselect_all = Action('取消全选', triggered=self.deselect_all_items)
+        deselect_all = Action('取消选择', triggered=self.deselect_all_items)
         invert_select = Action('反选', triggered=self.invert_all_items)
         remove_selected = Action('移除已选文件', triggered=self.remove_selected_files)
 
