@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea
 from PySide6.QtCore import Qt, Signal
 
-from qfluentwidgets import ExpandGroupSettingCard, SimpleExpandGroupSettingCard, ToolButton, ProgressBar, PushButton, BodyLabel, StrongBodyLabel, ScrollArea, TitleLabel, ToolTipFilter, CaptionLabel
+from qfluentwidgets import ExpandGroupSettingCard, SimpleExpandGroupSettingCard, ToolButton, ProgressBar, PushButton, BodyLabel, StrongBodyLabel, ScrollArea, TitleLabel, ToolTipFilter, CaptionLabel, ExpandLayout
 from qfluentwidgets import FluentIcon as FIF
 
 class ProgressBarCard(QWidget):
@@ -12,13 +12,12 @@ class ProgressBarCard(QWidget):
 
         self.cardLayout = QVBoxLayout(self)
         self.cardLayout.setContentsMargins(45, 10, 55, 10)
-        
+
         self.processFileHLayout = QHBoxLayout()
         self.processBarHLayout = QHBoxLayout()
         self.processInfoHLayout = QHBoxLayout()
         self.processInfo1HLayout = QHBoxLayout()
         self.processInfo2HLayout = QHBoxLayout()
-
 
         self.fileTextLabel = BodyLabel('正在处理: ', self)
         self.fileNameLabel = BodyLabel('等待任务开始...', self)
@@ -125,7 +124,7 @@ class TaskCard(QWidget):
 
     def __init__(self, functionName: str, fileList: list, parent=None):
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
+        self.layout = ExpandLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         if functionName == 'Recode':
@@ -146,7 +145,6 @@ class TaskCard(QWidget):
         self.task_card.title_path_btn.clicked.connect(self.openFolder.emit)
 
         self.layout.addWidget(self.task_card)
-        self.setLayout(self.layout)
 
     def hide_fast_task_elements(self):
         """外部调用以隐藏无需细粒度进度的 UI 元素"""
