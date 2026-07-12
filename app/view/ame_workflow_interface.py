@@ -91,6 +91,7 @@ class AMEWorkflowInterface(QWidget):
     def _switch_to_loader(self):
         self._stack.setCurrentIndex(0)
         self._toolbar.setVisible(False)
+        self._toolbar.close_expand()
         self._progress.setVisible(False)
         self._loader.load()
 

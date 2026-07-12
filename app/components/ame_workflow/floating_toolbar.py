@@ -117,7 +117,13 @@ class FloatingToolbar(QFrame):
             self.setFixedHeight(120)
         else:
             self.setFixedHeight(46)
-
+    
+    def close_expand(self):
+        if self._expanded:
+            self._expanded = False
+            self._row2.setVisible(False)
+            self._row3.setVisible(False)
+            self.setFixedHeight(46)
 
     def set_state(self, state: str):
         self._state = state

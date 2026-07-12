@@ -81,20 +81,53 @@ class HWDetectService:
 
 
     def _detect_windows(self) -> str:
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        
-        cmd = ["powershell", "-NoProfile", "-Command", "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name"]
+        """Windows 下优先使用注册表查询，速度最快且无编码问题，兼容 Win11"""
+        # 1. 首选方案：读取系统注册表 (最稳定)
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True, errors='ignore', startupinfo=startupinfo, timeout=5)
+            import winreg
+            gpu_list = []
+            # Windows 显示适配器的标准 GUID
+            key_path = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+                for i in range(100): # 遍历可能的子项
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        if subkey_name.lower() == "properties": 
+                            continue
+                        with winreg.OpenKey(key, subkey_name) as subkey:
+                            try:
+                                desc, _ = winreg.QueryValueEx(subkey, "DriverDesc")
+                                if desc:
+                                    gpu_list.append(desc)
+                            except FileNotFoundError:
+                                pass
+                    except OSError:
+                        break # 没有更多子项了
+            if gpu_list:
+                return "\n".join(gpu_list)
+        except Exception as e:
+            logger.debug(f"[HWDetect] 注册表读取显卡失败，尝试备用方案: {e}")
+
+        # 2. 备用方案：PowerShell (强制指定 UTF-8 编码，防止中文系统乱码被 ignore 吞掉)
+        creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000) # 更现代的隐藏黑框方法
+        try:
+            cmd = [
+                "powershell", "-NoProfile", "-NonInteractive", "-Command",
+                "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name"
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore', creationflags=creationflags, timeout=5)
             if res.returncode == 0 and res.stdout.strip():
                 return res.stdout
         except Exception:
             pass
             
-        cmd_fallback = ["wmic", "path", "win32_VideoController", "get", "name"]
-        res = subprocess.run(cmd_fallback, capture_output=True, text=True, errors='ignore', startupinfo=startupinfo, timeout=3)
-        return res.stdout
+        # 3. 最终兜底方案：WMIC (在较新的 Win11 中可能已不存在)
+        try:
+            cmd_fallback = ["wmic", "path", "win32_VideoController", "get", "name"]
+            res = subprocess.run(cmd_fallback, capture_output=True, text=True, errors='ignore', creationflags=creationflags, timeout=3)
+            return res.stdout
+        except Exception:
+            return ""
 
     def _detect_macos(self) -> str:
         cmd = ["system_profiler", "SPDisplaysDataType"]
