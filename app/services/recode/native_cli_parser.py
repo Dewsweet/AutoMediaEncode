@@ -9,9 +9,10 @@ class NativeCliParser:
 
     # --- 黑名单配置区 ---
     # 填入 FFmpeg 不接受、或者会与 FFmpeg 基础命令冲突的原生参数名。
-    # 比如我们已知有些参数在 libx264wrapper 中并不直接暴露，可以填在这里过滤掉。
+    # IGNORE_LIST 推荐写参数名本体（不带 --），例如 'fgo'。
     X264_IGNORE_LIST = {
         # 'example-param'
+        'fgo'
     }
 
     X265_IGNORE_LIST = {
@@ -22,6 +23,16 @@ class NativeCliParser:
         # 'example-param'
     }
 
+    @staticmethod
+    def _normalize_ignore_list(ignore_list: set) -> set:
+        normalized = set()
+        for item in ignore_list:
+            key = str(item).strip()
+            if not key:
+                continue
+            normalized.add(key.lstrip("-"))
+        return normalized
+
     @classmethod
     def _parse_generic(cls, cli_str: str, ignore_list: set) -> str:
         if not cli_str.strip():
@@ -31,6 +42,8 @@ class NativeCliParser:
         # 兼容例如 --aq-mode "1" 这样的写法
         tokens = shlex.split(cli_str)
         
+        ignore_set = cls._normalize_ignore_list(ignore_list)
+
         params = []
         i = 0
         while i < len(tokens):
@@ -52,9 +65,12 @@ class NativeCliParser:
                         i += 1  # 消耗掉 value
                     else:
                         val = "1" # 单独的开关，例如 --weightb 转为 weightb=1
+
+                # FFmpeg 用 ':' 作为参数分隔符，值内部冒号需替换为 ',' 避免被错误拆分。
+                val = val.replace(":", ",")
                 
                 # 过滤不需要的参数
-                if key not in ignore_list and raw_key not in ignore_list:
+                if key not in ignore_set and raw_key not in ignore_set:
                     params.append(f"{key}={val}")
             
             i += 1
