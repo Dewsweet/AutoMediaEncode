@@ -1,11 +1,10 @@
 """AME 工作流加载页 — 卡片网格 + 底部按钮栏"""
-from pathlib import Path
-from PySide6.QtCore import Qt, Signal, QSize, QRectF
-from PySide6.QtGui import QPixmap, QColor, QFont, QPainter, QMouseEvent
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                 QLabel, QFileDialog)
 
-from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel,PrimaryPushButton, PushButton,
+from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, PrimaryPushButton, PushButton,
                             RoundMenu, Action, InfoBar, InfoBarPosition,
                             isDarkTheme, FluentIcon as FIF, FlowLayout,
                             MessageBoxBase, LineEdit, ElevatedCardWidget, ScrollArea)
@@ -41,15 +40,48 @@ class WorkflowCard(ElevatedCardWidget):
         self.setFixedSize(200, 175)
         self.setCursor(Qt.PointingHandCursor)
 
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 6)
+        layout.setSpacing(4)
+
+        self._thumb = QLabel(self)
+        self._thumb.setFixedSize(184, 108)
+        self._load_thumbnail()
+        layout.addWidget(self._thumb, alignment=Qt.AlignCenter)
+
+        self._name_label = BodyLabel(self._info.name[:24], self)
+        font = self._name_label.font()
+        font.setBold(True)
+        font.setPointSize(10)
+        self._name_label.setFont(font)
+        layout.addWidget(self._name_label)
+
+        tm = self._info.modified.strftime('%Y-%m-%d %H:%M')
+        self._time_label = CaptionLabel(tm, self)
+        layout.addWidget(self._time_label)
+
+    def _load_thumbnail(self):
+        pix = None
+        if self._info.thumbnail and self._info.thumbnail.exists():
+            pix = QPixmap(str(self._info.thumbnail))
+        if not pix or pix.isNull():
+            pix = QPixmap(':app/images/default_project.png')
+        if pix and not pix.isNull():
+            scaled = pix.scaled(184, 108, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            if scaled.width() > 184 or scaled.height() > 108:
+                x = (scaled.width() - 184) // 2
+                y = (scaled.height() - 108) // 2
+                scaled = scaled.copy(x, y, 184, 108)
+            self._thumb.setPixmap(scaled)
+
     def info(self):
         return self._info
 
     def set_selected(self, on: bool):
         if on:
-            if isDarkTheme():
-                self.setStyleSheet("border: 2px solid #dcdcdc; border-radius: 8px;")
-            else:
-                self.setStyleSheet("border: 2px solid #333333; border-radius: 8px;")
+            color = "#dcdcdc" if isDarkTheme() else "#333333"
+            self.setStyleSheet(
+                "ElevatedCardWidget { border: 2px solid " + color + "; border-radius: 8px; }")
         else:
             self.setStyleSheet("")
 
@@ -67,47 +99,6 @@ class WorkflowCard(ElevatedCardWidget):
         menu.addAction(Action("重命名", triggered=lambda: self.rename_requested.emit(self._info)))
         menu.addAction(Action("设置封面", triggered=lambda: self.set_thumb_requested.emit(self._info)))
         menu.exec(event.globalPos())
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        w, h = self.width(), self.height()
-        dark = isDarkTheme()
-
-        # Thumbnail
-        tw, th = 184, 108
-        x, y = (w - tw) // 2, 8
-        clip_rect = QRectF(x, y, tw, th)
-        painter.save()
-        painter.setClipRect(clip_rect)
-        pix = None
-        if self._info.thumbnail and self._info.thumbnail.exists():
-            pix = QPixmap(str(self._info.thumbnail))
-        if not pix or pix.isNull():
-            pix = QPixmap(':app/images/default_project.png')
-        if pix and not pix.isNull():
-            scaled = pix.scaled(tw, th, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
-            sx = x + (tw - scaled.width()) // 2
-            sy = y + (th - scaled.height()) // 2
-            painter.drawPixmap(int(sx), int(sy), scaled)
-        else:
-            painter.fillRect(clip_rect, QColor(0x35, 0x35, 0x35) if dark else QColor(0xe0, 0xe0, 0xe0))
-        painter.restore()
-
-        # Name
-        name_y = int(clip_rect.bottom()) + 6
-        painter.setPen(QColor(0xdd, 0xdd, 0xdd) if dark else QColor(0x33, 0x33, 0x33))
-        font = QFont("Segoe UI", 10)
-        font.setBold(True)
-        painter.setFont(font)
-        painter.drawText(8, name_y, w - 16, 20, Qt.AlignLeft | Qt.AlignVCenter, self._info.name[:24])
-        # Time
-        tm = self._info.modified.strftime('%Y-%m-%d %H:%M')
-        painter.setPen(QColor(0x88, 0x88, 0x88))
-        painter.setFont(QFont("Segoe UI", 8))
-        painter.drawText(8, name_y + 20, w - 16, 16, Qt.AlignLeft | Qt.AlignVCenter, tm)
-        painter.end()
 
 
 class AMELoaderPage(QWidget):
