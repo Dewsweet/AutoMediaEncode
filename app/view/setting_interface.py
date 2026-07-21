@@ -42,7 +42,7 @@ class SettingInterface(QWidget):
         self.scrollArea = ScrollArea(self)
         self.scrollArea.setWidget(self.scrollBox) 
         self.scrollArea.setWidgetResizable(True)
-        self.titleLabel = TitleLabel("设置")
+        self.titleLabel = TitleLabel(self.tr("设置"))
 
         self._toolsCardArea()
         self._customCardArea()
@@ -55,14 +55,14 @@ class SettingInterface(QWidget):
         self.toolsCardGroup = SettingCardGroup(self.tr("工具选项"), self.scrollBox)
 
         # 媒体工具检查卡片
-        self.toolsCheckCard = ExpandGroupSettingCard(FIF.MEDIA, "媒体工具", "本软件所用到的基本媒体处理工具", self.toolsCardGroup)
+        self.toolsCheckCard = ExpandGroupSettingCard(FIF.MEDIA, self.tr("媒体工具"), self.tr("本软件所用到的基本媒体处理工具"), self.toolsCardGroup)
 
         self.toolsCheckCardFuncBtnBox = QWidget()
         self.toolsCheckCardFuncBtnBoxLayout = QHBoxLayout(self.toolsCheckCardFuncBtnBox)
         self.toolsCheckCardFuncBtnBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self.refresh_tools_btn = ToolButton(FIF.SYNC, self.toolsCheckCard)
-        self.refresh_tools_btn.setToolTip("刷新工具状态")
+        self.refresh_tools_btn.setToolTip(self.tr("刷新工具状态"))
         self.refresh_tools_btn.installEventFilter(ToolTipFilter(self.refresh_tools_btn))
 
         # self.download_Tools_Button = ToolButton(FIF.DOWNLOAD, self.toolsCheckCard)
@@ -70,7 +70,7 @@ class SettingInterface(QWidget):
         # self.download_Tools_Button.installEventFilter(ToolTipFilter(self.download_Tools_Button))
 
         self.open_tools_folder_button = ToolButton(FIF.FOLDER, self.toolsCheckCard)
-        self.open_tools_folder_button.setToolTip("打开工具文件夹")
+        self.open_tools_folder_button.setToolTip(self.tr("打开工具文件夹"))
         self.open_tools_folder_button.installEventFilter(ToolTipFilter(self.open_tools_folder_button))
 
         # self.toolsCheckCardFuncBtnBoxLayout.addWidget(self.download_Tools_Button)
@@ -106,11 +106,11 @@ class SettingInterface(QWidget):
             self.tool_widgets[tool["tool_name"]] = card
             
         # 编码器预设卡片
-        self.encoderPresetCard = ExpandGroupSettingCard(FIF.SETTING, "编码器预设", "基础编码器相关参数的预设", self.toolsCardGroup)
+        self.encoderPresetCard = ExpandGroupSettingCard(FIF.SETTING, self.tr("编码器预设"), self.tr("基础编码器相关参数的预设"), self.toolsCardGroup)
 
         # 导出预设选项的全局按钮 (放在预设卡片右上方)
         self.exportPresetBtn = ToolButton(FIF.SAVE, self.encoderPresetCard)
-        self.exportPresetBtn.setToolTip("导出所有预设")
+        self.exportPresetBtn.setToolTip(self.tr("导出所有预设"))
         self.exportPresetBtn.installEventFilter(ToolTipFilter(self.exportPresetBtn))
         self.encoderPresetCard.addWidget(self.exportPresetBtn)
 
@@ -136,24 +136,25 @@ class SettingInterface(QWidget):
             FIF.LANGUAGE,
             self.tr("语言 (Language)"),
             self.tr("选择软件的显示语言"),
-            texts=["系统默认", "简体中文", "English"],
+            # texts=["系统默认", "简体中文", "English"],
+            texts=[self.tr("系统默认"), self.tr("简体中文")],
             parent=self.customCardGroup
         )
 
         self.themeCard = OptionsSettingCard(
             cfg.themeMode,
             FIF.BRUSH,
-            "应用主题",
-            "调整你的应用外观",
-            texts=["浅色", "深色", "跟随系统设置"],
+            self.tr("应用主题"),
+            self.tr("调整你的应用外观"),
+            texts=[self.tr("浅色"), self.tr("深色"), self.tr("跟随系统设置")],
             parent=self.customCardGroup
         )
 
         self.themeColorCard = CustomColorSettingCard(
             cfg.themeColor,
             FIF.PALETTE,
-            "主题颜色",
-            "自定义你的主题颜色",
+            self.tr("主题颜色"),
+            self.tr("自定义你的主题颜色"),
             parent=self.customCardGroup
         )
 
@@ -165,7 +166,7 @@ class SettingInterface(QWidget):
             parent=self.customCardGroup
         )
         self.clearBgButton = ToolButton(FIF.DELETE, self.bgImageCard)
-        self.clearBgButton.setToolTip("清除背景图片")
+        self.clearBgButton.setToolTip(self.tr("清除背景图片"))
         self.clearBgButton.installEventFilter(ToolTipFilter(self.clearBgButton))
         
         self.bgImageCard.hBoxLayout.addWidget(self.clearBgButton) 
@@ -174,16 +175,16 @@ class SettingInterface(QWidget):
     def _aboutCardArea(self):
         self.aboutCardGroup = SettingCardGroup(self.tr("关于"), self.scrollBox)
 
-        self.helpCard = ExpandGroupSettingCard(FIF.HELP, "帮助", "使用说明和常见问题", self.aboutCardGroup)
+        self.helpCard = ExpandGroupSettingCard(FIF.HELP, self.tr("帮助"), self.tr("使用说明和常见问题"), self.aboutCardGroup)
         self.helpNoteBox = QWidget()
         self.helpNoteBoxLayout = QVBoxLayout(self.helpNoteBox)
         self.helpNoteBoxLayout.setContentsMargins(40, 10, 40, 10)
         self.helpNoteBoxLayout.setSpacing(5)
 
-        self.helpNoteLine1 = BodyLabel('本软件旨在为不擅长使用命令行的用户提供快速简单的媒体处理功能，同时也为熟悉命令行操作的用户提供较复杂的工作流编辑体验', self)
-        self.helpNoteLine2 = BodyLabel('感谢VCB-Studio和谜之压制组的开源, 关于媒体处理和编码器可以参考他们的教程:', self)
-        self.helpNoteLine3 = HyperlinkLabel(QUrl('https://iavoe.github.io/'), '谜之压制组 压制教程: https://iavoe.github.io/', self)
-        self.helpNoteLine4 = HyperlinkLabel(QUrl('https://guides.vcb-s.com/'), 'VCB-Studio 公开教程: https://guides.vcb-s.com/', self)
+        self.helpNoteLine1 = BodyLabel(self.tr('本软件旨在为不擅长使用命令行的用户提供快速简单的媒体处理功能，同时也为熟悉命令行操作的用户提供较复杂的工作流编辑体验'), self)
+        self.helpNoteLine2 = BodyLabel(self.tr('感谢VCB-Studio和谜之压制组的开源, 关于媒体处理和编码器可以参考他们的教程:'), self)
+        self.helpNoteLine3 = HyperlinkLabel(QUrl('https://iavoe.github.io/'), self.tr('谜之压制组 压制教程: https://iavoe.github.io/'), self)
+        self.helpNoteLine4 = HyperlinkLabel(QUrl('https://guides.vcb-s.com/'), self.tr('VCB-Studio 公开教程: https://guides.vcb-s.com/'), self)
         for line in [self.helpNoteLine3, self.helpNoteLine4]:
             line.setFixedHeight(line.sizeHint().height()) # 固定高度，防止被设置过大后挤压布局
 
@@ -270,7 +271,7 @@ class SettingInterface(QWidget):
 
     def _on_vspipe_button_clicked(self):
         """选择 vspipe 路径并更新"""
-        path, _ = QFileDialog.getOpenFileName(self, "选择 vspipe", "", "可执行文件 (*.exe);;所有文件 (*.*)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择 vspipe"), "", "可执行文件 (*.exe);;所有文件 (*.*)")
         if path:
             p = Path(path)
             card = self.tool_widgets.get("vspipe")
@@ -286,7 +287,7 @@ class SettingInterface(QWidget):
                     card.checkState(state)
             else:
                 if card:
-                    card.setSubtitle("错误: 选定的文件不是 vspipe 程序, 请检查文件名")
+                    card.setSubtitle(self.tr("错误: 选定的文件不是 vspipe 程序, 请检查文件名"))
                     card.checkState(False)
 
     def _show_preset_dialog(self, encoder_name):
@@ -297,14 +298,14 @@ class SettingInterface(QWidget):
     def _on_export_presets_clicked(self):
         """将内置的 custom_preset.json 导出给用户"""
         save_path, _ = QFileDialog.getSaveFileName(
-            self, "导出预设", "custom_preset.json", "JSON 文件 (*.json)"
+            self, self.tr("导出预设"), "custom_preset.json", self.tr("JSON 文件 (*.json)")
         )
         if save_path:
             try:
                 shutil.copy2(preset_service.preset_file_path, save_path)
                 InfoBar.success(
-                    title='导出成功',
-                    content=f"预设已成功导出", 
+                    title=self.tr("导出成功"),
+                    content=self.tr("预设已成功导出"), 
                     orient=Qt.Horizontal,
                     isClosable=True,
                     position=InfoBarPosition.TOP_RIGHT,
@@ -313,8 +314,8 @@ class SettingInterface(QWidget):
                 )
             except Exception as e:
                 InfoBar.error(
-                    title='导出失败',
-                    content=f"错误信息：{str(e)}",
+                    title=self.tr("导出失败"),
+                    content=self.tr(f"错误信息：{str(e)}"),
                     orient=Qt.Horizontal,
                     isClosable=True,
                     position=InfoBarPosition.TOP_RIGHT,
@@ -332,7 +333,7 @@ class SettingInterface(QWidget):
     def _on_choose_bg_image_clicked(self):
         """选择自定义背景图片"""
         path, _ = QFileDialog.getOpenFileName(
-            self, "选择背景图片", "", "图片文件 (*.png *.jpg *.jpeg *.bmp);;所有文件 (*.*)"
+            self, self.tr("选择背景图片"), "", self.tr("图片文件 (*.png *.jpg *.jpeg *.bmp);;所有文件 (*.*)")
         )
         if path:
             qconfig.set(cfg.bg_image_path, path)
