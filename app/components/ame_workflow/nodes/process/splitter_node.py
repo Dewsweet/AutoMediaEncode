@@ -104,28 +104,31 @@ class SplitterNode(AMENodeBase):
         tracks = []
         try:
             cmd = [ff, '-i', src, '-hide_banner']
-            r = subprocess.run(cmd, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=60)
-            for ln in r.stderr.split('\n'):
+            r = subprocess.run(cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=60)
+            if not r.stderr:
+                return tracks
+            stderr_text = r.stderr.decode('utf-8', errors='replace')
+            for ln in stderr_text.split('\n'):
                 if 'Stream #0:' not in ln:
                     continue
                 try:
                     idx = int(ln.split('Stream #0:')[1].split('[')[0].split('(')[0].strip().split(':')[0])
+                    if 'Video:' in ln:
+                        codec = ln.split('Video:')[1].split()[0].split(',')[0]
+                        tracks.append({'type': 'video', 'idx': idx, 'codec': codec})
+                    elif 'Audio:' in ln:
+                        codec = ln.split('Audio:')[1].split()[0].split(',')[0]
+                        depth = ''
+                        if 'pcm_bluray' in codec:
+                            if 's16' in ln: depth = 's16'
+                            elif 's32' in ln: depth = 's32'
+                            elif 's24' in ln: depth = 's24'
+                        tracks.append({'type': 'audio', 'idx': idx, 'codec': codec, 'depth': depth})
+                    elif 'Subtitle:' in ln:
+                        codec = ln.split('Subtitle:')[1].split()[0].split(',')[0]
+                        tracks.append({'type': 'subtitle', 'idx': idx, 'codec': codec})
                 except (IndexError, ValueError):
                     continue
-                if 'Video:' in ln:
-                    codec = ln.split('Video:')[1].split()[0].split(',')[0]
-                    tracks.append({'type': 'video', 'idx': idx, 'codec': codec})
-                elif 'Audio:' in ln:
-                    codec = ln.split('Audio:')[1].split()[0].split(',')[0]
-                    depth = ''
-                    if 'pcm_bluray' in codec:
-                        if 's16' in ln: depth = 's16'
-                        elif 's32' in ln: depth = 's32'
-                        elif 's24' in ln: depth = 's24'
-                    tracks.append({'type': 'audio', 'idx': idx, 'codec': codec, 'depth': depth})
-                elif 'Subtitle:' in ln:
-                    codec = ln.split('Subtitle:')[1].split()[0].split(',')[0]
-                    tracks.append({'type': 'subtitle', 'idx': idx, 'codec': codec})
         except Exception as e:
             logger.error(f'[Splitter] 探测失败: {e}')
         return tracks
