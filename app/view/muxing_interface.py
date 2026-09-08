@@ -110,6 +110,10 @@ class MuxingInterface(QWidget):
         signalBus.taskCancelled.connect(self.on_task_finished)
         signalBus.taskError.connect(self.on_task_error)
 
+        # 全局任务互斥: 其他界面任务运行时禁用/恢复自家开始按钮
+        signalBus.taskExecutionStarted.connect(self._on_global_task_started)
+        signalBus.taskExecutionEnded.connect(self._on_global_task_ended)
+
         self.header.reload_button.clicked.connect(self.open_file_dialog)
         self.header.start_button.clicked.connect(self.emit_builder_output)
 
@@ -404,6 +408,15 @@ class MuxingInterface(QWidget):
             self._current_task_is_finished = True
             self.header.start_button.setText('开始混流')
             self.header.start_button.setEnabled(True)
+
+    def _on_global_task_started(self, task_id: str):
+        """其他界面的任务开始执行时, 禁用自家开始按钮(全局任务互斥)"""
+        if task_id != getattr(self, '_current_checking_task_id', ''):
+            self.header.start_button.setEnabled(False)
+
+    def _on_global_task_ended(self, task_id: str):
+        """全局任务结束后恢复自家开始按钮(重复调用 setEnabled 无副作用, 幂等)"""
+        self.header.start_button.setEnabled(True)
 
     def on_task_error(self, task_id: str, error_msg: str):
         if getattr(self, '_current_checking_task_id', '') == task_id:

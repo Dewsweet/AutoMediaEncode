@@ -149,6 +149,14 @@ class FloatingToolbar(QFrame):
             self._row2.setEnabled(True)
             self._row3.setEnabled(True)
 
+    def set_locked(self, locked: bool):
+        """全局任务互斥锁定: locked=True 强制禁用开始按钮;
+        解锁时按当前 _state 恢复开始按钮应有的可用性, 与 set_state 的三态语义独立"""
+        if locked:
+            self.start_btn.setEnabled(False)
+        else:
+            self.start_btn.setEnabled(self._state in ('idle', 'paused'))
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()

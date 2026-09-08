@@ -410,9 +410,14 @@ class DemuxWorker(QThread):
     def _run_ffmpeg_task_with_progress(self, task_id: str, file_idx: int, total_files: int, file_name: str, cmd_list: list):
         start_time = time.time()
 
+        popen_kwargs = {}
+        if os.name == 'nt':
+            popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+            popen_kwargs['stdin'] = subprocess.DEVNULL
+
         try:
             self._current_ff_process = FfmpegProgress(cmd_list)
-            for progress in self._current_ff_process.run_command_with_progress():
+            for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=popen_kwargs):
                 if self._is_cancelled:
                     self._current_ff_process.quit()
                     break

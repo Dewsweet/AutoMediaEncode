@@ -56,6 +56,10 @@ class TaskManager(QObject):
             worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
             self.workers[task_id] = worker
             worker.start()
+
+        if task_id in self.workers:
+            # 通知所有界面: 已有任务进入执行状态, 其他界面的开始按钮需禁用
+            signalBus.taskExecutionStarted.emit(task_id)
         else:
             pass
 
@@ -70,6 +74,9 @@ class TaskManager(QObject):
         if task_id in self.workers:
             # 安全清理
             del self.workers[task_id]
+            # worker.finished 在任务完成/出错/被取消三种结局下均会触发,
+            # 在此处统一发射全局结束信号, 通知所有界面恢复开始按钮
+            signalBus.taskExecutionEnded.emit(task_id)
 
 # 创建单例即可生效，由于这里是挂载在 signalBus 上的
 taskManager = TaskManager()

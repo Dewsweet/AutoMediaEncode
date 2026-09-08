@@ -134,6 +134,10 @@ class RecodeInterface(QWidget):
         signalBus.taskCompleted.connect(self.on_task_finished)
         signalBus.taskCancelled.connect(self.on_task_finished)
 
+        # 全局任务互斥: 其他界面任务运行时禁用/恢复自家开始按钮
+        signalBus.taskExecutionStarted.connect(self._on_global_task_started)
+        signalBus.taskExecutionEnded.connect(self._on_global_task_ended)
+
         # 接收文件
         self.loaderComponent.filesReady.connect(self.on_files_loaded)
         self.hearder.reload_button.clicked.connect(self.open_file_dialog)
@@ -347,6 +351,15 @@ class RecodeInterface(QWidget):
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_is_finished = True
         self.hearder.start_button.setText('开始转码')
+        self.hearder.start_button.setEnabled(True)
+
+    def _on_global_task_started(self, task_id: str):
+        """其他界面的任务开始执行时, 禁用自家开始按钮(全局任务互斥)"""
+        if task_id != getattr(self, '_current_checking_task_id', ''):
+            self.hearder.start_button.setEnabled(False)
+
+    def _on_global_task_ended(self, task_id: str):
+        """全局任务结束后恢复自家开始按钮(重复调用 setEnabled 无副作用, 幂等)"""
         self.hearder.start_button.setEnabled(True)
 
     def on_task_error(self, task_id: str, error_msg: str):

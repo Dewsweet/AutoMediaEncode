@@ -12,6 +12,7 @@ from app.components.ame_workflow.nodes import MENU_KEY_MAP
 from app.components.ame_workflow.ame_context_menu import AMEConextMenu, AMENodeContextMenu
 from app.components.ame_workflow.ame_loader_page import AMELoaderPage, NameInputDialog
 from app.services.ame_workflow.ame_preset_service import preset_service
+from app.common.signal_bus import signalBus
 from app.common.style_sheet import StyleSheet
 
 
@@ -77,6 +78,10 @@ class AMEWorkflowInterface(QWidget):
 
         self._loader.workflow_selected.connect(self._on_load_workflow)
         self._loader.new_requested.connect(self._on_new_workflow)
+
+        # 全局任务互斥: 其他界面任务运行时锁定/解锁自家开始按钮
+        signalBus.taskExecutionStarted.connect(self._on_global_task_started)
+        signalBus.taskExecutionEnded.connect(self._on_global_task_ended)
 
     # ── 页面切换 ──
     def _switch_to_canvas(self):
@@ -235,10 +240,17 @@ class AMEWorkflowInterface(QWidget):
         self._executor.error_occurred.connect(self._on_error)
         self._executor.start()
 
+        # 通知所有界面: 工作流任务进入执行状态, 其他界面的开始按钮需禁用
+        signalBus.taskExecutionStarted.emit('ame_workflow')
+
     def _on_cancel(self):
+        was_running = bool(self._executor and self._running)
         if self._executor:
             self._executor.cancel()
         self._reset_ui()
+        if was_running:
+            # 仅在确有任务运行时发射全局结束信号
+            signalBus.taskExecutionEnded.emit('ame_workflow')
 
     def _on_pause(self):
         if self._executor:
@@ -259,6 +271,7 @@ class AMEWorkflowInterface(QWidget):
     def _on_finished(self):
         self._running = False
         self._toolbar.set_state('idle')
+        signalBus.taskExecutionEnded.emit('ame_workflow')
         if self._progress.value() >= 100:
             InfoBar.success(title='处理完成', content='AME 工作流已执行完毕',
                             orient=Qt.Horizontal, isClosable=True,
@@ -268,9 +281,18 @@ class AMEWorkflowInterface(QWidget):
         self._running = False
         self._toolbar.set_state('idle')
         self._progress.setVisible(False)
+        signalBus.taskExecutionEnded.emit('ame_workflow')
         InfoBar.error(title='工作流执行失败', content=msg,
                       orient=Qt.Horizontal, isClosable=True,
                       position=InfoBarPosition.TOP, duration=15000, parent=self)
+
+    def _on_global_task_started(self, task_id: str):
+        """其他界面的任务开始执行时, 锁定工作流工具栏开始按钮(全局任务互斥)"""
+        self._toolbar.set_locked(True)
+
+    def _on_global_task_ended(self, task_id: str):
+        """全局任务结束后解锁工作流工具栏开始按钮(按当前状态恢复, 幂等)"""
+        self._toolbar.set_locked(False)
 
     def _find_output_class(self):
         from app.components.ame_workflow.nodes.system.output_node import OutputNode
