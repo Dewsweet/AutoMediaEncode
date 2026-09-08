@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass
 from ..path_service import PathService
+from ..setting.json_sync import sync_template_dir, record_deleted_template
 
 
 @dataclass
@@ -19,15 +20,17 @@ class AMEPresetService:
     def __init__(self):
         self._template_dir = PathService.get_json_dir() / "ame_preset"
         self._user_dir = PathService.get_config_dir() / "ame_preset"
+        # 删除标记放在用户预设目录之外, 避免被 list_workflows 的 *.json 遍历误认为工作流
+        self._deleted_marker = PathService.get_config_dir() / "ame_preset_deleted.json"
         self._manual_thumbs = set()  # 手动设置过封面的工作流名，不再自动截图
         self._init_dirs()
 
     def _init_dirs(self):
-        """确保用户预设目录存在，如果没有则从模板目录复制初始预设"""
-        self._user_dir.mkdir(parents=True, exist_ok=True)
-        if self._template_dir.exists() and not any(self._user_dir.glob('*.json')):
-            for f in self._template_dir.glob('*.json'):
-                shutil.copy2(f, self._user_dir / f.name)
+        """确保用户预设目录存在, 并按文件名补缺同步出厂模板:
+        - 用户目录缺失的出厂工作流自动补充 (软件更新新增模板可送达)
+        - 用户已删除的出厂工作流记录在删除标记中, 不会复活
+        """
+        sync_template_dir(self._template_dir, self._user_dir, self._deleted_marker)
 
     def list_workflows(self) -> list:
         """列出所有用户预设的工作流，按修改时间倒序"""
@@ -75,6 +78,9 @@ class AMEPresetService:
             p = self._user_dir / f"{name}{ext}"
             if p.exists():
                 p.unlink()
+        # 若删除的是出厂模板同名工作流, 记录删除标记, 防止下次启动补缺同步时复活
+        if (self._template_dir / f"{name}.json").exists():
+            record_deleted_template(self._deleted_marker, name)
 
     def rename(self, old: str, new: str):
         for ext in ('.json', '.png'):

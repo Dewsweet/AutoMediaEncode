@@ -1,11 +1,12 @@
 # coding:utf-8
 import json
-import os
-import shutil
 from pathlib import Path
 from typing import Dict, Any
 
+from loguru import logger
+
 from ..path_service import PathService
+from .json_sync import sync_preset_json, atomic_write_json
 
 class PresetService:
     def __init__(self):
@@ -18,23 +19,24 @@ class PresetService:
 
     def _ensure_preset_file_exists(self):
         """
-        初始化检查：如果在用户的 config 目录下没有该字典，
-        则从内部持有的 "出厂模板" 中复制一份过去，防止覆盖安装丢失用户数据。
+        初始化检查：将出厂模板同步到用户的 config 目录。
+        - 用户文件缺失: 复制模板
+        - 用户文件损坏: 备份为 .bak 后从模板重建
+        - 均有效: 深合并模板新增键, 用户已有值永远优先
+        防止覆盖安装/软件更新丢失或污染用户数据。
         """
+        template_path = PathService.get_json_dir() / "custom_preset.json"
+        sync_preset_json(template_path, self.preset_file_path)
+
+        # 极端情况: 模板不存在且用户文件也没有, 创建一个空的出厂结构
         if not self.preset_file_path.exists():
-            # 获取代码目录里的初始模板
-            template_path = PathService.get_json_dir() / "custom_preset.json"
-            if template_path.exists():
-                shutil.copy2(template_path, self.preset_file_path)
-            else:
-                # 极端情况下如果连模板都没有，就创建一个空的（按原来字典结构）
-                default_data = {
-                    "_Notes" : "编码器参数预设置",
-                    "x264": {},
-                    "x265": {},
-                    "SVTAV1": {}
-                }
-                self.save_all_presets(default_data)
+            default_data = {
+                "_Notes" : "编码器参数预设置",
+                "x264": {},
+                "x265": {},
+                "SVTAV1": {}
+            }
+            self.save_all_presets(default_data)
 
     def load_all_presets(self) -> Dict[str, Any]:
         """
@@ -52,17 +54,18 @@ class PresetService:
             with open(self.preset_file_path, "r", encoding="utf-8") as f:
                 return json.load(f) 
         except Exception:
-            return {"x264": {}, "x265": {}, "SVTAV1": {}}
+            # 读取失败(文件损坏/被删): 触发同步逻辑自愈, 备份损坏文件并从模板重建
+            logger.warning("读取用户预设 JSON 失败, 触发自愈重建")
+            self._ensure_preset_file_exists()
+            try:
+                with open(self.preset_file_path, "r", encoding="utf-8") as f:
+                    return json.load(f) 
+            except Exception:
+                return {"x264": {}, "x265": {}, "SVTAV1": {}}
 
     def save_all_presets(self, data: Dict[str, Any]) -> bool:
-        """保存所有预设回 JSON"""
-        try:
-            with open(self.preset_file_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            return True
-        except Exception as e:
-            print(f"Error saving preset: {e}")
-            return False
+        """保存所有预设回 JSON (原子写入, 避免中断产生半截文件)"""
+        return atomic_write_json(self.preset_file_path, data)
 
     def get_presets_by_encoder(self, encoder_name: str) -> Dict[str, str]:
         """获取指定编码器 (如 'x264') 的所有预设"""
