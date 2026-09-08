@@ -88,6 +88,11 @@ class AMEPresetService:
             dst = self._user_dir / f"{new}{ext}"
             if src.exists():
                 src.rename(dst)
+        # 若重命名的原名对应出厂模板, 记录原名删除标记:
+        # 否则下次启动补缺同步会因用户目录缺少原同名文件而把模板以原名复活,
+        # 且重命名后的工作流再被删除时, 原名模板同样会复活
+        if (self._template_dir / f"{old}.json").exists():
+            record_deleted_template(self._deleted_marker, old)
 
     def import_file(self, path: str) -> str | None:
         src = Path(path)
