@@ -7,16 +7,20 @@ from .nodes import MENU_KEY_MAP
 NODE_PALETTE_STRUCTURE = [
     ('系统', [
         ('工作区', 'workspace'),
-        ('输入文件', 'input_file'),
-        ('多文件输入', 'input_multi'),
-        ('输出文件', 'output'),
         ('纯文本', 'text'),
+        ('自定义文件名', 'custom_name'),
     ]),
     ('工具', [
         ('分离器', 'splitter'),
         ('VapourSynth', 'vs_compound'),
         ('ffmpeg处理器', 'ffmpeg_processor'),
-        ('自定义文件名', 'custom_name'),
+    ]),
+    ('输入/输出', [
+        ('普通输入', 'input_file'),
+        ('多文件输入', 'input_multi'),
+        ('视频规范化输入', 'input_video_normalizer'),
+        ('BD 规范化输入', 'input_bd_normalizer'),
+        ('普通输出', 'output'),
     ]),
     ('视频编码', [
         ('x264', 'encoder_x264'),

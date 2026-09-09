@@ -3,6 +3,7 @@ from .system.text_node import TextNode
 
 from .system.input_file_node import InputFileNode
 from .system.input_files_node import InputFilesNode
+from .system.input_splitter_node import InputVideoNormalizerNode
 from .system.output_node import OutputNode
 
 from .process.splitter_node import SplitterNode
@@ -29,7 +30,7 @@ from .muxer.ffmpeg_muxer_node import MuxerFFmpegNode
 
 ALL_NODE_CLASSES = [
     WorkspaceNode, TextNode, 
-    InputFileNode, InputFilesNode,
+    InputFileNode, InputFilesNode, InputVideoNormalizerNode,
     SplitterNode,
     VPYLoaderNode, VSPipeNode, FFmpegProcessorNode,
     EncoderX264Node, EncoderX265Node, EncoderSvtAv1Node,
