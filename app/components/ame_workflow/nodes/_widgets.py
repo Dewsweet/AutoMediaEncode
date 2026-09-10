@@ -5,6 +5,7 @@ from qfluentwidgets import PushButton, PrimaryPushButton, LineEdit, ComboBox, Sw
 from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
 from app.services.setting.preset_service import preset_service
 
+# Custom ComboBox widget area
 class NodeComboBox(PushButton):
     """
     使用 RoundMune + PushButton 实现的顶层浮动 ComboBox 替代方案，解决 NodeGraphQt 中 ComboBox 的显示异样问题
@@ -72,7 +73,33 @@ class NodeComboBoxWidget(NodeBaseWidget):
         if value:
             self._combo.setCurrentText(str(value))
 
+class NodeTextComboBoxWidget(NodeBaseWidget):
+    def __init__(self, parent, name, items, text:str=''):
+        super().__init__(parent, name)
+        self._row = QWidget()
+        self._layout = QHBoxLayout(self._row)
 
+        self._text = BodyLabel(text, self._row)
+        self._combo = NodeComboBox()
+        self._combo.addItems(items)
+        self._combo.currentTextChanged.connect(lambda t: self.on_value_changed(t))
+
+        self._layout.addWidget(self._text, alignment=Qt.AlignLeft)
+        self._layout.addWidget(self._combo, alignment=Qt.AlignLeft)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+
+
+        self.set_custom_widget(self._row)
+
+    def get_value(self):
+        return self._combo.currentText()
+
+    def set_value(self, value):
+        if value:
+            self._combo.setCurrentText(str(value))
+
+
+# path browse widget area
 class PathBrowseWidget(NodeBaseWidget):
     def __init__(self, parent, name, btn_text='浏览'):
         super().__init__(parent, name)
@@ -161,7 +188,13 @@ class FilesBrowseWidget(NodeBaseWidget):
             self._edit.setPlainText(str(value))
 
 
+# complex widget area
 class PresetSwitchWidget(NodeBaseWidget):
+    """
+    Label + SwitchButton + ComboBox 
+
+    用于选择是否使用预设以及选择预设名称
+    """
     def __init__(self, parent, name, encoder_type='x264'):
         super().__init__(parent, name)
         self._enc = encoder_type
@@ -208,6 +241,11 @@ class PresetSwitchWidget(NodeBaseWidget):
                 self._cb.setCurrentText(value['preset'])
 
 class FfmpegSimpleOptionsWidget(NodeBaseWidget):
+    """
+    Label + ComboBox + Label + TextEdit
+
+    用于选择 ffmpeg 节点编码器预设以及自定义 CLI 参数
+    """
     def __init__(self, parent, name, coder_items):
         super().__init__(parent, name)
 
@@ -251,6 +289,11 @@ class FfmpegSimpleOptionsWidget(NodeBaseWidget):
             self._customEdit.setPlainText(custom_cli)
 
 class StapleAudioEncoderWidget(NodeBaseWidget):
+    """
+    Label + LineEdit + TextEdit + Slider
+
+    用于选择音频编码器参数
+    """
     def __init__(self, parent, name, encoder_name='aac'):
         super().__init__(parent, name)
         self._encoder_name = encoder_name
@@ -342,150 +385,12 @@ class StapleAudioEncoderWidget(NodeBaseWidget):
             elif self._encoder_name in ('aac', 'opus'):
                 bitrate = value.get('bitrate', '')
                 self._encoderModelLine.setText(bitrate)
-        
-class CLITextWidget(NodeBaseWidget):
-    def __init__(self, parent, name):
-        super().__init__(parent, name)
-        self._edit = TextEdit()
-        self._edit.setPlaceholderText('自定义 CLI 参数...')
-        self._edit.setMinimumHeight(48)
-        self._edit.setMaximumHeight(100)
-        self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
-        self.set_custom_widget(self._edit)
-
-    def get_value(self):
-        return self._edit.toPlainText()
-
-    def set_value(self, value):
-        if value:
-            self._edit.setPlainText(str(value))
-
-class MkvTrackConfigDialog(MessageBoxBase):
-    def __init__(self, parent=None, title='轨道设置', data=None):
-        super().__init__(parent)
-        self.titleLabel = BodyLabel(title, self)
-
-        self.defaultTrackHLayout = QHBoxLayout()
-        self._defaultTrackLabel = BodyLabel('默认轨道:', self)
-        self._defaultTrackSwitch = SwitchButton(self)
-        self._defaultTrackSwitch.setChecked(True) # 默认就是默认轨道
-        self._defaultTrackSwitch.setOnText('是')
-        self._defaultTrackSwitch.setOffText('否')
-        self.defaultTrackHLayout.addWidget(self._defaultTrackLabel)
-        self.defaultTrackHLayout.addWidget(self._defaultTrackSwitch)
-        self.defaultTrackHLayout.addStretch(1)
-
-        self.trackLanguageHLayout = QHBoxLayout()
-        self._trackLanguageLabel = BodyLabel('语言:', self)
-        self._trackLanguageEdit = LineEdit(self)
-        self._trackLanguageEdit.setPlaceholderText('')
-        self.trackLanguageHLayout.addWidget(self._trackLanguageLabel)
-        self.trackLanguageHLayout.addWidget(self._trackLanguageEdit)
-
-        self.trackNameHLayout = QHBoxLayout()
-        self._trackNameLabel = BodyLabel('名称:', self)
-        self._trackNameEdit = LineEdit(self)
-        self.trackNameHLayout.addWidget(self._trackNameLabel)
-        self.trackNameHLayout.addWidget(self._trackNameEdit)
-
-        self.trackCustomVLayout = QVBoxLayout()
-        self._trackCustomLabel = BodyLabel('自定义轨道参数:', self)
-        self._trackCustomEdit = TextEdit(self)
-        self._trackCustomEdit.setPlaceholderText('输入轨道额外参数...')
-        self._trackCustomEdit.setMinimumHeight(80)
-        self._trackCustomEdit.setMaximumHeight(150)
-        self.trackCustomVLayout.addWidget(self._trackCustomLabel)
-        self.trackCustomVLayout.addWidget(self._trackCustomEdit)
-        
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addSpacing(10)
-        self.viewLayout.addLayout(self.defaultTrackHLayout)
-        self.viewLayout.addLayout(self.trackLanguageHLayout)
-        self.viewLayout.addLayout(self.trackNameHLayout)
-        self.viewLayout.addLayout(self.trackCustomVLayout)
-
-        if parent:
-            target_w = 350
-            target_h = 250
-            self.widget.setMinimumSize(target_w, target_h)
-        
-        self.yesButton.setText("确认")
-        self.cancelButton.setText("取消")
-
-        if data:
-            self._defaultTrackSwitch.setChecked(data.get('default_track', False))
-            self._trackLanguageEdit.setText(data.get('track_language', ''))
-            self._trackNameEdit.setText(data.get('track_name', ''))
-            self._trackCustomEdit.setPlainText(data.get('track_custom', ''))
-
-    def get_data(self):
-        return {
-            'default_track': self._defaultTrackSwitch.isChecked(),
-            'track_language': self._trackLanguageEdit.text(),
-            'track_name': self._trackNameEdit.text(),
-            'track_custom': self._trackCustomEdit.toPlainText()
-        }
-
-class MkvInlineConfigButton(NodeBaseWidget):
-    addRequested = Signal(str)
-
-    def __init__(self, parent, name, port_name, mode='base'):
-        super().__init__(parent, name)
-        self.port_name = port_name
-        self._mode = mode  
-        self.mainbox = QWidget()
-        self.mainbox.setAttribute(Qt.WA_TranslucentBackground, True) # 设置背景透明 
-        self.mainbox.setStyleSheet('background: transparent;') 
-        layout = QHBoxLayout(self.mainbox)
-        layout.setContentsMargins(0,0,0,0)
-        layout.setSpacing(4)
-
-        self.btn = TransparentPushButton('轨道设置', self.mainbox)
-        self.btn.clicked.connect(self._open_dialog)
-        layout.addWidget(self.btn)
-
-        if self._mode == 'base':
-            self._extra_btn = TransparentToolButton(FIF.ADD, self.mainbox)
-            self._extra_btn.setFixedSize(28, 28)
-            self._extra_btn.setAttribute(Qt.WA_TranslucentBackground, True)
-            self._extra_btn.setStyleSheet('background: transparent; border: none;')
-            self._extra_btn.clicked.connect(lambda: self.addRequested.emit(self.port_name))
-            layout.addWidget(self._extra_btn)
-
-        self.set_custom_widget(self.mainbox)
-        try:
-            group = self.widget()
-            group.setFlat(True)
-            group.setStyleSheet(
-                'QGroupBox { background: transparent; border: 0px; margin-top: 0px; padding: 0px; }'
-                'QGroupBox::title { color: transparent; background: transparent; }'
-            )
-        except Exception:
-            pass
-        self._value = {}
-
-    def _open_dialog(self):
-        title_map = {'video': '视频', 'audio': '音频', 'subtitle': '字幕', 'chapter': '章节', 'attachment': '附件'}
-
-        # 兼容 track_1_video 等动态命名格式
-        lookup_name = self.port_name
-        if "track_" in self.port_name:
-            lookup_name = self.port_name.split("_")[-1]
-
-        title_prefix = title_map.get(lookup_name, self.port_name)
-        dialog = MkvTrackConfigDialog(QApplication.activeWindow(), f'{title_prefix} 参数设置', self._value)
-        if dialog.exec():
-            self._value = dialog.get_data()
-            self.on_value_changed(self._value)
-
-    def get_value(self):
-        return self._value
-
-    def set_value(self, value):
-        if isinstance(value, dict):
-            self._value = value
 
 class CustomTextWidget(NodeBaseWidget):
+    """
+    Label + TextEdit + PushButton
+    用于输入自定义文件名称，支持占位符插入
+    """
     def __init__(self, parent, name, placeholder: dict= {}):
         super().__init__(parent, name)
         self._placeholder = placeholder
@@ -559,7 +464,153 @@ class CustomTextWidget(NodeBaseWidget):
         if name2:
             self._clearBtn.setText(name2)
 
+class CLITextWidget(NodeBaseWidget):
+    def __init__(self, parent, name):
+        super().__init__(parent, name)
+        self._edit = TextEdit()
+        self._edit.setPlaceholderText('自定义 CLI 参数...')
+        self._edit.setMinimumHeight(48)
+        self._edit.setMaximumHeight(100)
+        self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
+        self.set_custom_widget(self._edit)
 
+    def get_value(self):
+        return self._edit.toPlainText()
+
+    def set_value(self, value):
+        if value:
+            self._edit.setPlainText(str(value))
+
+# mkv track config dialog and inline button
+class MkvTrackConfigDialog(MessageBoxBase):
+    """用于设置 MKV 轨道的参数"""
+    def __init__(self, parent=None, title='轨道设置', data=None):
+        super().__init__(parent)
+        self.titleLabel = BodyLabel(title, self)
+
+        self.defaultTrackHLayout = QHBoxLayout()
+        self._defaultTrackLabel = BodyLabel('默认轨道:', self)
+        self._defaultTrackSwitch = SwitchButton(self)
+        self._defaultTrackSwitch.setChecked(True) # 默认就是默认轨道
+        self._defaultTrackSwitch.setOnText('是')
+        self._defaultTrackSwitch.setOffText('否')
+        self.defaultTrackHLayout.addWidget(self._defaultTrackLabel)
+        self.defaultTrackHLayout.addWidget(self._defaultTrackSwitch)
+        self.defaultTrackHLayout.addStretch(1)
+
+        self.trackLanguageHLayout = QHBoxLayout()
+        self._trackLanguageLabel = BodyLabel('语言:', self)
+        self._trackLanguageEdit = LineEdit(self)
+        self._trackLanguageEdit.setPlaceholderText('')
+        self.trackLanguageHLayout.addWidget(self._trackLanguageLabel)
+        self.trackLanguageHLayout.addWidget(self._trackLanguageEdit)
+
+        self.trackNameHLayout = QHBoxLayout()
+        self._trackNameLabel = BodyLabel('名称:', self)
+        self._trackNameEdit = LineEdit(self)
+        self.trackNameHLayout.addWidget(self._trackNameLabel)
+        self.trackNameHLayout.addWidget(self._trackNameEdit)
+
+        self.trackCustomVLayout = QVBoxLayout()
+        self._trackCustomLabel = BodyLabel('自定义轨道参数:', self)
+        self._trackCustomEdit = TextEdit(self)
+        self._trackCustomEdit.setPlaceholderText('输入轨道额外参数...')
+        self._trackCustomEdit.setMinimumHeight(80)
+        self._trackCustomEdit.setMaximumHeight(150)
+        self.trackCustomVLayout.addWidget(self._trackCustomLabel)
+        self.trackCustomVLayout.addWidget(self._trackCustomEdit)
+        
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(10)
+        self.viewLayout.addLayout(self.defaultTrackHLayout)
+        self.viewLayout.addLayout(self.trackLanguageHLayout)
+        self.viewLayout.addLayout(self.trackNameHLayout)
+        self.viewLayout.addLayout(self.trackCustomVLayout)
+
+        if parent:
+            target_w = 350
+            target_h = 250
+            self.widget.setMinimumSize(target_w, target_h)
+        
+        self.yesButton.setText("确认")
+        self.cancelButton.setText("取消")
+
+        if data:
+            self._defaultTrackSwitch.setChecked(data.get('default_track', False))
+            self._trackLanguageEdit.setText(data.get('track_language', ''))
+            self._trackNameEdit.setText(data.get('track_name', ''))
+            self._trackCustomEdit.setPlainText(data.get('track_custom', ''))
+
+    def get_data(self):
+        return {
+            'default_track': self._defaultTrackSwitch.isChecked(),
+            'track_language': self._trackLanguageEdit.text(),
+            'track_name': self._trackNameEdit.text(),
+            'track_custom': self._trackCustomEdit.toPlainText()
+        }
+
+class MkvInlineConfigButton(NodeBaseWidget):
+    """用于在节点中内嵌轨道设置按钮，点击时弹出 MkvTrackConfigDialog"""
+    addRequested = Signal(str)
+
+    def __init__(self, parent, name, port_name, mode='base'):
+        super().__init__(parent, name)
+        self.port_name = port_name
+        self._mode = mode  
+        self.mainbox = QWidget()
+        self.mainbox.setAttribute(Qt.WA_TranslucentBackground, True) # 设置背景透明 
+        self.mainbox.setStyleSheet('background: transparent;') 
+        layout = QHBoxLayout(self.mainbox)
+        layout.setContentsMargins(0,0,0,0)
+        layout.setSpacing(4)
+
+        self.btn = TransparentPushButton('轨道设置', self.mainbox)
+        self.btn.clicked.connect(self._open_dialog)
+        layout.addWidget(self.btn)
+
+        if self._mode == 'base':
+            self._extra_btn = TransparentToolButton(FIF.ADD, self.mainbox)
+            self._extra_btn.setFixedSize(28, 28)
+            self._extra_btn.setAttribute(Qt.WA_TranslucentBackground, True)
+            self._extra_btn.setStyleSheet('background: transparent; border: none;')
+            self._extra_btn.clicked.connect(lambda: self.addRequested.emit(self.port_name))
+            layout.addWidget(self._extra_btn)
+
+        self.set_custom_widget(self.mainbox)
+        try:
+            group = self.widget()
+            group.setFlat(True)
+            group.setStyleSheet(
+                'QGroupBox { background: transparent; border: 0px; margin-top: 0px; padding: 0px; }'
+                'QGroupBox::title { color: transparent; background: transparent; }'
+            )
+        except Exception:
+            pass
+        self._value = {}
+
+    def _open_dialog(self):
+        title_map = {'video': '视频', 'audio': '音频', 'subtitle': '字幕', 'chapter': '章节', 'attachment': '附件'}
+
+        # 兼容 track_1_video 等动态命名格式
+        lookup_name = self.port_name
+        if "track_" in self.port_name:
+            lookup_name = self.port_name.split("_")[-1]
+
+        title_prefix = title_map.get(lookup_name, self.port_name)
+        dialog = MkvTrackConfigDialog(QApplication.activeWindow(), f'{title_prefix} 参数设置', self._value)
+        if dialog.exec():
+            self._value = dialog.get_data()
+            self.on_value_changed(self._value)
+
+    def get_value(self):
+        return self._value
+
+    def set_value(self, value):
+        if isinstance(value, dict):
+            self._value = value
+
+
+# signal widget area 
 class ActionButtonWidget(NodeBaseWidget):
     """内嵌按钮控件，点击时触发回调"""
     def __init__(self, parent, name, label, on_click):
@@ -573,7 +624,6 @@ class ActionButtonWidget(NodeBaseWidget):
         return None
     def set_value(self, v):
         pass
-
 
 class SwitchButtonWidget(NodeBaseWidget):
     """内嵌开关控件"""

@@ -53,8 +53,8 @@ class InputVideoNormalizerNode(AMENodeBase):
         # 缓存属性必须先于文件 widget 注册：加载工作流时 custom properties
         # 按 JSON 键序恢复，input_file widget 恢复(set_value)触发本节点回调时
         # 即可直接读到 tracks 缓存重建端口，无需重跑 ffmpeg
-        self.create_property('tracks_src', '', widget_type=HIDDEN, tab='')
-        self.create_property('tracks', [], widget_type=HIDDEN, tab='')
+        self.create_property('tracks_src', '', widget_type=HIDDEN, tab='') # 缓存探测源文件路径
+        self.create_property('tracks', [], widget_type=HIDDEN, tab='') # 缓存探测结果: [{'type': 'video', 'idx': 0, 'codec': 'h264'}, ...]
 
         EXT = "视频文件 (" + ' '.join(f'*{e}' for e in VIDEO_EXTS) + ');;'
         w = FileBrowseWidget(self.view, 'input_file', '选择输入文件', exts=EXT)
@@ -62,7 +62,36 @@ class InputVideoNormalizerNode(AMENodeBase):
         # add_custom_widget 已将 value_changed 接到 set_property，这里额外挂自动探测回调
         w.value_changed.connect(lambda k, v: self._on_file_changed(v))
 
+    def set_ports(self, port_data):
+        """拦截工作流载入时的端口重建。
+
+        NodeGraphQt _deserialize 的顺序是: 恢复 custom properties(此时
+        _on_file_changed 已做过一次颜色校正) → add_node → set_ports;
+        set_ports 会清空并重建全部端口且不支持颜色(默认墨绿), 覆盖掉
+        之前的校正, 因此重建完成后需按缓存轨道再校正一次。
+        """
+        super().set_ports(port_data)
+
+        for name, color in self.INPUTS:
+            port = self.inputs().get(name)
+            if port is None:
+                continue
+            try:
+                port.view.color = color
+                port.view.border_color = [min(255, max(0, i + 80)) for i in color]
+            except Exception as e:
+                logger.warning(f'[InputVideoNormalizerNode] 校正输入端口颜色失败: {name}, {e}')
+        tracks = self.property('tracks') or []
+        if tracks:
+            try:
+                self._rebuild_ports(tracks)
+                logger.info(f'[InputVideoNormalizerNode] 载入重建端口完成, '
+                            f'已校正 {len(tracks)} 条端口颜色')
+            except Exception as e:
+                logger.warning(f'[InputVideoNormalizerNode] 载入后校正端口颜色失败: {e}')
+
     def _on_file_changed(self, fp):
+        """文件路径变化回调: 探测轨道并动态调整输出端口"""
         fp = str(fp or '').strip()
         if not fp or fp == self._last_probed:
             # 直接返回: 空路径或与上次探测一致
@@ -110,10 +139,20 @@ class InputVideoNormalizerNode(AMENodeBase):
             except Exception as e:
                 logger.warning(f'[InputVideoNormalizerNode] 移除端口失败: {pn}, {e}')
         for pn, tt in names:
-            if pn in self.outputs():
-                continue
-            self.add_output(pn, color=P.get(tt, P['any']))
-            logger.info(f'[InputVideoNormalizerNode] 追加端口: {pn}')
+            port = self.outputs().get(pn)
+            color = P.get(tt, P['any'])
+            if port is None:
+                self.add_output(pn, color=color)
+                logger.info(f'[InputVideoNormalizerNode] 追加端口: {pn}')
+            elif list(port.view.color[:3]) != list(color):
+                # 工作流载入时 set_ports 重建端口不带颜色(官方序列化格式无 color),
+                # 端口会回到默认墨绿, 这里按轨道类型校正
+                try:
+                    port.view.color = color
+                    port.view.border_color = [min(255, max(0, i + 80)) for i in color]
+                    logger.info(f'[InputVideoNormalizerNode] 校正端口颜色: {pn}')
+                except Exception as e:
+                    logger.warning(f'[InputVideoNormalizerNode] 校正端口颜色失败: {pn}, {e}')
         self.view.draw_node()
 
     @staticmethod

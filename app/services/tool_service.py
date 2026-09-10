@@ -95,6 +95,16 @@ class ToolService:
             "is_custom": False,
         },
         {
+            "tool_name": "eac3to",
+            "folder": "eac3to",
+            "type": ".exe",
+            "aliases": ["eac3to.exe"],
+            "title": "eac3to",
+            "desc": "Blu-ray/HD DVD 轨道探测与无损提取工具",
+            "url": "https://forum.doom9.org/showthread.php?t=125905",
+            "is_custom": False,
+        },
+        {
             "tool_name": "vspipe",
             "folder": "",
             "type": ".exe",
