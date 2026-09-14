@@ -295,7 +295,7 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.set_locked(False)
 
     def _find_output_class(self):
-        from app.components.ame_workflow.nodes.system.output_node import OutputNode
+        from app.components.ame_workflow.nodes.io.output_node import OutputNode
         return OutputNode
 
     def resizeEvent(self, event):

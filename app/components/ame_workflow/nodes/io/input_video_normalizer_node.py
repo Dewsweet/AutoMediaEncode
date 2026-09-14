@@ -43,7 +43,7 @@ class InputVideoNormalizerNode(AMENodeBase):
     DESCRIPTION = '选择文件后自动探测轨道并生成输出端口'
     CATEGORY = '输入'; CATEGORY_COLOR = C['Gray']
     MENU_KEY = 'input_video_normalizer'
-    INPUTS  = [('path', P['any'])]
+    INPUTS  = [('workspace', P['any'])]
     OUTPUTS = []
 
     def _setup_widgets(self):

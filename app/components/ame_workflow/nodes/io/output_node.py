@@ -8,7 +8,7 @@ class OutputNode(AMENodeBase):
     NODE_NAME = '输出文件'
     DESCRIPTION = '最终输出文件路径。可开启运行后清理缓存'
     CATEGORY = '输出'; CATEGORY_COLOR = C['Gray']
-    INPUTS = [('input', P['any'])]
+    INPUTS = [('file', P['any'])]
     OUTPUTS = []
     MENU_KEY = 'output'
 

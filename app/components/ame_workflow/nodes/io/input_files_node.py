@@ -6,7 +6,7 @@ class InputFilesNode(AMENodeBase):
     NODE_NAME = '多文件输入'
     DESCRIPTION = '批量载入多个文件'
     CATEGORY = '输入'; CATEGORY_COLOR = C['Gray']
-    INPUTS = [('path', P['any'])]
+    INPUTS = [('workspace', P['any'])]
     OUTPUTS = [('files', P['any'])]
     MENU_KEY = 'input_multi'
 

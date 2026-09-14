@@ -6,7 +6,7 @@ class EncoderFFmpegAudioNode(AMENodeBase):
     NODE_NAME = 'ffmpeg 音频编码'
     DESCRIPTION = 'FFmpeg 音频编码器'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
-    INPUTS = [('input', P['audio'])]
+    INPUTS = [('file', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]
     MENU_KEY = 'encoder_ffmpeg_audio'
 

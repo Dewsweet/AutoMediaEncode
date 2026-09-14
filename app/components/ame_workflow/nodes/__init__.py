@@ -1,17 +1,17 @@
 from .system.workspace_node import WorkspaceNode
 from .system.text_node import TextNode
+from .system.custom_name_node import CustomNameNode
 
-from .system.input_file_node import InputFileNode
-from .system.input_files_node import InputFilesNode
-from .system.input_splitter_node import InputVideoNormalizerNode
-from .system.input_bd_normalizer_node import InputBDNormalizerNode
-from .system.output_node import OutputNode
+from .io.input_file_node import InputFileNode
+from .io.input_files_node import InputFilesNode
+from .io.input_video_normalizer_node import InputVideoNormalizerNode
+from .io.input_bd_normalizer_node import InputBDNormalizerNode
+from .io.output_node import OutputNode
 
 from .process.splitter_node import SplitterNode
 from .process.vpy_loader_node import VPYLoaderNode
 from .process.vspipe_node import VSPipeNode
 from .process.ffmpeg_processor_node import FFmpegProcessorNode
-from .process.custom_name_node import CustomNameNode
 
 from .encoder.x264_encoder_node import EncoderX264Node
 from .encoder.x265_encoder_node import EncoderX265Node
@@ -30,7 +30,7 @@ from .muxer.ffmpeg_muxer_node import MuxerFFmpegNode
 
 
 ALL_NODE_CLASSES = [
-    WorkspaceNode, TextNode, 
+    WorkspaceNode, TextNode, CustomNameNode, 
     InputFileNode, InputFilesNode, InputVideoNormalizerNode, InputBDNormalizerNode,
     SplitterNode,
     VPYLoaderNode, VSPipeNode, FFmpegProcessorNode,
@@ -38,7 +38,7 @@ ALL_NODE_CLASSES = [
     EncoderFFmpegVideoNode, EncoderFFmpegAudioNode,
     EncoderAACNode, EncoderFLACNode, EncoderOPUSNode,
     MuxerMkvmergeNode, MuxerFFmpegNode,
-    OutputNode, CustomNameNode,
+    OutputNode,
 ]
 
 MENU_KEY_MAP = {cls.MENU_KEY: cls for cls in ALL_NODE_CLASSES if cls.MENU_KEY}

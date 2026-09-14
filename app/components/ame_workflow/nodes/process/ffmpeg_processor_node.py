@@ -20,7 +20,7 @@ class FFmpegProcessorNode(AMENodeBase):
     DESCRIPTION = '自定义 FFmpeg 命令行处理'
     CATEGORY = '工具'; CATEGORY_COLOR = C['Orange']
     INPUTS = [('input_1', P['any']), ('input_2', P['any']), ('input_3', P['any'])]
-    OUTPUTS = [('output', P['any'])]
+    OUTPUTS = [('file', P['any'])]
     MENU_KEY = 'ffmpeg_processor'
 
     def _setup_widgets(self):

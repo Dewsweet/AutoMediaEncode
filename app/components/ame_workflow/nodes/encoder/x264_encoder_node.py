@@ -6,7 +6,7 @@ class EncoderX264Node(AMENodeBase):
     NODE_NAME = 'x264 编码'
     DESCRIPTION = 'x264 CLI 编码器'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
-    INPUTS = [('input', P['video']), ('pipe', P['script'])]
+    INPUTS = [('file', P['video']), ('pipe', P['script'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_x264'
 

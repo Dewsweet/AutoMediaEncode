@@ -10,7 +10,7 @@ class MuxerFFmpegNode(AMENodeBase):
     DESCRIPTION = 'FFmpeg 封装 MP4/MOV，接收单视频单音频'
     CATEGORY = '封装'; CATEGORY_COLOR = C['Green']
     INPUTS = [('video', P['video']), ('audio', P['audio'])]
-    OUTPUTS = [('output', P['any'])]
+    OUTPUTS = [('file', P['any'])]
     MENU_KEY = 'muxer_ffmpeg'
 
     def _setup_widgets(self):

@@ -6,7 +6,7 @@ class EncoderX265Node(AMENodeBase):
     NODE_NAME = 'x265 编码'
     DESCRIPTION = 'x265 CLI 编码器'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
-    INPUTS = [('input', P['video']), ('pipe', P['script'])]
+    INPUTS = [('file', P['video']), ('pipe', P['script'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_x265'
 

@@ -6,7 +6,7 @@ class InputFileNode(AMENodeBase):
     NODE_NAME = '输入文件'
     DESCRIPTION = '载入媒体文件'
     CATEGORY = '输入'; CATEGORY_COLOR = C['Gray']
-    INPUTS = [('path', P['any'])]
+    INPUTS = [('workspace', P['any'])]
     OUTPUTS = [('file', P['any'])]
     MENU_KEY = 'input_file'
 

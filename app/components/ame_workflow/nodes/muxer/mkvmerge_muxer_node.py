@@ -15,7 +15,7 @@ class MuxerMkvmergeNode(AMENodeBase):
               ('subtitle', P['subtitle']),
               ('chapter', P['chapter']),
               ('attachment', P['attachment'])]
-    OUTPUTS = [('output', P['any'])]
+    OUTPUTS = [('file', P['any'])]
     MENU_KEY = 'muxer_mkvmerge'
 
     def _setup_widgets(self):

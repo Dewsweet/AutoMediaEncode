@@ -6,7 +6,7 @@ class EncoderOPUSNode(AMENodeBase):
     NODE_NAME = 'Opus 编码 (ffmpeg)'
     DESCRIPTION = 'Opus 音频编码 (CBR 128k)'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
-    INPUTS = [('input', P['audio'])]
+    INPUTS = [('file', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]
     MENU_KEY = 'encoder_opus'
 

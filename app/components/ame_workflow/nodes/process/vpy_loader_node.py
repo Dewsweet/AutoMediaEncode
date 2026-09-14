@@ -19,7 +19,7 @@ class VPYLoaderNode(AMENodeBase):
     NODE_NAME = 'vpy 加载器'
     DESCRIPTION = '载入 .vpy 脚本，自动替换 __INPUT_FILE__ 或匹配源滤镜路径'
     CATEGORY = '工具'; CATEGORY_COLOR = C['Purple']
-    INPUTS = [('input', P['video'])]
+    INPUTS = [('file', P['video'])]
     OUTPUTS = [('script', P['script'])]
     MENU_KEY = 'vpy_loader'
 

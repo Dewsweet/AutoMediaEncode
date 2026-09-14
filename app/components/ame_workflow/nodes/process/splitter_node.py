@@ -12,7 +12,7 @@ class SplitterNode(AMENodeBase):
     DESCRIPTION = '默认 video_1 + audio_1。探测后按实际轨道动态追加 video_2/audio_2/subtitle_1 等'
     CATEGORY = '工具'; CATEGORY_COLOR = C['Orange']
     MENU_KEY = 'splitter'
-    INPUTS  = [('input', P['any'])]
+    INPUTS  = [('file', P['any'])]
     OUTPUTS = [('video_1', P['video']), ('audio_1', P['audio'])]
 
     def _setup_widgets(self):

@@ -7,7 +7,7 @@ class EncoderAACNode(AMENodeBase):
     NODE_NAME = 'AAC 编码 (qaac)'
     DESCRIPTION = 'AAC 音频编码, 使用 qaac 编码器的 CVBR 模式'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
-    INPUTS = [('input', P['audio'])]
+    INPUTS = [('file', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]
     MENU_KEY = 'encoder_aac'
 

@@ -6,7 +6,7 @@ class EncoderFLACNode(AMENodeBase):
     NODE_NAME = 'FLAC 编码(ffmpeg)'
     DESCRIPTION = 'FLAC 无损音频编码'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
-    INPUTS = [('input', P['audio'])]
+    INPUTS = [('file', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]
     MENU_KEY = 'encoder_flac'
 

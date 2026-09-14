@@ -11,8 +11,8 @@ class CustomNameNode(AMENodeBase):
     NODE_NAME = '自定义文件名'
     DESCRIPTION = '重命名文件。{input_name} 替换为输入文件名(不含扩展名)，{datetime} 替换为当前时间'
     CATEGORY = '输出'; CATEGORY_COLOR = C['Gray']
-    INPUTS = [('input', P['any'])]
-    OUTPUTS = [('output', P['any'])]
+    INPUTS = [('file', P['any'])]
+    OUTPUTS = [('file', P['any'])]
     MENU_KEY = 'custom_name'
 
     def _setup_widgets(self):

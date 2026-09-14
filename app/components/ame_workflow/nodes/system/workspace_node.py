@@ -6,7 +6,7 @@ class WorkspaceNode(AMENodeBase):
     DESCRIPTION = '设定中间文件存储目录，连接输入节点后所有中间文件写入该目录'
     CATEGORY = '系统'; CATEGORY_COLOR = C['Gray']
     INPUTS = []
-    OUTPUTS = [('path', P['any'])]
+    OUTPUTS = [('workspace', P['any'])]
     MENU_KEY = 'workspace'
 
     def _setup_widgets(self):
