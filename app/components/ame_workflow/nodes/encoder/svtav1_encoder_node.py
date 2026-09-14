@@ -6,7 +6,7 @@ class EncoderSvtAv1Node(AMENodeBase):
     NODE_NAME = 'SVT-AV1 编码 (ffmpeg)'
     DESCRIPTION = 'SVT-AV1 编码器, 需要 ffmpeg 内置 SVT-AV1 支持'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
-    INPUTS = [('input', P['video'])]
+    INPUTS = [('input', P['video']), ('pipe', P['script'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_svtav1'
 

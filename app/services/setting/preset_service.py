@@ -57,9 +57,10 @@ class PresetService:
             # 读取失败(文件损坏/被删): 触发同步逻辑自愈, 备份损坏文件并从模板重建
             logger.warning("读取用户预设 JSON 失败, 触发自愈重建")
             self._ensure_preset_file_exists()
+            # 自愈重建后重读; 仍失败则返回空结构兜底(避免返回 None 使调用方 data.get() 崩溃)
             try:
                 with open(self.preset_file_path, "r", encoding="utf-8") as f:
-                    return json.load(f) 
+                    return json.load(f)
             except Exception:
                 return {"x264": {}, "x265": {}, "SVTAV1": {}}
 

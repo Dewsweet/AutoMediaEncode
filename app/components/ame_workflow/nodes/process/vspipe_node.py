@@ -11,10 +11,11 @@ class VSPipeNode(AMENodeBase):
     DESCRIPTION = 'VapourSynth 管道输出。检测 vspipe API 版本后组装管道命令连接编码器'
     CATEGORY = '工具'; CATEGORY_COLOR = C['Purple']
     INPUTS = [('script', P['script'])]
-    OUTPUTS = [('video', P['video'])]
+    OUTPUTS = [('pipe', P['script'])]
     MENU_KEY = 'vspipe'
 
     def execute(self, inputs, temp_dir):
+        logger.info('\n' * 2 + '=' * 40 + f' [VSPipeNode] ' + '=' * 40)
         script = (inputs.get('script') or [''])[0]
         if not script:
             logger.warning('[VSPipe] 没有脚本输入')

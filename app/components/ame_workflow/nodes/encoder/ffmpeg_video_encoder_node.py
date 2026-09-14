@@ -6,7 +6,7 @@ class EncoderFFmpegVideoNode(AMENodeBase):
     NODE_NAME = 'ffmpeg 视频编码'
     DESCRIPTION = 'FFmpeg 视频编码器'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
-    INPUTS = [('input', P['video'])]
+    INPUTS = [('input', P['video']), ('pipe', P['script'])]
     OUTPUTS = [('video', P['video'])]
     MENU_KEY = 'encoder_ffmpeg_video'
 

@@ -9,6 +9,32 @@ from .nodes import ALL_NODE_CLASSES
 from .ame_hotkeys import register as register_hotkeys
 
 
+def _patch_model_set_property():
+    """容错补丁: 工作流载入时, 动态端口节点(如 mkvmerge 追加轨道)保存的 custom
+    属性在节点 __init__ 重建初期尚未注册, BaseModel.set_property 直接抛
+    NodePropertyError 导致整个载入中断; 此处捕获后自动补注册属性, 保留保存
+    的数据。幂等(重复调用只打一次)。"""
+    from NodeGraphQt.base.model import NodeModel
+    from NodeGraphQt.errors import NodePropertyError
+
+    if getattr(NodeModel, '_ame_tolerant_set_property', False):
+        return
+    _orig = NodeModel.set_property
+
+    def set_property(self, name, value):
+        try:
+            return _orig(self, name, value)
+        except NodePropertyError:
+            # 载入动态端口节点保存的 custom 属性时尚未注册, 自动补注册保留数据
+            try:
+                self.add_property(name, value)
+            except NodePropertyError:
+                pass
+
+    NodeModel.set_property = set_property
+    NodeModel._ame_tolerant_set_property = True
+
+
 class _ProxyEventFilter(QObject):
     """拦截 viewer 的滚轮/鼠标事件，直接操作内嵌可滚动控件的 ScrollBar"""
 
@@ -130,6 +156,7 @@ class _ProxyEventFilter(QObject):
 
 class AMEGraph:
     def __init__(self, parent=None):
+        _patch_model_set_property()
         self.graph = NodeGraph(parent=parent)
         self.graph.set_pipe_style(PipeLayoutEnum.CURVED.value)
 

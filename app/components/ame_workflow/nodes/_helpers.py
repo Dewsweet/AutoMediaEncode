@@ -6,13 +6,24 @@ from app.services.setting.preset_service import preset_service
 from app.services.error_service import ErrorService
 
 def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
-    """x264/x265/SVTAV1 通用 CLI 编码（支持文件输入和管道输入）"""
-    logger.info('\n' * 2 + '=' * 40 + f' [{node.NODE_NAME}] ' + '=' * 40)
-    inp = inputs.get('input', [''])
-    src_raw = inp[0] if inp else ''
+    """x264/x265/SVTAV1 通用 CLI 编码。
 
-    if not src_raw:
-        logger.warning(f'[{node.NODE_NAME}] 没有输入文件')
+    双输入端口规范: input 端口仅接受视频文件, script 端口仅接受 VS 管道输出,
+    互不关联; script 管道存在则走管道模式, 否则走 input 文件模式。
+    """
+    logger.info('\n' * 2 + '=' * 40 + f' [{node.NODE_NAME}] ' + '=' * 40)
+    pipe_raw = (inputs.get('script') or [''])[0]
+    file_raw = (inputs.get('input') or [''])[0]
+    is_pipe = isinstance(pipe_raw, dict) and pipe_raw.get('pipe')
+
+    if is_pipe:
+        src_raw = pipe_raw
+        logger.info(f'[{node.NODE_NAME}] 管道输入 (script 端口)')
+    elif file_raw:
+        src_raw = file_raw
+        logger.info(f'[{node.NODE_NAME}] 文件输入 (input 端口): {file_raw}')
+    else:
+        logger.warning(f'[{node.NODE_NAME}] 没有输入 (input 端口需视频文件 / script 端口需 VS 管道)')
         return None
 
     cli_p = ToolService.get_tool_path(tool_key)
@@ -36,8 +47,7 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     cancelled = getattr(node, '_ame_cancelled', lambda: False)
     paused = getattr(node, '_ame_paused', None)
 
-    # ── 管道模式 (vspipe → x264/x265/svtav1) ──
-    is_pipe = isinstance(src_raw, dict) and src_raw.get('pipe')
+    # ── 管道模式 (script 端口: vspipe → x264/x265/svtav1) ──
     if is_pipe:
         pipe_cmd = src_raw['cmd']
         if tool_key.lower() == 'svtav1':
@@ -61,7 +71,9 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
             r, err_msg = _run_pipe(pipe_cmd, {}, enc_cmd,
                           {'stderr': subprocess.STDOUT, 'text': True, 'bufsize': 1},
                           node)
-            if r is None: return None
+            if r is None:
+                logger.info(f'[{node.NODE_NAME}] 已取消')
+                return None
             if r == 0 and dst.is_file() and dst.stat().st_size > 0:
                 logger.info(f'[{node.NODE_NAME}] 编码成功: {dst}')
                 return {'video': [str(dst)]}
@@ -233,24 +245,23 @@ def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
         return None
 
 def _do_ffmpeg_video(node, inputs, temp_dir):
-    """通用 FFmpeg 视频编码"""
+    """通用 FFmpeg 视频编码。
+
+    双输入端口规范: input 端口仅接受视频文件, script 端口仅接受 VS 管道输出,
+    互不关联; script 管道存在则走管道模式, 否则走 input 文件模式。
+    """
     widget_data = node.property('Video_codec', {})
+    codec = 'libx264'
+    args = []
     if isinstance(widget_data, dict):
-        codec = widget_data.get('encoder', 'libx264')
+        codec = widget_data.get('encoder', 'libx264') or 'libx264'
         custom_options = widget_data.get('custom_cli', '')
         try:
             args = shlex.split(custom_options) if custom_options else []
         except ValueError:
             args = custom_options.split() if custom_options else []
-        
 
     logger.info('\n' * 2 + '=' * 40 + f' [{codec}] ' + '=' * 40)
-    src = (inputs.get('input') or [''])[0]
-    logger.info(f'[{codec}] 输入文件: {src}')
-    if not src:
-        logger.warning(f'[{codec}] 没有输入文件')
-        return None
-    
     ff = ToolService.get_tool_path('ffmpeg')
     if not ff:
         logger.error(f'[{codec}] 找不到 ffmpeg')
@@ -258,8 +269,43 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
 
     ext = _codec_to_ext(codec)
     dst = Path(temp_dir) / f'v_{node.id}{ext}'
-    cmd = [ff, '-i', src, '-c:v', codec, '-an', dst, '-y']
-    if custom_options:
+
+    # 双输入端口: script(管道)优先, input(视频文件)兜底
+    pipe_raw = (inputs.get('script') or [''])[0]
+    file_src = (inputs.get('input') or [''])[0]
+    is_pipe = isinstance(pipe_raw, dict) and pipe_raw.get('pipe')
+
+    if is_pipe:
+        # ── 管道模式: vspipe y4m → ffmpeg stdin ──
+        pipe_cmd = pipe_raw['cmd']
+        cmd = [ff, '-f', 'yuv4mpegpipe', '-i', '-']
+        cmd.extend(args)
+        cmd.extend(['-c:v', codec, '-an', str(dst), '-y'])
+        logger.info(f'[{codec}] 管道命令: {" ".join(str(c) for c in cmd)}')
+        try:
+            r, err_msg = _run_pipe(pipe_cmd, {}, cmd,
+                          {'stderr': subprocess.STDOUT, 'text': True, 'bufsize': 1},
+                          node)
+            if r is None:
+                logger.info(f'[{codec}] 已取消')
+                return None
+            if r == 0 and dst.is_file() and dst.stat().st_size > 0:
+                logger.info(f'[{codec}] 编码成功: {dst}')
+                return {'video': [str(dst)]}
+            logger.error(f'[{codec}] 编码失败: returncode={r}')
+            node._last_error = ErrorService.ffmpeg_error(str(err_msg))
+            return None
+        except Exception as e:
+            logger.error(f'[{codec}] 管道编码异常: {e}')
+            return None
+
+    # ── 文件模式 ──
+    if not file_src:
+        logger.warning(f'[{codec}] 没有输入 (input 端口需视频文件 / script 端口需 VS 管道)')
+        return None
+    logger.info(f'[{codec}] 输入文件: {file_src}')
+    cmd = [ff, '-i', file_src, '-c:v', codec, '-an', str(dst), '-y']
+    if args:
         cmd[-3:-3] = args
     logger.info(f'[{codec}] 组装命令: {" ".join(str(c) for c in cmd)}')
     try:
@@ -267,16 +313,17 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
         paused = getattr(node, '_ame_paused', None)
         r, err_msg = _run_with_progress(cmd, cancelled, paused, timeout=14400)
         if r is None:
-            return None  # 用户取消
+            logger.info(f'[{codec}] 已取消')
+            return None
         if r == 0 and dst.is_file() and dst.stat().st_size > 0:
             logger.info(f'[{codec}] 编码成功: {dst}')
-            return {'video': [dst]}
-        else:
-            logger.error(f'[{codec}] 编码失败: returncode={r}')
-            node._last_error = ErrorService.ffmpeg_error(str(err_msg))
-            return None
+            return {'video': [str(dst)]}
+        logger.error(f'[{codec}] 编码失败: returncode={r}')
+        node._last_error = ErrorService.ffmpeg_error(str(err_msg))
+        return None
     except Exception as e:
         logger.error(f'[{codec}] 编码异常: {e}')
+        node._last_error = ErrorService.ffmpeg_error(str(e))
         return None
 
 
@@ -307,6 +354,9 @@ def _build_cli_args(node, tool_key):
     if use_p and pname:
         presets = preset_service.get_presets_by_encoder(tool_key)
         cli_args = presets.get(pname, '')
+    # 诊断日志: 预设命中过程全可见, 便于排查"参数未套用"
+    logger.info(f'[{node.NODE_NAME}] 编码参数: preset_cfg={pcfg!r}, '
+                f'custom_cli={node.property("custom_cli", "")!r}, 最终={cli_args!r}')
     return cli_args
 
 
@@ -393,5 +443,12 @@ def _run_pipe(cmd1, kw1, cmd2, kw2, node, timeout=14400):
         p1.terminate()
         try: p1.wait(timeout=5)
         except subprocess.TimeoutExpired: p1.kill()
+    # stdout EOF 只代表子进程关闭了标准输出, 不代表已被回收;
+    # 未 wait 前 returncode 恒为 None, 会被上游误判为"用户取消"
+    try:
+        p2.wait(timeout=30)
+    except subprocess.TimeoutExpired:
+        p2.kill()
+        p2.wait()
     full_output = "".join(out_lines)
     return p2.returncode, full_output

@@ -9,7 +9,7 @@
     },
     "SVTAV1": {
         "质量": "--preset 2 --keyint 300 --scd 1 --enable-tf 2 --tf-strength 2 --crf 30 --enable-qm 1 --enable-variance-boost 1 --variance-boost-curve 2 --variance-boost-strength 2 --variance-octile 2 --enable-dlf 1 --sharpness 6",
-        "容量": "`--preset 2 --keyint 240 --scd 1 --enable-tf 2 --tf-strength 2 --crf 35 --enable-dlf 1 --sharpness 4",
+        "容量": "--preset 2 --keyint 240 --scd 1 --enable-tf 2 --tf-strength 2 --crf 35 --enable-dlf 1 --sharpness 4",
         "速度": "--preset 2 --scd 1 --scm 0 --enable-tf 2 --tf-strength 2 -crf 40 --tune 0 --enable-variance-boost 1 --variance-boost-curve 2 --variance-boost-strength 2 --variance-octile 2 --sharpness 4"
     }
 }
