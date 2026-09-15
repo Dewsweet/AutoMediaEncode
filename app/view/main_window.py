@@ -114,7 +114,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.muxingInterface, FIF.MEDIA, '媒体混流')
         self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME 工作流')
 
-        self.addSubInterface(self.taskInterface, FIF.MESSAGE, '任务进度', NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.taskInterface, FIF.DATE_TIME, '任务进度', NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.settingInterface, FIF.SETTING, '设置', NavigationItemPosition.BOTTOM)
 
 

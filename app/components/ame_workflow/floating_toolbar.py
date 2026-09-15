@@ -46,7 +46,7 @@ class FloatingToolbar(QFrame):
         self.pause_btn.setFixedSize(32, 32)
         self.pause_btn.setToolTip("暂停")
 
-        self.cancel_btn = ToolButton(FIF.CANCEL, self)
+        self.cancel_btn = ToolButton(FIF.CLOSE, self)
         self.cancel_btn.setFixedSize(32, 32)
         self.cancel_btn.setToolTip("取消")
 

@@ -257,11 +257,12 @@ class MuxingOptionCard(HeaderCardWidget):
         # self.contextHLayout2 = QHBoxLayout()
         # self.contextHLayout3 = QHBoxLayout()
 
-        self.chapter_suffix_label = BodyLabel('章节后缀: ')
+        self.chapter_suffix_label = BodyLabel('章节类型: ')
         self.chapter_suffix_cb = ComboBox()
         self.chapter_suffix_cb.addItems(['XML', 'TXT'])
 
         self.desubsetting_ckeackbox = CheckBox('字幕去子集化')
+        self.desubsetting_ckeackbox.setToolTip('提取时删除字幕中的子集化信息')
 
         # self.turehd_decore_ckeackbox = CheckBox('提取有损 Core')
 

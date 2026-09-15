@@ -54,7 +54,7 @@ class ToolService:
             ],
             "title": "x264",
             "desc": "H.264 视频编码器",
-            "url": "https://www.videolan.org/developers/x264.html",
+            "url": "https://github.com/jpsdr/x264",
             "is_custom": False,
         },
         {
@@ -68,7 +68,7 @@ class ToolService:
             ],
             "title": "x265",
             "desc": "H.265 视频编码器",
-            "url": "https://www.videolan.org/developers/x265.html",
+            "url": "https://github.com/msg7086/x265-Yuuki-Asuna",
             "is_custom": False,
         },
         {
@@ -101,7 +101,7 @@ class ToolService:
             "aliases": ["eac3to.exe"],
             "title": "eac3to",
             "desc": "Blu-ray/HD DVD 轨道探测与无损提取工具",
-            "url": "https://forum.doom9.org/showthread.php?t=125905",
+            "url": "https://www.videohelp.com/software/eac3to",
             "is_custom": False,
         },
         {

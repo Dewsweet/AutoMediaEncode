@@ -3,7 +3,7 @@ from .._widgets import PresetSwitchWidget, CLITextWidget
 from .._helpers import _do_cli_encode
 
 class EncoderSvtAv1Node(AMENodeBase):
-    NODE_NAME = 'SVT-AV1 编码 (ffmpeg)'
+    NODE_NAME = 'SVT-AV1'
     DESCRIPTION = 'SVT-AV1 编码器, 需要 ffmpeg 内置 SVT-AV1 支持'
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
     INPUTS = [('file', P['video']), ('pipe', P['script'])]
