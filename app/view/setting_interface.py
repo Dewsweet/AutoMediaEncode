@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
 from qfluentwidgets import (ScrollArea, SettingCardGroup, ExpandGroupSettingCard, OptionsSettingCard, CustomColorSettingCard, PrimaryPushSettingCard, ComboBoxSettingCard, PushSettingCard, 
@@ -14,8 +14,10 @@ from qfluentwidgets import FluentIcon as FIF
 
 from app.components.preset_dialog import PresetManagerDialog
 from app.components.tools_template_card import MediaToolsCardTemplate
+from app.components.update_dialog import UpdateDialog
 from app.services.setting.preset_service import preset_service
 from app.services.tool_service import ToolService
+from app.services.update_service import update_service
 from app.services.path_service import PathService
 from app.common.config import cfg, VERSION, AUTHOR, YEAR
 from app.common.style_sheet import StyleSheet
@@ -343,8 +345,80 @@ class SettingInterface(QWidget):
                 self.window().update()
 
     def _check_for_updates(self):
-        """检查更新 (暂时用Github页面链接)"""
-        QDesktopServices.openUrl("https://github.com/Dewsweet/AutoMediaEncode")
+        """检查更新：后台线程请求 GitHub Releases API，结果通过回调反馈"""
+        if update_service.is_checking:
+            InfoBar.info(
+                title=self.tr("请稍候"),
+                content=self.tr("正在检查更新，请勿重复操作"),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+            return
+
+        # 检查期间禁用按钮，防止重复点击
+        self.aboutCard.button.setEnabled(False)
+        self.aboutCard.button.setText(self.tr("检查中...."))
+
+        started = update_service.check_for_updates(
+            on_finished=self._on_update_check_finished,
+            on_failed=self._on_update_check_failed,
+            parent=self,
+        )
+        if not started:
+            self._restore_update_button()
+
+    def _on_update_check_finished(self, release_info: dict):
+        """检查成功回调：比较版本并弹窗/提示"""
+        self._restore_update_button()
+
+        remote_tag = release_info.get("tag_name", "")
+        result = update_service.compare_versions(VERSION, remote_tag)
+
+        if result > 0:
+            # 有新版本，弹窗展示更新内容
+            dialog = UpdateDialog(release_info, self.window())
+            dialog.exec()
+        elif result < 0:
+            InfoBar.warning(
+                title=self.tr("版本检查"),
+                content=self.tr(f"远程版本 ({remote_tag}) 低于当前版本 ({VERSION})，无需更新"),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=5000,
+                parent=self
+            )
+        else:
+            InfoBar.success(
+                title=self.tr("已是最新版本"),
+                content=self.tr(f"当前版本 ({VERSION}) 已是最新"),
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=3000,
+                parent=self
+            )
+
+    def _on_update_check_failed(self, reason: str):
+        """检查失败回调"""
+        self._restore_update_button()
+        InfoBar.error(
+            title=self.tr("检查更新失败"),
+            content=self.tr(f"{reason}，可稍后重试"),
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=5000,
+            parent=self
+        )
+
+    def _restore_update_button(self):
+        """恢复检查更新按钮为可用状态"""
+        self.aboutCard.button.setEnabled(True)
+        self.aboutCard.button.setText(self.tr("检查更新"))
 
     def update_tools_state(self):
         """重新检测所有普通工具的状态，不需要重启软件就能刷新状态"""
