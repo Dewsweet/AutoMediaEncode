@@ -19,7 +19,7 @@ class OutputNode(AMENodeBase):
     def execute(self, inputs, temp_dir):
         logger.info('\n' * 2 + '=' * 40 + ' [OutputNode] ' + '=' * 40)
 
-        src_files = inputs.get('input', [])
+        src_files = inputs.get('file', [])
         if not src_files:
             return None
         output_dir = self.get_property('output')

@@ -233,4 +233,4 @@ class MuxerMkvmergeNode(AMENodeBase):
         if not Path(out).is_file():
             return None
         logger.info(f'[MuxerMKV] 封装成功: {out}')
-        return {'output': [out]}
+        return {'file': [out]}

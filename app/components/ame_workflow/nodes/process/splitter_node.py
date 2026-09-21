@@ -21,7 +21,7 @@ class SplitterNode(AMENodeBase):
 
     def _on_probe(self):
         """探测输入文件的轨道信息，动态调整输出端口"""
-        in_port = self.inputs().get('input')
+        in_port = self.inputs().get('file')
         if not in_port:
             return
         connected = in_port.connected_ports()
@@ -59,7 +59,7 @@ class SplitterNode(AMENodeBase):
 
     def execute(self, inputs: dict, temp_dir: str) -> dict | None:
         logger.info('\n' * 2 + '=' * 40 + ' [Splitter] ' + '=' * 40)
-        src_files = inputs.get('input', [])
+        src_files = inputs.get('file', [])
         if not src_files:
             self._last_error = '分离器未接收到输入文件'
             return None

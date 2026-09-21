@@ -39,4 +39,4 @@ class MuxerFFmpegNode(AMENodeBase):
             cmd.extend(['-map', str(si)]); si += 1
         cmd.extend(['-c', 'copy', dst, '-y'])
         subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
-        return {'output': [dst]} if dst.is_file() else None
+        return {'file': [dst]} if dst.is_file() else None

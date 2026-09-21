@@ -167,7 +167,7 @@ class FFmpegProcessorNode(AMENodeBase):
 
         if proc.returncode == 0 and final_out_path and final_out_path.is_file() and final_out_path.stat().st_size > 0:
             logger.info(f'[{self.NODE_NAME}] 处理成功: {final_out_path.name}')
-            return {'output': [str(final_out_path)]}
+            return {'file': [str(final_out_path)]}
         else:
             logger.error(f'[{self.NODE_NAME}] 处理失败: returncode={proc.returncode}')
             err_text = "\n".join(output_lines[-10:]) if output_lines else "无输出"

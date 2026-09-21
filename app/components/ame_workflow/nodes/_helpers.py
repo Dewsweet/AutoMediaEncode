@@ -13,7 +13,7 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     """
     logger.info('\n' * 2 + '=' * 40 + f' [{node.NODE_NAME}] ' + '=' * 40)
     pipe_raw = (inputs.get('script') or [''])[0]
-    file_raw = (inputs.get('input') or [''])[0]
+    file_raw = (inputs.get('file') or [''])[0]
     is_pipe = isinstance(pipe_raw, dict) and pipe_raw.get('pipe')
 
     if is_pipe:
@@ -140,7 +140,7 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
 def _do_qaac_encode(node, inputs, temp_dir, ext):
     """QAAC 通用 CLI 编码"""
     logger.info('\n' * 2 + '=' * 40 + f' [AAC] ' + '=' * 40)
-    src = (inputs.get('input') or [''])[0]
+    src = (inputs.get('file') or [''])[0]
     logger.info(f'[AAC] 输入文件: {src}')
 
     if not src:
@@ -188,7 +188,7 @@ def _do_qaac_encode(node, inputs, temp_dir, ext):
 def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
     """通用 FFmpeg 音频编码"""
     logger.info('\n' * 2 + '=' * 40 + f' [{node.NODE_NAME}] ' + '=' * 40)
-    src = (inputs.get('input') or [''])[0]
+    src = (inputs.get('file') or [''])[0]
     logger.info(f'[{node.NODE_NAME}] 输入文件: {src}')
 
     if not src:
@@ -272,7 +272,7 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
 
     # 双输入端口: script(管道)优先, input(视频文件)兜底
     pipe_raw = (inputs.get('script') or [''])[0]
-    file_src = (inputs.get('input') or [''])[0]
+    file_src = (inputs.get('file') or [''])[0]
     is_pipe = isinstance(pipe_raw, dict) and pipe_raw.get('pipe')
 
     if is_pipe:

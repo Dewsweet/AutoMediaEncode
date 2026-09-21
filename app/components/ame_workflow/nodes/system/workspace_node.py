@@ -14,4 +14,4 @@ class WorkspaceNode(AMENodeBase):
 
     def execute(self, inputs, temp_dir):
         wd = self.property('workspace', '')
-        return {'path': [wd]} if wd else None
+        return {'workspace': [wd]} if wd else None

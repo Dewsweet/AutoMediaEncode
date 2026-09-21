@@ -200,7 +200,8 @@ class InputBDNormalizerNode(AMENodeBase):
     DESCRIPTION = 'm2ts/mpls 输入, eac3to 探测轨道; 连体盘自动切换 mkvmerge'
     CATEGORY = '输入'; CATEGORY_COLOR = C['Gray']
     MENU_KEY = 'input_bd_normalizer'
-    INPUTS  = [('workspace', P['any'])]
+    INPUTS  = [(''
+    '', P['any'])]
     OUTPUTS = []
 
     def _setup_widgets(self):

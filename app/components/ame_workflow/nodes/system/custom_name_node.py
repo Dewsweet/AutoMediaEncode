@@ -27,7 +27,7 @@ class CustomNameNode(AMENodeBase):
     def execute(self, inputs, temp_dir):
         logger.info('\n' * 2 + '=' * 40 + f' [{self.NODE_NAME}] ' + '=' * 40)
         
-        raw_files = inputs.get('input', [])
+        raw_files = inputs.get('file', [])
         if not raw_files:
             return None
             
@@ -96,4 +96,4 @@ class CustomNameNode(AMENodeBase):
             
             result.append(str(dst))
             
-        return {'output': result}
+        return {'file': result}

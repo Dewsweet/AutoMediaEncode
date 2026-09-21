@@ -32,7 +32,7 @@ class VPYLoaderNode(AMENodeBase):
             logger.warning('[VPYLoader] 没有选择 vpy 脚本')
             return None
         
-        inp_list = inputs.get('input', [])
+        inp_list = inputs.get('file', [])
         inp_str = inp_list[0] if inp_list else ''
         inp = Path(inp_str)
         if not inp.is_file():
