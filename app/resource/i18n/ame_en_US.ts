@@ -2,6 +2,60 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US" sourcelanguage="zh_CN">
 <context>
+    <name>AttachmentCard</name>
+    <message>
+        <location filename="../../components/muxing_card_interface.py" line="+922"/>
+        <location line="+30"/>
+        <source>添加附件</source>
+        <translation>Add attachments</translation>
+    </message>
+    <message>
+        <location line="-17"/>
+        <source>附件名</source>
+        <translation>Attachment name</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>大小</source>
+        <translation>Size</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>目录</source>
+        <translation>Folder</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>启用所选附件</source>
+        <translation>Enable selected attachments</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>禁用所选附件</source>
+        <translation>Disable selected attachments</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>移除选择附件</source>
+        <translation>Remove selected attachments</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>移除所有附件</source>
+        <translation>Remove all attachments</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>选择附件文件</source>
+        <translation>Select attachment files</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>内置附件</source>
+        <translation>Embedded attachment</translation>
+    </message>
+</context>
+<context>
     <name>AudioParamCard</name>
     <message>
         <location filename="../../components/recode_card_interface.py" line="+578"/>
@@ -15,6 +69,163 @@
     </message>
 </context>
 <context>
+    <name>DeMuxingInterface</name>
+    <message>
+        <location filename="../../view/demuxing_interface.py" line="+33"/>
+        <source>媒体抽流</source>
+        <translation>Demuxing</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>使用 MkvExtract 和 FFMpeg 从视频文件中提取各种音频、视频、字幕流……</source>
+        <translation>Extract video, audio, subtitles and other tracks with mkvextract and FFmpeg</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+159"/>
+        <location line="+16"/>
+        <source>开始抽流</source>
+        <translation>Start demuxing</translation>
+    </message>
+    <message>
+        <location line="-160"/>
+        <source>📌 媒体文件抽流 😇</source>
+        <translation>📌 Media demuxing 😇</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>提取视频文件中的各个轨道</source>
+        <translation>Extract tracks from media files</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>视频文件 ({extensions})</source>
+        <translation>Video files ({extensions})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有文件 (*)</source>
+        <translation>All files (*)</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>选择抽流文件</source>
+        <translation>Select files to demux</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>载入文件失败</source>
+        <translation>Could not load files</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>未检测到有效的媒体文件, 请重新选择</source>
+        <translation>No valid media files found. Please select files again.</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>选择输出文件夹</source>
+        <translation>Select output folder</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+12"/>
+        <source>注意</source>
+        <translation>Attention</translation>
+    </message>
+    <message>
+        <location line="-11"/>
+        <source>文件列表为空，或未选择任何需要抽取的轨道！</source>
+        <translation>No files loaded or no tracks selected for extraction.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>未设置输出目录，请选择输出路径或勾选&quot;使用源目录&quot;!</source>
+        <translation>Select an output folder or enable &quot;Use source folder&quot;.</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>正在执行中...</source>
+        <translation>Running...</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>任务执行成功</source>
+        <translation>Task started</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>抽流任务已开始执行，进入「任务进度」可查看详情</source>
+        <translation>Demuxing has started. Open Task progress to view the details.</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>执行失败</source>
+        <translation>Task failed</translation>
+    </message>
+</context>
+<context>
+    <name>DemuxProbeService</name>
+    <message>
+        <location filename="../../services/demuxing/demux_probe_service.py" line="+23"/>
+        <source>未找到 MediaInfo 程序文件，请检查工具设置</source>
+        <translation>MediaInfo was not found. Please check the tool settings.</translation>
+    </message>
+    <message>
+        <location line="+151"/>
+        <source>附件 {number}: {type} ({filename})</source>
+        <translation>Attachment {number}: {type} ({filename})</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>轨道 {number}: {type}({language}) {codec}{title} {default}</source>
+        <translation>Track {number}: {type}({language}) {codec}{title} {default}</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>轨道 {number}: {type}({language}) {codec} {resolution} {fps} {default}</source>
+        <translation>Track {number}: {type}({language}) {codec} {resolution} {fps} {default}</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>轨道 {number}: {type}({language}) {codec} {sampling_rate} {channels} {default}</source>
+        <translation>Track {number}: {type}({language}) {codec} {sampling_rate} {channels} {default}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>轨道 {number}: {type}({language}) {codec} {default}</source>
+        <translation>Track {number}: {type}({language}) {codec} {default}</translation>
+    </message>
+</context>
+<context>
+    <name>DemuxWorker</name>
+    <message>
+        <location filename="../../services/demuxing/demux_worker.py" line="+104"/>
+        <source>未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log</source>
+        <translation>mkvextract was not found. Please check the tool settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+84"/>
+        <source>未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log</source>
+        <translation>FFmpeg was not found. Please check the tool settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+213"/>
+        <source>处理时发生错误: {error}
+{traceback}</source>
+        <translation>An error occurred while processing: {error}
+{traceback}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+47"/>
+        <source>文件 [{filename}] 处理失败
+[可能因为]: {error}</source>
+        <translation>Failed to process [{filename}]
+Possible cause: {error}</translation>
+    </message>
+</context>
+<context>
     <name>ErrorService</name>
     <message>
         <location filename="../../services/error_service.py" line="+50"/>
@@ -22,7 +233,26 @@
         <translation>An unknown error occurred</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+11"/>
+        <source>{tool} 执行失败，无错误输出。请检查节点设置或查看日志</source>
+        <translation>{tool} failed without error output. Please check the settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>{tool} 执行失败，请检查节点设置或查看日志</source>
+        <translation>{tool} failed. Please check the settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>{error}
+
+详情请查看 logs/ame_run.log</source>
+        <translation>{error}
+
+See logs/ame_run.log for details.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>所选视频编码器不支持 10 bit, 请更换编码器或降低位深</source>
         <translation>The selected video encoder does not support 10-bit input. Choose another encoder or reduce the bit depth.</translation>
     </message>
@@ -298,6 +528,152 @@
         <source>全不选</source>
         <translation>Deselect all</translation>
     </message>
+    <message>
+        <location filename="../../components/demuxing_card_interface.py" line="+29"/>
+        <location filename="../../components/muxing_card_interface.py" line="-998"/>
+        <source>输入文件</source>
+        <translation>Input files</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <location filename="../../components/muxing_card_interface.py" line="+157"/>
+        <source>载入文件失败</source>
+        <translation>Could not load files</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>未检测到有效的媒体文件, 请重新选择</source>
+        <translation>No valid media files found. Please select files again.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>文件加载中……</source>
+        <translation>Loading file...</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>解析失败: {error}</source>
+        <translation>Could not read file: {error}</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+44"/>
+        <source>章节: %n 个条目</source>
+        <translation>
+            <numerusform>Chapters: %n entry</numerusform>
+            <numerusform>Chapters: %n entries</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>载入文件</source>
+        <comment>menu</comment>
+        <translation>Load files</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>全选所有项</source>
+        <translation>Select all items</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>取消选择</source>
+        <translation>Deselect all</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>反选</source>
+        <translation>Invert selection</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>移除已选文件</source>
+        <translation>Remove selected files</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>快速选择...</source>
+        <translation>Quick selection...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有视频</source>
+        <translation>All video tracks</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有音频</source>
+        <translation>All audio tracks</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有字幕</source>
+        <translation>All subtitle tracks</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有附件</source>
+        <translation>All attachments</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有章节</source>
+        <translation>All chapters</translation>
+    </message>
+    <message>
+        <location filename="../../components/muxing_card_interface.py" line="-140"/>
+        <source>文件名</source>
+        <translation>Filename</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>容器</source>
+        <translation>Container</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>文件大小</source>
+        <translation>File size</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>文件路径</source>
+        <translation>File path</translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <source>重置所有列</source>
+        <translation>Reset all columns</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>添加文件</source>
+        <translation>Add files</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>移除选中</source>
+        <translation>Remove selected files</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>清空列表</source>
+        <translation>Clear list</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>所支持的媒体文件 ({extensions});;所有文件 (*)</source>
+        <translation>Supported media files ({extensions});;All files (*)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>选择混流媒体文件</source>
+        <translation>Select files to mux</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <source>请选择支持的媒体文件进行混流</source>
+        <translation>Please select supported media files for muxing.</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -312,7 +688,17 @@
         <translation>Recoding</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+1"/>
+        <source>媒体抽流</source>
+        <translation>Demuxing</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>媒体混流</source>
+        <translation>Muxing</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>任务进度</source>
         <translation>Task progress</translation>
     </message>
@@ -565,9 +951,284 @@
     </message>
 </context>
 <context>
+    <name>MuxWorker</name>
+    <message>
+        <location filename="../../services/muxing/mux_worker.py" line="+72"/>
+        <source>不支持的封装格式: {container}</source>
+        <translation>Unsupported container: {container}</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>未找到 MkvMerge 可执行文件, 请检查相关设置或查看 log</source>
+        <translation>mkvmerge was not found. Please check the tool settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+108"/>
+        <source>任务已被用户取消</source>
+        <translation>The task was canceled by the user.</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <location line="+7"/>
+        <source>混流 (mkvmerge)</source>
+        <translation>Muxing (mkvmerge)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>混流失败 (code {code}):
+{error}</source>
+        <translation>Muxing failed (code {code}):
+{error}</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log</source>
+        <translation>FFmpeg was not found. Please check the tool settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>MP4 / MOV 至少需要一个可封装的视频或音频轨道</source>
+        <translation>MP4 / MOV requires at least one video or audio track.</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <location line="+3"/>
+        <source>混流 (FFmpeg)</source>
+        <translation>Muxing (FFmpeg)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>混流失败:
+{error}</source>
+        <translation>Muxing failed:
+{error}</translation>
+    </message>
+</context>
+<context>
+    <name>MuxingInterface</name>
+    <message>
+        <location filename="../../view/muxing_interface.py" line="+49"/>
+        <source>所支持的媒体文件 ({extensions});;所有文件 (*)</source>
+        <translation>Supported media files ({extensions});;All files (*)</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>媒体混流</source>
+        <translation>Muxing</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>使用 MkvMerge 和 FFMpeg 对各种媒体文件进行混流 封装成视频文件</source>
+        <translation>Mux media tracks into a video container with mkvmerge and FFmpeg</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+351"/>
+        <location line="+15"/>
+        <source>开始混流</source>
+        <translation>Start muxing</translation>
+    </message>
+    <message>
+        <location line="-354"/>
+        <source>📌 媒体文件混流 😇</source>
+        <translation>📌 Media muxing 😇</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>封装成视频</source>
+        <translation>Mux tracks into a video container</translation>
+    </message>
+    <message>
+        <location line="+65"/>
+        <source>选择混流媒体文件</source>
+        <translation>Select files to mux</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>载入文件失败</source>
+        <translation>Could not load files</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>请选择支持的媒体文件进行混流</source>
+        <translation>Please select supported media files for muxing.</translation>
+    </message>
+    <message>
+        <location line="+152"/>
+        <location line="+10"/>
+        <location line="+10"/>
+        <location line="+13"/>
+        <location line="+11"/>
+        <location line="+10"/>
+        <source>注意</source>
+        <translation>Attention</translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <source>MP4 / MOV 不会封装软字幕和章节，请关闭对应轨道。</source>
+        <translation>MP4 / MOV does not mux subtitle tracks or chapters here. Disable those tracks.</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>MP4 / MOV 仅支持一个视频轨和一个音频轨，请减少启用的轨道数量。</source>
+        <translation>MP4 / MOV supports one video track and one audio track here. Reduce the number of enabled tracks.</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>MP4 / MOV 至少需要启用一个视频轨或一个音频轨。</source>
+        <translation>Enable at least one video or audio track for MP4 / MOV.</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>语言标签 &quot;[{language}]&quot; 不合法, 请修改为合法 BCP 47 语言标签</source>
+        <translation>Invalid language tag &quot;[{language}]&quot;. Enter a valid BCP 47 language tag.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>请至少保留一个启用的轨道</source>
+        <translation>Keep at least one track enabled.</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>请确保输出路径和输入参数正确</source>
+        <translation>Please check the output path and input settings.</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>正在执行中...</source>
+        <translation>Running...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>任务执行成功</source>
+        <translation>Task started</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>混流任务已开始执行，进入「任务进度」可查看详情</source>
+        <translation>Muxing has started. Open Task progress to view the details.</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>运行错误</source>
+        <translation>Task failed</translation>
+    </message>
+</context>
+<context>
+    <name>MuxingOptionCard</name>
+    <message>
+        <location filename="../../components/demuxing_card_interface.py" line="+80"/>
+        <source>其他选项</source>
+        <translation>Other options</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>章节类型: </source>
+        <translation>Chapter format: </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>字幕去子集化</source>
+        <translation>Remove font subset prefixes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>提取时删除字幕中的子集化信息</source>
+        <translation>Remove font subset prefixes and metadata from extracted subtitles.</translation>
+    </message>
+</context>
+<context>
+    <name>OptionCard</name>
+    <message>
+        <location filename="../../components/muxing_card_interface.py" line="+514"/>
+        <source>选项与属性</source>
+        <translation>Options and properties</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>选择容器: </source>
+        <translation>Container: </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>启用附件</source>
+        <translation>Enable attachments</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>通用选项</source>
+        <translation>General options</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>启用轨道: </source>
+        <translation>Track enabled: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>是</source>
+        <translation>Yes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>否</source>
+        <translation>No</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>轨道名称: </source>
+        <translation>Track name: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>为轨道指定名称</source>
+        <translation>Set the track name</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>轨道语言: </source>
+        <translation>Language: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>为轨道指定语言代码,
+除指定预设语言可手动输入符合 IETF BCP 47 标准的语言代码</source>
+        <translation>Set the track language.
+Select a preset or enter an IETF BCP 47 language tag.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>轨道标记: </source>
+        <translation>Track flags: </translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>为轨道添加一个或多个标记, 让播放器识别
+默认无标记, 一般选择默认轨道或强制显示</source>
+        <translation>Add one or more track flags for the player.
+No flags are set by default; common choices are Default track and Forced display.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>压缩方法: </source>
+        <translation>Compression: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>自动决定</source>
+        <translation>Automatic</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>不做额外压缩</source>
+        <translation>No extra compression</translation>
+    </message>
+</context>
+<context>
     <name>OutputCard</name>
     <message>
         <location filename="../../components/recode_card_interface.py" line="+1079"/>
+        <location filename="../../components/demuxing_card_interface.py" line="+31"/>
         <source>输出设置</source>
         <translation>Output settings</translation>
     </message>
@@ -578,16 +1239,21 @@
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../../components/demuxing_card_interface.py" line="+11"/>
         <source>使用源目录</source>
         <translation>Use source folder</translation>
     </message>
     <message>
         <location line="+2"/>
+        <location filename="../../components/demuxing_card_interface.py" line="-3"/>
+        <location filename="../../components/muxing_card_interface.py" line="+111"/>
         <source>输出路径: </source>
-        <translation>Output folder: </translation>
+        <translation>Output path: </translation>
     </message>
     <message>
         <location line="+2"/>
+        <location filename="../../components/demuxing_card_interface.py" line="+5"/>
+        <location filename="../../components/muxing_card_interface.py" line="+3"/>
         <source>浏览</source>
         <translation>Browse</translation>
     </message>
@@ -595,6 +1261,16 @@
         <location line="+43"/>
         <source>选择输出目录</source>
         <translation>Select output folder</translation>
+    </message>
+    <message>
+        <location filename="../../components/muxing_card_interface.py" line="+23"/>
+        <source>选择输出文件</source>
+        <translation>Select output file</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Matroska 文件 (*.mkv *.mka *.mks);;MP4 文件 (*.mp4);;QuickTime Movie 文件 (*.mov);;所有文件 (*)</source>
+        <translation>Matroska files (*.mkv *.mka *.mks);;MP4 files (*.mp4);;QuickTime Movie files (*.mov);;All files (*)</translation>
     </message>
 </context>
 <context>
@@ -1348,6 +2024,145 @@ Possible cause: {error}</translation>
         <location line="+10"/>
         <source>强大的视频处理框架; 不影响软件的基本功能, 有需要请自行指定位置</source>
         <translation>Advanced video processing framework; optional for basic features. Set its path if needed</translation>
+    </message>
+</context>
+<context>
+    <name>TrackCard</name>
+    <message>
+        <location filename="../../components/muxing_card_interface.py" line="-682"/>
+        <source>确认轨道</source>
+        <translation>Tracks</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>编码格式</source>
+        <translation>Codec</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>类型</source>
+        <translation>Type</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>语言</source>
+        <translation>Language</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>名称</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>默认轨道</source>
+        <translation>Default track</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>属性</source>
+        <translation>Properties</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>输入文件</source>
+        <translation>Input files</translation>
+    </message>
+    <message>
+        <location line="+90"/>
+        <location line="+42"/>
+        <source>是</source>
+        <translation>Yes</translation>
+    </message>
+    <message>
+        <location line="-42"/>
+        <location line="+42"/>
+        <location line="+2"/>
+        <source>否</source>
+        <translation>No</translation>
+    </message>
+    <message>
+        <location line="-22"/>
+        <source>🎬 视频</source>
+        <translation>🎬 Video</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>🎧 音频</source>
+        <translation>🎧 Audio</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>📚 字幕</source>
+        <translation>📚 Subtitles</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>🔘 互动</source>
+        <translation>🔘 Buttons</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>📑 章节</source>
+        <translation>📑 Chapters</translation>
+    </message>
+    <message>
+        <location line="+84"/>
+        <source>重置所有列</source>
+        <translation>Reset all columns</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>全选行</source>
+        <translation>Select all rows</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>全部启用</source>
+        <translation>Enable all</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>全部禁用</source>
+        <translation>Disable all</translation>
+    </message>
+</context>
+<context>
+    <name>TrackFlags</name>
+    <message>
+        <location line="+284"/>
+        <source>默认轨道</source>
+        <translation>Default track</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>强制显示</source>
+        <translation>Forced display</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>听觉障碍</source>
+        <translation>Hearing impaired</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>视觉障碍</source>
+        <translation>Visual impaired</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>文字描述</source>
+        <translation>Text descriptions</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>原始语言</source>
+        <translation>Original language</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>评论轨道</source>
+        <translation>Commentary</translation>
     </message>
 </context>
 <context>

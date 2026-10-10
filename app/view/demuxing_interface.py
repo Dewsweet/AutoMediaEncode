@@ -30,7 +30,7 @@ class DeMuxingInterface(QWidget):
         self.Hbox = QWidget(self)
         self.HboxLayout = QHBoxLayout(self.Hbox)
 
-        self.header = HeaderWidget('媒体抽流', '使用 MkvExtract 和 FFMpeg 从视频文件中提取各种音频、视频、字幕流……', '开始抽流', self)
+        self.header = HeaderWidget(self.tr('媒体抽流'), self.tr('使用 MkvExtract 和 FFMpeg 从视频文件中提取各种音频、视频、字幕流……'), self.tr('开始抽流'), self)
         self.inputFilesCard = InputFilesCard(self)
         self.optionCard = MuxingOptionCard(self)
         self.outputCard = OutputCard(self)
@@ -45,7 +45,7 @@ class DeMuxingInterface(QWidget):
         self.loadPage.setObjectName('LoadPage')
         self.loadLayout = QVBoxLayout(self.loadPage)
 
-        self.loaderComponent = FileLoadInterface(self.file_filter, title="📌 媒体文件抽流 😇",desc="提取视频文件中的各个轨道", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(self.file_filter, title=self.tr("📌 媒体文件抽流 😇"),desc=self.tr("提取视频文件中的各个轨道"), parent=self.loadPage)
         self.loaderComponent.setFixedSize(360, 200)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
@@ -65,8 +65,8 @@ class DeMuxingInterface(QWidget):
         self.stackedWidget.setCurrentIndex(0)
 
     def _init_file_filter(self):
-        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in DEMUXING_EXTS) + ")"
-        all_ext = "所有文件 (*)"
+        v_ext = self.tr("视频文件 ({extensions})").format(extensions=" ".join(f"*{ext}" for ext in DEMUXING_EXTS))
+        all_ext = self.tr("所有文件 (*)")
         self.file_filter = f"{v_ext};;{all_ext}"
 
     def _connect_signals(self):
@@ -89,15 +89,15 @@ class DeMuxingInterface(QWidget):
         signalBus.taskExecutionEnded.connect(self._on_global_task_ended)
 
     def open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择抽流文件", "", self.file_filter)
+        files, _ = QFileDialog.getOpenFileNames(self, self.tr("选择抽流文件"), "", self.file_filter)
         if files:
             self.on_files_loaded(files)
 
     def on_files_loaded(self, files: list):
         if not files or Path(files[0]).suffix.lower() not in DEMUXING_EXTS:
             InfoBar.warning(
-                title='载入文件失败',
-                content='未检测到有效的媒体文件, 请重新选择',
+                title=self.tr('载入文件失败'),
+                content=self.tr('未检测到有效的媒体文件, 请重新选择'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -113,7 +113,7 @@ class DeMuxingInterface(QWidget):
             self.stackedWidget.setCurrentIndex(1)
 
     def choose_output_dir(self):
-        folder = QFileDialog.getExistingDirectory(self, "选择输出文件夹")
+        folder = QFileDialog.getExistingDirectory(self, self.tr("选择输出文件夹"))
         if folder:
             self.outputCard.output_path_lineEdit.setText(folder)
 
@@ -127,8 +127,8 @@ class DeMuxingInterface(QWidget):
         
         if not files:
             InfoBar.warning(
-                title='注意',
-                content='文件列表为空，或未选择任何需要抽取的轨道！',
+                title=self.tr('注意'),
+                content=self.tr('文件列表为空，或未选择任何需要抽取的轨道！'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -139,8 +139,8 @@ class DeMuxingInterface(QWidget):
 
         if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
             InfoBar.warning(
-                title='注意',
-                content='未设置输出目录，请选择输出路径或勾选"使用源目录"!',
+                title=self.tr('注意'),
+                content=self.tr('未设置输出目录，请选择输出路径或勾选"使用源目录"!'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -165,7 +165,7 @@ class DeMuxingInterface(QWidget):
         self._current_task_has_error = False
         self._current_task_is_finished = False
 
-        self.header.start_button.setText('正在执行中...')
+        self.header.start_button.setText(self.tr('正在执行中...'))
         self.header.start_button.setEnabled(False)
 
         signalBus.taskAdded.emit(payload)
@@ -177,8 +177,8 @@ class DeMuxingInterface(QWidget):
     def _check_task_start_success(self, task_id: str):
         if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):
             InfoBar.success(
-                title='任务执行成功',
-                content='抽流任务已开始执行，进入「任务进度」可查看详情',
+                title=self.tr('任务执行成功'),
+                content=self.tr('抽流任务已开始执行，进入「任务进度」可查看详情'),
                 orient=Qt.Horizontal,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=2000,
@@ -189,7 +189,7 @@ class DeMuxingInterface(QWidget):
         """侦听任务完成信号"""
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_is_finished = True
-            self.header.start_button.setText('开始抽流')
+            self.header.start_button.setText(self.tr('开始抽流'))
             self.header.start_button.setEnabled(True)
 
     def _on_global_task_started(self, task_id: str):
@@ -205,10 +205,10 @@ class DeMuxingInterface(QWidget):
         """侦听任务异常信号"""
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_has_error = True
-            self.header.start_button.setText('开始抽流')
+            self.header.start_button.setText(self.tr('开始抽流'))
             self.header.start_button.setEnabled(True)
             InfoBar.error(
-                title='执行失败',
+                title=self.tr('执行失败'),
                 content=error_msg,
                 orient=Qt.Horizontal,
                 isClosable=True,

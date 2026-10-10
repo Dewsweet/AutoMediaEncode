@@ -1,4 +1,4 @@
-﻿# coding: utf-8
+# coding: utf-8
 import time
 import bcp47
 from pathlib import Path
@@ -46,7 +46,7 @@ class MuxingInterface(QWidget):
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self._probe_workers = []
-        self.mux_ext_filter = "所支持的媒体文件 (" + " ".join(f"*{ext}" for ext in MUXING_EXTS ) + ");;所有文件 (*)"
+        self.mux_ext_filter = self.tr("所支持的媒体文件 ({extensions});;所有文件 (*)").format(extensions=" ".join(f"*{ext}" for ext in MUXING_EXTS))
 
         self._initWidget()
         self._loadPage()
@@ -55,7 +55,7 @@ class MuxingInterface(QWidget):
         StyleSheet.MUXING_INTERFACE.apply(self)
 
     def _initWidget(self):
-        self.header = HeaderWidget('媒体混流', '使用 MkvMerge 和 FFMpeg 对各种媒体文件进行混流 封装成视频文件', '开始混流', self)
+        self.header = HeaderWidget(self.tr('媒体混流'), self.tr('使用 MkvMerge 和 FFMpeg 对各种媒体文件进行混流 封装成视频文件'), self.tr('开始混流'), self)
         self.inputFilesCard = InputFilesCard(self)
         self.trackCard = TrackCard(self)
         self.optionCard = OptionCard(self)
@@ -67,7 +67,7 @@ class MuxingInterface(QWidget):
         self.loadPage = QWidget()
         self.loadPage.setObjectName('LoadPage')
         self.loadLayout = QVBoxLayout(self.loadPage)
-        self.loaderComponent = FileLoadInterface(self.mux_ext_filter, title="📌 媒体文件混流 😇",desc="封装成视频", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(self.mux_ext_filter, title=self.tr("📌 媒体文件混流 😇"),desc=self.tr("封装成视频"), parent=self.loadPage)
         self.loaderComponent.setFixedSize(360, 200)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
@@ -132,7 +132,7 @@ class MuxingInterface(QWidget):
         self.optionCard.containerCb.currentTextChanged.connect(lambda _: self._update_output_path())
 
     def open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择混流媒体文件", "", self.mux_ext_filter)
+        files, _ = QFileDialog.getOpenFileNames(self, self.tr("选择混流媒体文件"), "", self.mux_ext_filter)
         if files:
             self.on_files_loaded(files)
 
@@ -152,8 +152,8 @@ class MuxingInterface(QWidget):
     def on_files_loaded(self, files: list):
         if not files or Path(files[0]).suffix.lower() not in MUXING_EXTS:
             InfoBar.warning(
-                title='载入文件失败',
-                content='请选择支持的媒体文件进行混流',
+                title=self.tr('载入文件失败'),
+                content=self.tr('请选择支持的媒体文件进行混流'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 duration=3000,
@@ -253,7 +253,7 @@ class MuxingInterface(QWidget):
             type_item = self.trackCard.table.item(row, 1)
             
             if codec_item and codec_item.checkState() == Qt.Checked:
-                t_type = type_item.text() if type_item else ''
+                t_type = type_item.data(Qt.UserRole) if type_item else ''
                 if '视频' in t_type:
                     has_video = True
                 elif '音频' in t_type:
@@ -305,8 +305,8 @@ class MuxingInterface(QWidget):
         if target_container in ('mp4', 'mov'):
             if enabled_sub_tracks or has_chapter_tracks:
                 InfoBar.warning(
-                    title='注意',
-                    content='MP4 / MOV 不会封装软字幕和章节，请关闭对应轨道。',
+                    title=self.tr('注意'),
+                    content=self.tr('MP4 / MOV 不会封装软字幕和章节，请关闭对应轨道。'),
                     parent=self,
                     isClosable=False,
                     position=InfoBarPosition.TOP_RIGHT
@@ -315,8 +315,8 @@ class MuxingInterface(QWidget):
 
             if len(enabled_video_tracks) > 1 or len(enabled_audio_tracks) > 1:
                 InfoBar.warning(
-                    title='注意',
-                    content='MP4 / MOV 仅支持一个视频轨和一个音频轨，请减少启用的轨道数量。',
+                    title=self.tr('注意'),
+                    content=self.tr('MP4 / MOV 仅支持一个视频轨和一个音频轨，请减少启用的轨道数量。'),
                     parent=self,
                     isClosable=False,
                     position=InfoBarPosition.TOP_RIGHT
@@ -325,8 +325,8 @@ class MuxingInterface(QWidget):
 
             if len(enabled_video_tracks) + len(enabled_audio_tracks) == 0:
                 InfoBar.warning(
-                    title='注意',
-                    content='MP4 / MOV 至少需要启用一个视频轨或一个音频轨。',
+                    title=self.tr('注意'),
+                    content=self.tr('MP4 / MOV 至少需要启用一个视频轨或一个音频轨。'),
                     parent=self,
                     isClosable=False,
                     position=InfoBarPosition.TOP_RIGHT
@@ -338,8 +338,8 @@ class MuxingInterface(QWidget):
             language = track.get('language', '')
             if language.lower() != 'und' and not language in bcp47.tags:
                 InfoBar.warning(
-                    title='注意',
-                    content=f'语言标签 "[{language}]" 不合法, 请修改为合法 BCP 47 语言标签',
+                    title=self.tr('注意'),
+                    content=self.tr('语言标签 "[{language}]" 不合法, 请修改为合法 BCP 47 语言标签').format(language=language),
                     parent=self,
                     isClosable=False,
                     duration=3000,
@@ -349,8 +349,8 @@ class MuxingInterface(QWidget):
 
         if not input_files:
             InfoBar.warning(
-                title='注意', 
-                content='请至少保留一个启用的轨道', 
+                title=self.tr('注意'),
+                content=self.tr('请至少保留一个启用的轨道'),
                 parent=self, 
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT
@@ -359,8 +359,8 @@ class MuxingInterface(QWidget):
             
         if not output_state.get('output_path'):
             InfoBar.warning(
-                title='注意', 
-                content='请确保输出路径和输入参数正确', 
+                title=self.tr('注意'),
+                content=self.tr('请确保输出路径和输入参数正确'),
                 parent=self,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT
@@ -386,7 +386,7 @@ class MuxingInterface(QWidget):
         self._current_task_has_error = False
         self._current_task_is_finished = False
 
-        self.header.start_button.setText('正在执行中...')
+        self.header.start_button.setText(self.tr('正在执行中...'))
         self.header.start_button.setEnabled(False)
 
         signalBus.taskAdded.emit(payload)
@@ -395,8 +395,8 @@ class MuxingInterface(QWidget):
     def _check_task_start_success(self, task_id: str):
         if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):
             InfoBar.success(
-                title='任务执行成功',
-                content='混流任务已开始执行，进入「任务进度」可查看详情',
+                title=self.tr('任务执行成功'),
+                content=self.tr('混流任务已开始执行，进入「任务进度」可查看详情'),
                 orient=Qt.Horizontal,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=2000,
@@ -406,7 +406,7 @@ class MuxingInterface(QWidget):
     def on_task_finished(self, task_id: str):
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_is_finished = True
-            self.header.start_button.setText('开始混流')
+            self.header.start_button.setText(self.tr('开始混流'))
             self.header.start_button.setEnabled(True)
 
     def _on_global_task_started(self, task_id: str):
@@ -421,10 +421,10 @@ class MuxingInterface(QWidget):
     def on_task_error(self, task_id: str, error_msg: str):
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_has_error = True
-            self.header.start_button.setText('开始混流')
+            self.header.start_button.setText(self.tr('开始混流'))
             self.header.start_button.setEnabled(True)
             InfoBar.error(
-                title='运行错误',
+                title=self.tr('运行错误'),
                 content=error_msg,
                 orient=Qt.Horizontal,
                 isClosable=True,

@@ -55,14 +55,14 @@ class ErrorService:
     @classmethod
     def cli_error(cls, tool: str, stderr: str):
         """x264/x265/qaac/mkvmerge/vspipe 通用 CLI 错误提取
-        返回: 中文错误提示 + 关键原文片段
+        返回: 当前界面语言的错误提示 + 关键原文片段
         """
         if not stderr:
-            return f"{tool} 执行失败，无错误输出。请检查节点设置或查看日志"
+            return QCoreApplication.translate("ErrorService", "{tool} 执行失败，无错误输出。请检查节点设置或查看日志").format(tool=tool)
 
         lines = [l.strip() for l in stderr.splitlines() if l.strip()]
         if not lines:
-            return f"{tool} 执行失败，请检查节点设置或查看日志"
+            return QCoreApplication.translate("ErrorService", "{tool} 执行失败，请检查节点设置或查看日志").format(tool=tool)
 
         # 取最后 3 行作为关键错误
         tail = "\n".join(lines[-3:])
@@ -73,7 +73,7 @@ class ErrorService:
         else:
             # 未匹配到已知模式，截取最后 150 字符
             snippet = tail[-150:] if len(tail) > 150 else tail
-            return f"{snippet}\n\n详情请查看 logs/ame_run.log"
+            return QCoreApplication.translate("ErrorService", "{error}\n\n详情请查看 logs/ame_run.log").format(error=snippet)
 
     @classmethod
     def _match_hint(cls, text: str):

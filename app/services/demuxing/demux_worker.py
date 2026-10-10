@@ -101,7 +101,7 @@ class DemuxWorker(QThread):
         mkvextract_path = ToolService.get_tool_path('mkvextract')
         if not mkvextract_path:
             logger.error(f"[{task_id}] 未找到 MkvExtract 可执行文件, 停止运行")
-            signalBus.taskError.emit(task_id, "未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log")
+            signalBus.taskError.emit(task_id, self.tr("未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log"))
             self._has_error = True
             return
 
@@ -185,7 +185,7 @@ class DemuxWorker(QThread):
         ffmpeg_bin_path = ToolService.get_tool_path('ffmpeg')
         if not ffmpeg_bin_path:
             logger.error(f"[{task_id}] 未找到 ffmpeg 可执行文件, 停止运行")
-            signalBus.taskError.emit(task_id, "未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log")
+            signalBus.taskError.emit(task_id, self.tr("未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log"))
             self._has_error = True
             return
 
@@ -398,10 +398,10 @@ class DemuxWorker(QThread):
                 
         except Exception as e:
             if not self._is_cancelled:
-                error_msg = f"处理时发生错误: {str(e)}\n{traceback.format_exc()}"
+                error_msg = self.tr("处理时发生错误: {error}\n{traceback}").format(error=str(e), traceback=traceback.format_exc())
                 logger.error(error_msg)
                 main_error = ErrorService.cli_error("mkvextract", str(error_msg))
-                main_error_msg = f"文件 [{file_name}] 处理失败\n[可能因为]: {main_error}"
+                main_error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=file_name, error=main_error)
                 signalBus.taskError.emit(task_id, main_error_msg)
         finally:
             self._current_ff_process = None
@@ -448,7 +448,7 @@ class DemuxWorker(QThread):
                 err_msg = str(e)
                 logger.error(err_msg)
                 main_error = ErrorService.ffmpeg_error(err_msg)
-                error_msg = f"文件 [{file_name}] 处理失败\n[可能因为]: {main_error}"
+                error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=file_name, error=main_error)
                 signalBus.taskError.emit(task_id, error_msg)
         finally:
             self._current_ff_process = None

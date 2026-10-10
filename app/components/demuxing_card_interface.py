@@ -26,7 +26,7 @@ class InputFilesCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('输入文件')
+        self.setTitle(self.tr('输入文件'))
         self.probe_service = DemuxProbeService()
         self.setAcceptDrops(True)
 
@@ -60,8 +60,8 @@ class InputFilesCard(HeaderCardWidget):
         files = [u.toLocalFile() for u in event.mimeData().urls() if u.isLocalFile()]
         if not files or Path(files[0]).suffix.lower() not in DEMUXING_EXTS:
             InfoBar.warning(
-                title='载入文件失败',
-                content='未检测到有效的媒体文件, 请重新选择',
+                title=self.tr('载入文件失败'),
+                content=self.tr('未检测到有效的媒体文件, 请重新选择'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -82,7 +82,7 @@ class InputFilesCard(HeaderCardWidget):
             top_item.setData(0, Qt.UserRole, {"file_path": file_path})
             
             # 使用临时子节点显示加载中
-            loading_child = QTreeWidgetItem(["文件加载中……"])
+            loading_child = QTreeWidgetItem([self.tr("文件加载中……")])
             top_item.addChild(loading_child)
             
             self.inputFilesTree.addTopLevelItem(top_item)
@@ -103,7 +103,7 @@ class InputFilesCard(HeaderCardWidget):
             top_item.takeChild(0)
 
         if "error" in probe_data:
-            err_item = QTreeWidgetItem([f"解析失败: {probe_data['error']}"])
+            err_item = QTreeWidgetItem([self.tr("解析失败: {error}").format(error=probe_data["error"])])
             top_item.addChild(err_item)
             return
 
@@ -147,7 +147,7 @@ class InputFilesCard(HeaderCardWidget):
         # Chapters
         chapters_count = probe_data.get('chapters', 0)
         if chapters_count > 0:
-            child = QTreeWidgetItem([f"章节: {chapters_count} 个条目"])
+            child = QTreeWidgetItem([self.tr("章节: %n 个条目", None, chapters_count)])
             child.setCheckState(0, Qt.Unchecked)
             child.setData(0, Qt.UserRole, {"type": "chapter"})
             top_item.addChild(child)
@@ -155,19 +155,19 @@ class InputFilesCard(HeaderCardWidget):
     def show_context_menu(self, pos):
         mune = RoundMenu(parent=self)
 
-        load_action = Action('载入文件', triggered=lambda: self.load_files_requested.emit())
+        load_action = Action(self.tr('载入文件', 'menu'), triggered=lambda: self.load_files_requested.emit())
         
-        select_all = Action('全选所有项', triggered=self.select_all_items)
-        deselect_all = Action('取消选择', triggered=self.deselect_all_items)
-        invert_select = Action('反选', triggered=self.invert_all_items)
-        remove_selected = Action('移除已选文件', triggered=self.remove_selected_files)
+        select_all = Action(self.tr('全选所有项'), triggered=self.select_all_items)
+        deselect_all = Action(self.tr('取消选择'), triggered=self.deselect_all_items)
+        invert_select = Action(self.tr('反选'), triggered=self.invert_all_items)
+        remove_selected = Action(self.tr('移除已选文件'), triggered=self.remove_selected_files)
 
-        select_submune = RoundMenu("快速选择...", self)
-        select_video = Action('所有视频', triggered=lambda: self.select_by_type("video"))
-        select_audio = Action('所有音频', triggered=lambda: self.select_by_type("audio"))
-        select_sub = Action('所有字幕', triggered=lambda: self.select_by_type("subtitle"))
-        select_att = Action('所有附件', triggered=lambda: self.select_by_type("attachment"))
-        select_chapter = Action('所有章节', triggered=lambda: self.select_by_type("chapter"))
+        select_submune = RoundMenu(self.tr("快速选择..."), self)
+        select_video = Action(self.tr('所有视频'), triggered=lambda: self.select_by_type("video"))
+        select_audio = Action(self.tr('所有音频'), triggered=lambda: self.select_by_type("audio"))
+        select_sub = Action(self.tr('所有字幕'), triggered=lambda: self.select_by_type("subtitle"))
+        select_att = Action(self.tr('所有附件'), triggered=lambda: self.select_by_type("attachment"))
+        select_chapter = Action(self.tr('所有章节'), triggered=lambda: self.select_by_type("chapter"))
 
         select_submune.addActions([select_video, select_audio, select_sub, select_att, select_chapter])
 
@@ -247,7 +247,7 @@ class InputFilesCard(HeaderCardWidget):
 class MuxingOptionCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('其他选项')
+        self.setTitle(self.tr('其他选项'))
 
         self.mainBox = QWidget(self)
         self.mainLayout = QVBoxLayout(self.mainBox)
@@ -257,12 +257,12 @@ class MuxingOptionCard(HeaderCardWidget):
         # self.contextHLayout2 = QHBoxLayout()
         # self.contextHLayout3 = QHBoxLayout()
 
-        self.chapter_suffix_label = BodyLabel('章节类型: ')
+        self.chapter_suffix_label = BodyLabel(self.tr('章节类型: '))
         self.chapter_suffix_cb = ComboBox()
         self.chapter_suffix_cb.addItems(['XML', 'TXT'])
 
-        self.desubsetting_ckeackbox = CheckBox('字幕去子集化')
-        self.desubsetting_ckeackbox.setToolTip('提取时删除字幕中的子集化信息')
+        self.desubsetting_ckeackbox = CheckBox(self.tr('字幕去子集化'))
+        self.desubsetting_ckeackbox.setToolTip(self.tr('提取时删除字幕中的子集化信息'))
 
         # self.turehd_decore_ckeackbox = CheckBox('提取有损 Core')
 
@@ -293,7 +293,7 @@ class MuxingOptionCard(HeaderCardWidget):
 class OutputCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('输出设置')
+        self.setTitle(self.tr('输出设置'))
 
         self.mainBox = QWidget(self)
         self.mainLayout = QVBoxLayout(self.mainBox)
@@ -301,12 +301,12 @@ class OutputCard(HeaderCardWidget):
 
         self.OutputPathLayout = QHBoxLayout()
 
-        self.output_path_label = BodyLabel('输出路径: ')
+        self.output_path_label = BodyLabel(self.tr('输出路径: '))
         self.output_path_lineEdit = LineEdit()
 
-        self.using_source_dir_checkbox = CheckBox('使用源目录')
+        self.using_source_dir_checkbox = CheckBox(self.tr('使用源目录'))
         self.using_source_dir_checkbox.stateChanged.connect(self.on_using_source_dir_changed)
-        self.output_path_view_button = PushButton('浏览')
+        self.output_path_view_button = PushButton(self.tr('浏览'))
 
         self.OutputPathLayout.addWidget(self.output_path_label)
         self.OutputPathLayout.addWidget(self.output_path_lineEdit)

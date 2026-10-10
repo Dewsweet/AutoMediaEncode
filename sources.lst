@@ -16,3 +16,10 @@ app/components/task_card_interface.py
 app/components/hearder_widget.py
 app/services/recode/recode_worker.py
 app/services/error_service.py
+app/view/demuxing_interface.py
+app/view/muxing_interface.py
+app/components/demuxing_card_interface.py
+app/components/muxing_card_interface.py
+app/services/demuxing/demux_probe_service.py
+app/services/demuxing/demux_worker.py
+app/services/muxing/mux_worker.py

@@ -110,8 +110,8 @@ class MainWindow(FluentWindow):
         # 添加子页面到侧边导航栏
         self.addSubInterface(self.mediaInfoInterface, FIF.INFO, self.tr('媒体信息'))
         self.addSubInterface(self.recodeInterface, FIF.VIDEO, self.tr('媒体重编码'))
-        self.addSubInterface(self.demuxingInterface, FIF.MOVIE, '媒体抽流')
-        self.addSubInterface(self.muxingInterface, FIF.MEDIA, '媒体混流')
+        self.addSubInterface(self.demuxingInterface, FIF.MOVIE, self.tr('媒体抽流'))
+        self.addSubInterface(self.muxingInterface, FIF.MEDIA, self.tr('媒体混流'))
         self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME 工作流')
 
         self.addSubInterface(self.taskInterface, FIF.DATE_TIME, self.tr('任务进度'), NavigationItemPosition.BOTTOM)

@@ -2,11 +2,16 @@ import re
 from pathlib import Path
 from typing import Dict, List, Any
 from pymediainfo import MediaInfo
+from PySide6.QtCore import QCoreApplication
 
 from app.services.tool_service import ToolService
 from app.services.mediainfo_service import parse_media_info
 
 class DemuxProbeService:
+    @staticmethod
+    def tr(text, disambiguation=None, n=-1):
+        return QCoreApplication.translate("DemuxProbeService", text, disambiguation, n)
+
     def __init__(self):
         self.mi_path = ToolService.get_tool_path('mediainfo')
 
@@ -15,7 +20,7 @@ class DemuxProbeService:
         运行 MediaInfo 获取 媒体文件信息，并解析出轨道、章节等结构化数据。
         """
         if not self.mi_path:
-            return {"error": "mediainfo not found"}
+            return {"error": self.tr("未找到 MediaInfo 程序文件，请检查工具设置")}
             
         file_path_str = str(file_path)
         try:
@@ -166,19 +171,19 @@ class DemuxProbeService:
                 attach_type = "image"
             else:
                 attach_type = ext
-            return f"附件 {track_number}: {attach_type} ({filename})"
+            return self.tr("附件 {number}: {type} ({filename})").format(number=track_number, type=attach_type, filename=filename)
             
         elif s_type == "Subtitle":
-            return f"轨道 {track_number}: {s_type}({lang}) {codec}{title_str} {is_default_str}".strip()
+            return self.tr("轨道 {number}: {type}({language}) {codec}{title} {default}").format(number=track_number, type=s_type, language=lang, codec=codec, title=title_str, default=is_default_str).strip()
             
         elif s_type == "Video":
             res_str = stream_dict.get("res_str", "")
             fps_str = stream_dict.get("fps_str", "")
-            return f"轨道 {track_number}: {s_type}({lang}) {codec} {res_str} {fps_str} {is_default_str}".strip()
+            return self.tr("轨道 {number}: {type}({language}) {codec} {resolution} {fps} {default}").format(number=track_number, type=s_type, language=lang, codec=codec, resolution=res_str, fps=fps_str, default=is_default_str).strip()
             
         elif s_type == "Audio":
             hz_str = stream_dict.get("hz_str", "")
             ch_str = stream_dict.get("ch_str", "")
-            return f"轨道 {track_number}: {s_type}({lang}) {codec} {hz_str} {ch_str} {is_default_str}".strip()
+            return self.tr("轨道 {number}: {type}({language}) {codec} {sampling_rate} {channels} {default}").format(number=track_number, type=s_type, language=lang, codec=codec, sampling_rate=hz_str, channels=ch_str, default=is_default_str).strip()
 
-        return f"轨道 {track_number}: {s_type}({lang}) {codec} {is_default_str}".strip()
+        return self.tr("轨道 {number}: {type}({language}) {codec} {default}").format(number=track_number, type=s_type, language=lang, codec=codec, default=is_default_str).strip()

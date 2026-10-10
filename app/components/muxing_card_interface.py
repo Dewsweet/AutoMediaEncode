@@ -1,7 +1,7 @@
-﻿# coding: utf-8
+# coding: utf-8
 import os
 from pathlib import Path
-from PySide6.QtCore import Qt, Signal, QSettings
+from PySide6.QtCore import Qt, Signal, QSettings, QCoreApplication, QT_TRANSLATE_NOOP
 from PySide6.QtGui import QIcon, QShortcut, QKeySequence
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView, QCompleter, QFileDialog
 
@@ -17,7 +17,7 @@ class InputFilesCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('输入文件')
+        self.setTitle(self.tr('输入文件'))
         self.setAcceptDrops(True)
 
         self.loaded_files = [] # 记录当前已加载的绝对路径防复复
@@ -34,7 +34,7 @@ class InputFilesCard(HeaderCardWidget):
         self.table.setColumnCount(4) 
         self.table.setRowCount(0)
 
-        self.table.setHorizontalHeaderLabels(["文件名", "容器", "文件大小", "文件路径"])
+        self.table.setHorizontalHeaderLabels([self.tr("文件名"), self.tr("容器"), self.tr("文件大小"), self.tr("文件路径")])
         self.table.setColumnWidth(0, 200)
         self.table.setColumnWidth(1, 110)
         self.table.setColumnWidth(2, 100)
@@ -78,7 +78,7 @@ class InputFilesCard(HeaderCardWidget):
     def show_header_menu(self, pos):
         menu = CheckableMenu(parent=self)
         
-        reset_action = Action("重置所有列", self)
+        reset_action = Action(self.tr("重置所有列"), self)
         reset_action.triggered.connect(self.reset_columns)
         menu.addAction(reset_action)
         menu.addSeparator()
@@ -111,17 +111,17 @@ class InputFilesCard(HeaderCardWidget):
 
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
-        add_files_action = Action(FIF.ADD, "添加文件", self, triggered=self.on_add_files_clicked)
+        add_files_action = Action(FIF.ADD, self.tr("添加文件"), self, triggered=self.on_add_files_clicked)
         
-        remove_file_action = Action(FIF.REMOVE, "移除选中", self, triggered=self.on_remove_selected_files)
-        remove_all_action = Action("清空列表", self, triggered=self.on_clear_files)
+        remove_file_action = Action(FIF.REMOVE, self.tr("移除选中"), self, triggered=self.on_remove_selected_files)
+        remove_all_action = Action(self.tr("清空列表"), self, triggered=self.on_clear_files)
         
         menu.addActions([add_files_action, remove_file_action, remove_all_action])
         menu.exec(self.table.viewport().mapToGlobal(pos))
 
     def on_add_files_clicked(self, clear_previous: bool = False):
-        mux_ext_filter = "所支持的媒体文件 (" + " ".join(f"*{ext}" for ext in MUXING_EXTS ) + ");;所有文件 (*)"
-        file_paths, _ = QFileDialog.getOpenFileNames(self, "选择混流媒体文件", "", mux_ext_filter)
+        mux_ext_filter = self.tr("所支持的媒体文件 ({extensions});;所有文件 (*)").format(extensions=" ".join(f"*{ext}" for ext in MUXING_EXTS))
+        file_paths, _ = QFileDialog.getOpenFileNames(self, self.tr("选择混流媒体文件"), "", mux_ext_filter)
         if file_paths:
             if clear_previous:
                 self.on_clear_files()
@@ -174,9 +174,9 @@ class InputFilesCard(HeaderCardWidget):
                 
         if invalid_files:
             InfoBar.warning(
-                title="载入文件失败",
+                title=self.tr("载入文件失败"),
                 # content=f"已过滤 {len(invalid_files)} 个不在混流支持列表中的文件。",
-                content="请选择支持的媒体文件进行混流",
+                content=self.tr("请选择支持的媒体文件进行混流"),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -216,14 +216,14 @@ class TrackCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('确认轨道')
+        self.setTitle(self.tr('确认轨道'))
 
         self.mainBox = QWidget(self)
         self.mainLayout = QVBoxLayout(self.mainBox)
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
         self.table = TableWidget(self)
-        self.hearderItems = ['编码格式', '类型', '语言', '名称', 'ID', '默认轨道', '属性', '输入文件']
+        self.hearderItems = [self.tr('编码格式'), self.tr('类型'), self.tr('语言'), self.tr('名称'), 'ID', self.tr('默认轨道'), self.tr('属性'), self.tr('输入文件')]
 
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setWordWrap(False)  # 禁止自动换行，保持单行显示
@@ -232,10 +232,10 @@ class TrackCard(HeaderCardWidget):
         self.table.setHorizontalHeaderLabels(self.hearderItems)
         self.table.setColumnWidth(0, 115)
         self.table.setColumnWidth(1, 95)
-        self.table.setColumnWidth(2, 65)
+        self.table.setColumnWidth(2, 85)
         self.table.setColumnWidth(3, 100)
         self.table.setColumnWidth(4, 30)
-        self.table.setColumnWidth(5, 65)
+        self.table.setColumnWidth(5, 100)
         self.table.setColumnWidth(6, 150)
         self.table.setColumnWidth(7, 180)
 
@@ -289,7 +289,7 @@ class TrackCard(HeaderCardWidget):
         enabled = self.table.item(row, 0).checkState() == Qt.Checked
         language = self.table.item(row, 2).text()
         name = self.table.item(row, 3).text()
-        is_default = self.table.item(row, 5).text() == "是"
+        is_default = bool(self.table.item(row, 5).data(Qt.UserRole))
         
         flags_data = self.table.item(row, 0).data(Qt.UserRole + 1)
         flags = flags_data if flags_data is not None else []
@@ -312,7 +312,9 @@ class TrackCard(HeaderCardWidget):
             if item: item.setText(str(value))
         elif key == 'is_default':
             item = self.table.item(row, 5)
-            if item: item.setText("是" if value else "否")
+            if item:
+                item.setText(self.tr("是") if value else self.tr("否"))
+                item.setData(Qt.UserRole, bool(value))
         elif key == 'flags':
             item = self.table.item(row, 0)
             if item: item.setData(Qt.UserRole + 1, value)
@@ -333,11 +335,11 @@ class TrackCard(HeaderCardWidget):
             
             # 类型转emoji
             type_str = t_type
-            if t_type == 'video': type_str = '🎬 视频'
-            elif t_type == 'audio': type_str = '🎧 音频'
-            elif t_type == 'subtitles': type_str = '📚 字幕'
-            elif t_type == 'buttons': type_str = '🔘 互动'
-            elif t_type == 'chapters': type_str = '📑 章节'
+            if t_type == 'video': type_str = QT_TRANSLATE_NOOP("TrackCard", '🎬 视频')
+            elif t_type == 'audio': type_str = QT_TRANSLATE_NOOP("TrackCard", '🎧 音频')
+            elif t_type == 'subtitles': type_str = QT_TRANSLATE_NOOP("TrackCard", '📚 字幕')
+            elif t_type == 'buttons': type_str = QT_TRANSLATE_NOOP("TrackCard", '🔘 互动')
+            elif t_type == 'chapters': type_str = QT_TRANSLATE_NOOP("TrackCard", '📑 章节')
             
             # 属性信息拼接
             props_str = ""
@@ -353,9 +355,9 @@ class TrackCard(HeaderCardWidget):
             name = prop.get('track_name', '')
             if name is None: name = ''
             t_id = str(track.get('id', ''))
-            is_default = '是' if prop.get('default_track') else '否'
+            is_default = self.tr('是') if prop.get('default_track') else self.tr('否')
             if t_type == 'chapters':
-                is_default = '否'
+                is_default = self.tr('否')
                 lang = ''
             
             codec_item = QTableWidgetItem(f"{color_emoji} {codec}")
@@ -365,11 +367,13 @@ class TrackCard(HeaderCardWidget):
             init_flags = ['默认轨道'] if prop.get('default_track') else []
             codec_item.setData(Qt.UserRole + 1, init_flags) # 隐式存储 flags 数据
             
-            type_item = QTableWidgetItem(type_str)
+            type_item = QTableWidgetItem(QCoreApplication.translate("TrackCard", type_str))
+            type_item.setData(Qt.UserRole, type_str)
             lang_item = QTableWidgetItem(lang)
             name_item = QTableWidgetItem(name)
             id_item = QTableWidgetItem(t_id)
             default_item = QTableWidgetItem(is_default)
+            default_item.setData(Qt.UserRole, bool(prop.get("default_track")) and t_type != "chapters")
             props_item = QTableWidgetItem(props_str)
             file_item = QTableWidgetItem(file_name)
             
@@ -391,7 +395,7 @@ class TrackCard(HeaderCardWidget):
                 row_items.append(self.table.takeItem(row, col))
             all_rows.append(row_items)
             
-        all_rows.sort(key=lambda items: _get_type_order(items[1].text()) if items[1] else 4)
+        all_rows.sort(key=lambda items: _get_type_order(items[1].data(Qt.UserRole)) if items[1] else 4)
         
         self.table.setRowCount(0)
         for row_items in all_rows:
@@ -419,7 +423,7 @@ class TrackCard(HeaderCardWidget):
     def show_header_menu(self, pos):
         menu = CheckableMenu(parent=self)
         
-        reset_action = Action("重置所有列", self)
+        reset_action = Action(self.tr("重置所有列"), self)
         reset_action.triggered.connect(self.reset_columns)
         menu.addAction(reset_action)
         menu.addSeparator()
@@ -446,17 +450,17 @@ class TrackCard(HeaderCardWidget):
             self.header.moveSection(current_visual_index, logical_index)
         self.table.setColumnWidth(0, 115)
         self.table.setColumnWidth(1, 95)
-        self.table.setColumnWidth(2, 65)
+        self.table.setColumnWidth(2, 85)
         self.table.setColumnWidth(3, 100)
         self.table.setColumnWidth(4, 30)
-        self.table.setColumnWidth(5, 65)
+        self.table.setColumnWidth(5, 100)
         self.table.setColumnWidth(6, 150)
         self.table.setColumnWidth(7, 180)
         self._save_table_state()
 
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
-        select_all_action = Action("全选行", self, triggered=self.table.selectAll)
+        select_all_action = Action(self.tr("全选行"), self, triggered=self.table.selectAll)
 
         # submenu = RoundMenu("快速选择", self)
         # select_video_action = Action("所有视频", self, triggered=lambda: self._select_tracks_by_type("视频"))
@@ -464,8 +468,8 @@ class TrackCard(HeaderCardWidget):
         # select_subtitle_action = Action("所有字幕", self, triggered=lambda: self._select_tracks_by_type("字幕"))
         # submenu.addActions([select_video_action, select_audio_action, select_subtitle_action])
         
-        enabel_all_action = Action("全部启用", self, triggered=lambda: self._set_all_checked(True))
-        disable_all_action = Action("全部禁用", self, triggered=lambda: self._set_all_checked(False))
+        enabel_all_action = Action(self.tr("全部启用"), self, triggered=lambda: self._set_all_checked(True))
+        disable_all_action = Action(self.tr("全部禁用"), self, triggered=lambda: self._set_all_checked(False))
         menu.addAction(select_all_action)
         # menu.addMenu(submenu)
         menu.addActions([enabel_all_action, disable_all_action])
@@ -496,7 +500,7 @@ class TrackCard(HeaderCardWidget):
                 continue
 
             file_path = self.table.item(row, 0).data(Qt.UserRole)
-            t_type = self.table.item(row, 1).text()
+            t_type = self.table.item(row, 1).data(Qt.UserRole)
             if '章节' in t_type:
                 if Path(file_path).suffix.lower() in {'.txt', '.xml'}:
                     chapter_files.append(file_path)
@@ -512,7 +516,7 @@ class TrackCard(HeaderCardWidget):
             language = self.table.item(row, 2).text()
             name = self.table.item(row, 3).text()
             t_id = self.table.item(row, 4).text()
-            is_default = self.table.item(row, 5).text() == "是"
+            is_default = bool(self.table.item(row, 5).data(Qt.UserRole))
             flags = self.table.item(row, 0).data(Qt.UserRole + 1) or []
 
             track_info = {
@@ -567,12 +571,13 @@ class OptionGroupBox(QWidget):
 class DynamicComboList(QWidget):
     valueChanged = Signal(list) # 当内部值发生变化时发送
 
-    def __init__(self, parent=None, items:list=[], text:str='', desc:str=''):
+    def __init__(self, parent=None, items:list=[], text:str='', desc:str='', translation_context:str | None=None):
         super().__init__(parent)
         self.vLayout = QVBoxLayout(self)
         self.vLayout.setContentsMargins(0, 0, 0, 0)
 
         self.options = items
+        self.translation_context = translation_context
         self.label_text = text
         self.desc = desc
         self._add_initial_row()
@@ -593,7 +598,9 @@ class DynamicComboList(QWidget):
 
         combo = ComboBox()
         combo.setToolTip(self.desc)
-        combo.addItems(self.options)
+        for value in self.options:
+            text = QCoreApplication.translate(self.translation_context, value) if self.translation_context else value
+            combo.addItem(text, userData=value)
         combo.currentTextChanged.connect(lambda: self.valueChanged.emit(self.get_values()))
         hLayout.addWidget(combo, 1)
 
@@ -656,7 +663,7 @@ class DynamicComboList(QWidget):
         combos = self.findChildren(ComboBox)
         if combos and values[0] in self.options:
             combos[0].blockSignals(True)
-            combos[0].setCurrentText(values[0])
+            combos[0].setCurrentIndex(combos[0].findData(values[0]))
             combos[0].blockSignals(False)
             
         for val in values[1:]:
@@ -665,7 +672,7 @@ class DynamicComboList(QWidget):
                 new_combos = self.findChildren(ComboBox)
                 if new_combos:
                     new_combos[-1].blockSignals(True)
-                    new_combos[-1].setCurrentText(val)
+                    new_combos[-1].setCurrentIndex(new_combos[-1].findData(val))
                     new_combos[-1].blockSignals(False)
         
         self.blockSignals(False)
@@ -674,8 +681,8 @@ class DynamicComboList(QWidget):
     def get_values(self):
         values = []
         for combo in self.findChildren(ComboBox):
-            if combo.currentText() and combo.currentText().strip():
-                values.append(combo.currentText())
+            if combo.currentData():
+                values.append(combo.currentData())
         return values
     
 class OptionCard(HeaderCardWidget):
@@ -683,7 +690,7 @@ class OptionCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle("选项与属性")
+        self.setTitle(self.tr("选项与属性"))
 
         self._is_updating = False # 防止双向绑定更新死循环
         self.is_mkv = True
@@ -708,11 +715,11 @@ class OptionCard(HeaderCardWidget):
         self.containerLayout = QHBoxLayout()
         self.containerLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.containerLabel = BodyLabel('选择容器: ', self)
+        self.containerLabel = BodyLabel(self.tr('选择容器: '), self)
         self.containerCb = ComboBox()
         self.containerCb.addItems(['MKV', 'MP4', 'MOV'])
 
-        self.enable_attachment_checkbox = CheckBox('启用附件', self)
+        self.enable_attachment_checkbox = CheckBox(self.tr('启用附件'), self)
         self.separator = HorizontalSeparator(self)
 
         self.containerLayout.addWidget(self.containerLabel)
@@ -726,31 +733,34 @@ class OptionCard(HeaderCardWidget):
         self.go_hLayout4 = QHBoxLayout()
         self.go_hLayout5 = QHBoxLayout()
 
-        self.general_options_group = OptionGroupBox('通用选项', self)
+        self.general_options_group = OptionGroupBox(self.tr('通用选项'), self)
 
-        self.track_enabled_label = BodyLabel('启用轨道: ', self)
+        self.track_enabled_label = BodyLabel(self.tr('启用轨道: '), self)
         self.track_enabled_cb = ComboBox()
-        self.track_enabled_cb.addItems(['是', '否'])
+        self.track_enabled_cb.addItem(self.tr("是"), userData=True)
+        self.track_enabled_cb.addItem(self.tr("否"), userData=False)
 
-        self.track_name_label = BodyLabel('轨道名称: ', self)
+        self.track_name_label = BodyLabel(self.tr('轨道名称: '), self)
         self.track_name_lineEdit = LineEdit()
-        self.track_name_lineEdit.setToolTip('为轨道指定名称')
+        self.track_name_lineEdit.setToolTip(self.tr('为轨道指定名称'))
 
-        self.track_language_label = BodyLabel('轨道语言: ', self)
+        self.track_language_label = BodyLabel(self.tr('轨道语言: '), self)
         self.track_language_lineEdit = EditableComboBox()
-        self.track_language_lineEdit.setToolTip('为轨道指定语言代码, \n除指定预设语言可手动输入符合 IETF BCP 47 标准的语言代码')
+        self.track_language_lineEdit.setToolTip(self.tr('为轨道指定语言代码,\n除指定预设语言可手动输入符合 IETF BCP 47 标准的语言代码'))
         self.language_items = ['und', 'zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'ru']
         self.track_language_lineEdit.addItems(self.language_items)
         self.language_completer = QCompleter(self.language_items, self.track_language_lineEdit)
         self.language_completer.setMaxVisibleItems(3)
         self.track_language_lineEdit.setCompleter(self.language_completer)
 
-        self.flag_Items = ['', '默认轨道', '强制显示', '听觉障碍', '视觉障碍', '文字描述', '原始语言', '评论轨道']
-        self.track_flag = DynamicComboList(items=self.flag_Items, text='轨道标记: ', desc='为轨道添加一个或多个标记, 让播放器识别\n默认无标记, 一般选择默认轨道或强制显示')
+        self.flag_Items = ['', QT_TRANSLATE_NOOP("TrackFlags", '默认轨道'), QT_TRANSLATE_NOOP("TrackFlags", '强制显示'), QT_TRANSLATE_NOOP("TrackFlags", '听觉障碍'), QT_TRANSLATE_NOOP("TrackFlags", '视觉障碍'), QT_TRANSLATE_NOOP("TrackFlags", '文字描述'), QT_TRANSLATE_NOOP("TrackFlags", '原始语言'), QT_TRANSLATE_NOOP("TrackFlags", '评论轨道')]
+        self.track_flag = DynamicComboList(items=self.flag_Items, translation_context="TrackFlags", text=self.tr('轨道标记: '), desc=self.tr('为轨道添加一个或多个标记, 让播放器识别\n默认无标记, 一般选择默认轨道或强制显示'))
 
-        self.compression_method = BodyLabel('压缩方法: ', self)
+        self.compression_method = BodyLabel(self.tr('压缩方法: '), self)
         self.compression_method_cb = ComboBox()
-        self.compression_method_cb.addItems(['自动决定', '不做额外压缩', 'zlib'])
+        self.compression_method_cb.addItem(self.tr("自动决定"), userData="自动决定")
+        self.compression_method_cb.addItem(self.tr("不做额外压缩"), userData="不做额外压缩")
+        self.compression_method_cb.addItem("zlib", userData="zlib")
         
 
         self.go_hLayout1.addWidget(self.track_enabled_label)
@@ -789,7 +799,7 @@ class OptionCard(HeaderCardWidget):
         self.containerCb.currentTextChanged.connect(self._on_container_changed) 
         
         # 联动 TrackCard 的基本修改
-        self.track_enabled_cb.currentTextChanged.connect(lambda t: self._emit_option_changed('enabled', t == '是'))
+        self.track_enabled_cb.currentTextChanged.connect(lambda _: self._emit_option_changed('enabled', self.track_enabled_cb.currentData()))
         self.track_name_lineEdit.textChanged.connect(lambda t: self._emit_option_changed('name', t))
         self.track_language_lineEdit.currentTextChanged.connect(lambda t: self._emit_option_changed('language', t))
         self.track_flag.valueChanged.connect(self._on_track_flag_changed)
@@ -831,7 +841,7 @@ class OptionCard(HeaderCardWidget):
         """外部调用：根据当前选中的单条轨道填充通用选项"""
         self._is_updating = True
         
-        self.track_enabled_cb.setCurrentText('是' if enabled else '否')
+        self.track_enabled_cb.setCurrentIndex(0 if enabled else 1)
         self.track_name_lineEdit.setText(name)
         self.track_language_lineEdit.setText(language)
         
@@ -860,10 +870,10 @@ class OutputCard(SimpleCardWidget):
 
         self.OutputPathLayout = QHBoxLayout()
 
-        self.output_path_label = BodyLabel('输出路径: ')
+        self.output_path_label = BodyLabel(self.tr('输出路径: '))
         self.output_path_lineEdit = LineEdit()
 
-        self.output_path_view_button = PushButton('浏览')
+        self.output_path_view_button = PushButton(self.tr('浏览'))
 
         self.OutputPathLayout.addWidget(self.output_path_label)
         self.OutputPathLayout.addWidget(self.output_path_lineEdit)
@@ -886,9 +896,9 @@ class OutputCard(SimpleCardWidget):
         
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "选择输出文件",
+            self.tr("选择输出文件"),
             default_dir or current_path,
-            "Matroska 文件 (*.mkv *.mka *.mks);;MP4 文件 (*.mp4);;QuickTime Movie 文件 (*.mov);;所有文件 (*)"
+            self.tr("Matroska 文件 (*.mkv *.mka *.mks);;MP4 文件 (*.mp4);;QuickTime Movie 文件 (*.mov);;所有文件 (*)")
         )
         if file_path:
             self.output_path_lineEdit.setText(file_path)
@@ -909,7 +919,7 @@ class OutputCard(SimpleCardWidget):
 class AttachmentCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle("添加附件")
+        self.setTitle(self.tr("添加附件"))
         self.setAcceptDrops(True)
         
         self.mainBox = QWidget()
@@ -922,7 +932,7 @@ class AttachmentCard(HeaderCardWidget):
         self.table.setColumnCount(3)
         self.table.setRowCount(0)
         
-        self.table.setHorizontalHeaderLabels(["附件名", "大小", "目录"])
+        self.table.setHorizontalHeaderLabels([self.tr("附件名"), self.tr("大小"), self.tr("目录")])
         self.table.setColumnWidth(0, 300)
         self.table.setColumnWidth(1, 100)
         self.table.setColumnWidth(2, 400)
@@ -939,11 +949,11 @@ class AttachmentCard(HeaderCardWidget):
         
     def show_content_menu(self, pos):
         menu = RoundMenu(parent=self)
-        add_files_action = Action(FIF.ADD, "添加附件", self, triggered=self.on_add_attachments)
-        enable_action = Action(FIF.ACCEPT, "启用所选附件", self, triggered=self.on_enable_selected)
-        disable_action = Action(FIF.CANCEL, "禁用所选附件", self, triggered=self.on_disable_selected)
-        remove_file_action = Action(FIF.REMOVE, "移除选择附件", self, triggered=self.on_remove_selected)
-        remove_all_action = Action("移除所有附件", self, triggered=self.on_clear_attachments)
+        add_files_action = Action(FIF.ADD, self.tr("添加附件"), self, triggered=self.on_add_attachments)
+        enable_action = Action(FIF.ACCEPT, self.tr("启用所选附件"), self, triggered=self.on_enable_selected)
+        disable_action = Action(FIF.CANCEL, self.tr("禁用所选附件"), self, triggered=self.on_disable_selected)
+        remove_file_action = Action(FIF.REMOVE, self.tr("移除选择附件"), self, triggered=self.on_remove_selected)
+        remove_all_action = Action(self.tr("移除所有附件"), self, triggered=self.on_clear_attachments)
         
         menu.addActions([add_files_action, enable_action, disable_action, remove_file_action, remove_all_action])
         menu.exec(self.table.viewport().mapToGlobal(pos))
@@ -971,7 +981,7 @@ class AttachmentCard(HeaderCardWidget):
         self.table.setRowCount(0)
 
     def on_add_attachments(self):
-        file_paths, _ = QFileDialog.getOpenFileNames(self, "选择附件文件", "", "Attachment Files (*.ttf *.otf *.png *.jpg *.jpeg *.xml);;All Files (*)")
+        file_paths, _ = QFileDialog.getOpenFileNames(self, self.tr("选择附件文件"), "", "Attachment Files (*.ttf *.otf *.png *.jpg *.jpeg *.xml);;All Files (*)")
         if file_paths:
             self._add_files_to_table(file_paths)
 
@@ -1005,7 +1015,8 @@ class AttachmentCard(HeaderCardWidget):
             name_item.setCheckState(Qt.CheckState.Checked)
             
             size_item = QTableWidgetItem(size_str)
-            path_item = QTableWidgetItem("内置附件")
+            path_item = QTableWidgetItem(self.tr("内置附件"))
+            path_item.setData(Qt.UserRole, True)
             
             for col, item in enumerate([name_item, size_item, path_item]):
                 if col == 0:
@@ -1054,6 +1065,6 @@ class AttachmentCard(HeaderCardWidget):
             if self.table.item(row, 0).checkState() == Qt.Checked:
                 name = self.table.item(row, 0).text()
                 directory = self.table.item(row, 2).text()
-                if directory != "内置附件":
+                if not self.table.item(row, 2).data(Qt.UserRole):
                     attachments.append(str(Path(directory) / name))
         return {'attachments': attachments}
