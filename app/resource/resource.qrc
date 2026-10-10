@@ -19,6 +19,5 @@
     <file>qss/light/setting_interface.qss</file>
     <file>qss/light/task_interface.qss</file>
     <file>i18n/ame_en_US.qm</file>
-    <file>i18n/qt/qtbase_zh_CN.qm</file>
   </qresource>
 </RCC>

@@ -9,3 +9,10 @@ app/services/tool_service.py
 app/view/mediainfo_interface.py
 app/components/fileload_interface.py
 app/services/mediainfo_service.py
+app/view/recode_interface.py
+app/view/task_interface.py
+app/components/recode_card_interface.py
+app/components/task_card_interface.py
+app/components/hearder_widget.py
+app/services/recode/recode_worker.py
+app/services/error_service.py

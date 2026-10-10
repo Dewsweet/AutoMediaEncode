@@ -19,19 +19,20 @@ class ProgressBarCard(QWidget):
         self.processInfo1HLayout = QHBoxLayout()
         self.processInfo2HLayout = QHBoxLayout()
 
-        self.fileTextLabel = BodyLabel('正在处理: ', self)
-        self.fileNameLabel = BodyLabel('等待任务开始...', self)
+        self.fileTextLabel = BodyLabel(self.tr('正在处理: '), self)
+        self.fileNameLabel = BodyLabel(self.tr('等待任务开始...'), self)
 
-        self.barTextLabel = BodyLabel('当前进度: ', self)
+        self.barTextLabel = BodyLabel(self.tr('当前进度: '), self)
         self.progress_bar = ProgressBar(self)
         self.progress_bar.setRange(0, 100)
 
-        self.processTextLabel = CaptionLabel('任务进度: ', self)
-        self.processingLabel = CaptionLabel('准备中...', self)
-        self.TimeTextLabel = CaptionLabel('预计剩余时间: ', self)
+        self.processTextLabel = CaptionLabel(self.tr('任务进度: '), self)
+        self.processingLabel = CaptionLabel(self.tr('准备中...'), self)
+        self.TimeTextLabel = CaptionLabel(self.tr('预计剩余时间: '), self)
         self.TimeLabel = CaptionLabel('00:00:00', self)
 
         self.errorLabel = CaptionLabel('', self)
+        self.errorLabel.setWordWrap(True)
         self.errorLabel.setVisible(False)
 
         self._initLayout()
@@ -86,23 +87,23 @@ class ProgressBarCard(QWidget):
 
 class TaskCardTemplate(ExpandGroupSettingCard):
     def __init__(self, ico, title: str, parent=None):
-        super().__init__(ico, title, '点击查看详细进度', parent)
+        super().__init__(ico, title, self.tr('点击查看详细进度'), parent)
 
         self.hearderHBox = QWidget(self)
         self.hearderHBoxLayout = QHBoxLayout(self.hearderHBox)
         self.hearderHBoxLayout.setContentsMargins(0, 0, 0, 0)
 
 
-        self.progessStateLabel = StrongBodyLabel('运行中: 0%', self) # 显示总进度 %
+        self.progessStateLabel = StrongBodyLabel(self.tr('运行中: 0%'), self) # 显示总进度 %
 
         self.title_stop_btn = ToolButton(FIF.PAUSE, self)
         self.title_stop_btn.setMaximumSize(36, 36)
-        self.title_stop_btn.setToolTip('终止当前任务')
+        self.title_stop_btn.setToolTip(self.tr('终止当前任务'))
         self.title_stop_btn.installEventFilter(ToolTipFilter(self.title_stop_btn))
 
         self.title_path_btn = ToolButton(FIF.FOLDER, self)
         self.title_path_btn.setMaximumSize(36, 36)
-        self.title_path_btn.setToolTip('打开输出目录')
+        self.title_path_btn.setToolTip(self.tr('打开输出目录'))
         self.title_path_btn.installEventFilter(ToolTipFilter(self.title_path_btn))
 
 
@@ -128,11 +129,11 @@ class TaskCard(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         if functionName == 'Recode':
-            self.task_card = TaskCardTemplate(FIF.VIDEO, '媒体重编码', self)
+            self.task_card = TaskCardTemplate(FIF.VIDEO, self.tr('媒体重编码'), self)
         elif functionName == 'Demux':
-            self.task_card = TaskCardTemplate(FIF.MOVIE, '媒体抽流', self)
+            self.task_card = TaskCardTemplate(FIF.MOVIE, self.tr('媒体抽流'), self)
         elif functionName == 'Mux':
-            self.task_card = TaskCardTemplate(FIF.MEDIA, '媒体封装', self)
+            self.task_card = TaskCardTemplate(FIF.MEDIA, self.tr('媒体封装'), self)
         elif functionName == 'AutoEncode':
             self.task_card = TaskCardTemplate(FIF.TRAIN, 'AME', self)
         # feature 未知类型任务的卡片 和 不处理逻辑
@@ -168,30 +169,30 @@ class TaskCard(QWidget):
             total_percent = ((current_idx - 1) * 100.0 + percent) / self.total_files
             if total_percent > 100:
                 total_percent = 100.0
-            self.task_card.progessStateLabel.setText(f'运行中: {total_percent:.1f}%')
+            self.task_card.progessStateLabel.setText(self.tr("运行中: {percent:.1f}%").format(percent=total_percent))
 
         # 如果文件处理完了更新 Processing 的文本为 "任务完成"
         if current_idx >= self.total_files and percent >= 100:
             self.is_finished = True
-            self.task_card.progessStateLabel.setText('任务完成: 100.0%')
+            self.task_card.progessStateLabel.setText(self.tr('任务完成: 100.0%'))
             self.task_card.title_stop_btn.setEnabled(False)
 
     def mark_as_error(self, error_msg: str):
         """任务出错强制终止UI样式更改"""
         self.is_finished = True
-        self.task_card.progessStateLabel.setText('运行错误')
+        self.task_card.progessStateLabel.setText(self.tr('运行错误'))
         self.task_card.progessStateLabel.setStyleSheet("color: red;")
         self.task_card.title_stop_btn.setEnabled(False)
         if hasattr(self.task_card.taskGroup, 'update_time'):
-            self.task_card.taskGroup.update_time("失败")
-        self.task_card.taskGroup.processingLabel.setText('已失败')
+            self.task_card.taskGroup.update_time(self.tr("失败"))
+        self.task_card.taskGroup.processingLabel.setText(self.tr('已失败'))
         self.task_card.taskGroup.show_error(error_msg)
 
     def mark_as_cancelled(self):
         """任务手动中止的样式更改"""
         self.is_finished = True
-        self.task_card.progessStateLabel.setText('已中止')
+        self.task_card.progessStateLabel.setText(self.tr('已中止'))
         self.task_card.title_stop_btn.setEnabled(False)
         if hasattr(self.task_card.taskGroup, 'update_time'):
-            self.task_card.taskGroup.update_time("已中止")
-        self.task_card.taskGroup.processingLabel.setText('已取消')
+            self.task_card.taskGroup.update_time(self.tr("已中止"))
+        self.task_card.taskGroup.processingLabel.setText(self.tr('已取消'))

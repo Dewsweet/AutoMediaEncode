@@ -35,9 +35,9 @@ class TaskInterface(QWidget):
         self.headerLayout = QVBoxLayout(self.headerBox)
         self.headerLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.titleLabel = TitleLabel('任务进度', self)
+        self.titleLabel = TitleLabel(self.tr('任务进度'), self)
 
-        self.clearTaskBtn = PushButton(FIF.DELETE, '清除任务', self)
+        self.clearTaskBtn = PushButton(FIF.DELETE, self.tr('清除任务'), self)
 
     def _progressArea(self):
         self.progressBox = QWidget(self)
@@ -113,8 +113,8 @@ class TaskInterface(QWidget):
             self.task_cards[task_id].mark_as_cancelled()
         
         InfoBar.warning(
-            title='任务中止',
-            content='你手动终止了正在执行的任务进程。',
+            title=self.tr('任务中止'),
+            content=self.tr('你手动终止了正在执行的任务进程。'),
             orient=Qt.Horizontal,
             isClosable=False,
             position=InfoBarPosition.TOP,
@@ -135,7 +135,7 @@ class TaskInterface(QWidget):
             if output_dir and os.path.exists(output_dir):
                 os.startfile(output_dir)
             else:
-                InfoBar.warning('文件路径不存在', f'找不到输出路径: {output_dir}', parent=self.window())
+                InfoBar.warning(self.tr('文件路径不存在'), self.tr("找不到输出路径: {directory}").format(directory=output_dir), parent=self.window())
         except Exception as e:
             print(f"打开文件夹失败: {e}")
 
@@ -150,11 +150,11 @@ class TaskInterface(QWidget):
             card = self.task_cards[task_id]
             # 更新为 100% 并在UI展现完成状态
             # 修复 TypeError: current_idx 参数必须为 int，不能为 None
-            card.update_task_progress(card.total_files, "全部完成", 100.0, "00:00:00")
+            card.update_task_progress(card.total_files, self.tr("全部完成"), 100.0, "00:00:00")
             
         InfoBar.success(
-            title='任务完成',
-            content='你添加的任务已全部执行完毕。请手动关闭此弹窗! ',
+            title=self.tr('任务完成'),
+            content=self.tr('你添加的任务已全部执行完毕。请手动关闭此弹窗! '),
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,

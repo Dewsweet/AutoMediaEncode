@@ -2,6 +2,121 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US" sourcelanguage="zh_CN">
 <context>
+    <name>AudioParamCard</name>
+    <message>
+        <location filename="../../components/recode_card_interface.py" line="+578"/>
+        <source>音频编码设置</source>
+        <translation>Audio encoding</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>编码格式:</source>
+        <translation>Codec:</translation>
+    </message>
+</context>
+<context>
+    <name>ErrorService</name>
+    <message>
+        <location filename="../../services/error_service.py" line="+50"/>
+        <source>发生未知错误</source>
+        <translation>An unknown error occurred</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>所选视频编码器不支持 10 bit, 请更换编码器或降低位深</source>
+        <translation>The selected video encoder does not support 10-bit input. Choose another encoder or reduce the bit depth.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>编码参数与容器不兼容，请更换编码器或容器格式</source>
+        <translation>The encoding parameters are incompatible with the container. Choose another codec or container.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>未找到可用的硬件加速设备</source>
+        <translation>No compatible hardware acceleration device found.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入文件或预设路径不存在</source>
+        <translation>The input file or preset path does not exist.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>CLI 命令中有未知的参数选项，请检查自定义参数</source>
+        <translation>Unknown command-line option. Please check the custom options.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>当前版本不支持该编码器，请更换编码器</source>
+        <translation>This version does not support the selected encoder. Choose another encoder.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入文件不存在或路径错误</source>
+        <translation>The input file does not exist or the path is incorrect.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>文件访问权限不足</source>
+        <translation>Permission denied when accessing the file.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入格式不受支持，请检查输入文件</source>
+        <translation>Unsupported input format. Please check the input file.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>管道连接中断 (vspipe)，上游进程异常退出</source>
+        <translation>The vspipe pipe was interrupted because the upstream process exited unexpectedly.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入文件已损坏或格式不正确</source>
+        <translation>The input file is corrupted or has an invalid format.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>系统内存不足，请关闭其他程序后重试</source>
+        <translation>Not enough memory. Close other applications and try again.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>解码输入文件时出错，文件可能已损坏</source>
+        <translation>Failed to decode the input file. The file may be corrupted.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>编码过程出错，请检查编码器参数</source>
+        <translation>Encoding failed. Please check the encoder options.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>转换失败，请检查节点设置或查看日志</source>
+        <translation>Conversion failed. Please check the node settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>执行返回错误码 1，请检查节点设置或查看日志</source>
+        <translation>The process returned error code 1. Please check the node settings or the log.</translation>
+    </message>
+</context>
+<context>
+    <name>FileInfoViewCard</name>
+    <message>
+        <location filename="../../components/recode_card_interface.py" line="-433"/>
+        <source>信息预览</source>
+        <translation>File information</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+9"/>
+        <source>点击文件读取信息...</source>
+        <translation>Click a file to view its information...</translation>
+    </message>
+</context>
+<context>
     <name>FileLoadInterface</name>
     <message>
         <location filename="../../components/fileload_interface.py" line="+18"/>
@@ -21,6 +136,170 @@
     </message>
 </context>
 <context>
+    <name>HeaderWidget</name>
+    <message>
+        <location filename="../../components/hearder_widget.py" line="+23"/>
+        <source>重载文件</source>
+        <translation>Reload files</translation>
+    </message>
+</context>
+<context>
+    <name>ImageParamCard</name>
+    <message>
+        <location filename="../../components/recode_card_interface.py" line="+628"/>
+        <source>图片编码设置</source>
+        <translation>Image encoding</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>编码格式:</source>
+        <translation>Codec:</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>无损压缩</source>
+        <translation>Lossless</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>质量:</source>
+        <translation>Quality:</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>基本处理</source>
+        <translation>Basic processing</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>基本处理: </source>
+        <translation>Basic processing: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>旋转: </source>
+        <translation>Rotation: </translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>不旋转</source>
+        <translation>No rotation</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>顺时针90度</source>
+        <translation>90° clockwise</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>逆时针90度</source>
+        <translation>90° counterclockwise</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>旋转180度</source>
+        <translation>180°</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>根据EXIF旋转</source>
+        <translation>Rotate using EXIF</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>镜像: </source>
+        <translation>Flip: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>不镜像</source>
+        <translation>No flip</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>水平镜像</source>
+        <translation>Horizontal flip</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>垂直镜像</source>
+        <translation>Vertical flip</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>裁剪比例: </source>
+        <translation>Crop ratio: </translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>不裁剪</source>
+        <translation>No cropping</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>原始比例</source>
+        <translation>Original ratio</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>输入比例(x:y)</source>
+        <translation>Enter ratio (x:y)</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>裁剪尺寸: </source>
+        <translation>Crop size: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>宽度</source>
+        <translation>Width</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>高度</source>
+        <translation>Height</translation>
+    </message>
+</context>
+<context>
+    <name>InputFilesCard</name>
+    <message>
+        <location line="-829"/>
+        <source>载入文件</source>
+        <translation>Input files</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>视频</source>
+        <translation>Video</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>音频</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>图片</source>
+        <translation>Images</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>字幕</source>
+        <translation>Subtitles</translation>
+    </message>
+    <message>
+        <location line="+61"/>
+        <source>全选</source>
+        <translation>Select all</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>全不选</source>
+        <translation>Deselect all</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="../../view/main_window.py" line="+111"/>
@@ -28,7 +307,17 @@
         <translation>Media information</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+1"/>
+        <source>媒体重编码</source>
+        <translation>Recoding</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>任务进度</source>
+        <translation>Task progress</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
@@ -276,6 +565,39 @@
     </message>
 </context>
 <context>
+    <name>OutputCard</name>
+    <message>
+        <location filename="../../components/recode_card_interface.py" line="+1079"/>
+        <source>输出设置</source>
+        <translation>Output settings</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>文件名后缀: </source>
+        <translation>Filename suffix: </translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>使用源目录</source>
+        <translation>Use source folder</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输出路径: </source>
+        <translation>Output folder: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>浏览</source>
+        <translation>Browse</translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>选择输出目录</source>
+        <translation>Select output folder</translation>
+    </message>
+</context>
+<context>
     <name>PresetEditDialog</name>
     <message>
         <location filename="../../components/preset_dialog.py" line="+52"/>
@@ -334,6 +656,212 @@
         <location line="+8"/>
         <source>编辑: {name}</source>
         <translation>Edit: {name}</translation>
+    </message>
+</context>
+<context>
+    <name>ProgressBarCard</name>
+    <message>
+        <location filename="../../components/task_card_interface.py" line="+22"/>
+        <source>正在处理: </source>
+        <translation>Processing: </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>等待任务开始...</source>
+        <translation>Waiting for the task to start...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>当前进度: </source>
+        <translation>File progress: </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>任务进度: </source>
+        <translation>Task progress: </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>准备中...</source>
+        <translation>Preparing...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>预计剩余时间: </source>
+        <translation>Time remaining: </translation>
+    </message>
+</context>
+<context>
+    <name>RecodeInterface</name>
+    <message>
+        <location filename="../../view/recode_interface.py" line="+34"/>
+        <source>媒体重编码</source>
+        <translation>Recoding</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>使用 FFMpeg 对视频、音频、图片、字幕进行简单的重编码</source>
+        <translation>Recoding video, audio, images and subtitles with FFmpeg</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+319"/>
+        <source>开始转码</source>
+        <translation>Start recoding</translation>
+    </message>
+    <message>
+        <location line="-315"/>
+        <source>视频文件 ({extensions})</source>
+        <translation>Video files ({extensions})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>音频文件 ({extensions})</source>
+        <translation>Audio files ({extensions})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>图片文件 ({extensions})</source>
+        <translation>Image files ({extensions})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>字幕文件 ({extensions})</source>
+        <translation>Subtitle files ({extensions})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>所有文件 (*)</source>
+        <translation>All files (*)</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>📌 媒体文件重编码 😇</source>
+        <translation>📌 Media recoding 😇</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>对媒体文件进行简单重编码</source>
+        <translation>Simple media recoding</translation>
+    </message>
+    <message>
+        <location line="+65"/>
+        <location line="+29"/>
+        <source>载入文件失败</source>
+        <translation>Could not load files</translation>
+    </message>
+    <message>
+        <location line="-28"/>
+        <location line="+29"/>
+        <source>未检测到有效的媒体文件, 请重新选择</source>
+        <translation>No valid media files found. Please select files again.</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <source>选择文件</source>
+        <translation>Select files</translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <source>该文件不是一个有效的文件!</source>
+        <translation>This is not a valid file!</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>读取文件信息失败: {error}</source>
+        <translation>Could not read file information: {error}</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <location line="+14"/>
+        <location line="+16"/>
+        <location line="+13"/>
+        <source>注意</source>
+        <translation>Attention</translation>
+    </message>
+    <message>
+        <location line="-42"/>
+        <source>文件列表为空, 请检查输入文件</source>
+        <translation>No files selected. Please check the input files.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>文件不存在或已被删除:
+{file}</source>
+        <translation>The file does not exist or has been deleted:
+{file}</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>输入文件容器与输出容器设置冲突: {format}
+请检查或者启用输出自定义后缀设置</source>
+        <translation>The input and output formats are the same: {format}
+Check the settings or enable a custom filename suffix.</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>输出目录未设置, 请检查输出设置</source>
+        <translation>No output folder selected. Please check the output settings.</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>正在执行中...</source>
+        <translation>Running...</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>任务执行成功</source>
+        <translation>Task started</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>进入「任务进度」可查看详情</source>
+        <translation>Open Task progress to view the details.</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>执行失败</source>
+        <translation>Task failed</translation>
+    </message>
+</context>
+<context>
+    <name>RecodeWorker</name>
+    <message>
+        <location filename="../../services/recode/recode_worker.py" line="+125"/>
+        <source>未找到 FFMpeg 程序文件
+请检查相关设置或查看 log</source>
+        <translation>FFmpeg was not found.
+Please check the tool settings or the log.</translation>
+    </message>
+    <message>
+        <location line="+63"/>
+        <source>文件 [{filename}] 处理超时(60s)</source>
+        <translation>Processing [{filename}] timed out (60s)</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+63"/>
+        <source>文件 [{filename}] 处理失败
+[可能因为]: {error}</source>
+        <translation>Failed to process [{filename}]
+Possible cause: {error}</translation>
+    </message>
+    <message>
+        <location line="-58"/>
+        <source>完成</source>
+        <translation>Completed</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>未能成功打包成FFmpeg命令，可能是界面参数导致异常:
+{error}</source>
+        <translation>Could not build the FFmpeg command. Please check the parameters:
+{error}</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>计算中...</source>
+        <translation>Calculating...</translation>
     </message>
 </context>
 <context>
@@ -637,6 +1165,144 @@
     </message>
 </context>
 <context>
+    <name>SubtitleParamCard</name>
+    <message>
+        <location filename="../../components/recode_card_interface.py" line="-87"/>
+        <source>字幕编码设置</source>
+        <translation>Subtitle encoding</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>字幕格式:</source>
+        <translation>Subtitle format:</translation>
+    </message>
+</context>
+<context>
+    <name>TaskCard</name>
+    <message>
+        <location filename="../../components/task_card_interface.py" line="+101"/>
+        <source>媒体重编码</source>
+        <translation>Recoding</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>媒体抽流</source>
+        <translation>Demuxing</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>媒体封装</source>
+        <translation>Muxing</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>运行中: {percent:.1f}%</source>
+        <translation>Running: {percent:.1f}%</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>任务完成: 100.0%</source>
+        <translation>Completed: 100.0%</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>运行错误</source>
+        <translation>Failed</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>失败</source>
+        <translation>Failed</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>已失败</source>
+        <translation>Failed</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+3"/>
+        <source>已中止</source>
+        <translation>Canceled</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>已取消</source>
+        <translation>Canceled</translation>
+    </message>
+</context>
+<context>
+    <name>TaskCardTemplate</name>
+    <message>
+        <location line="-108"/>
+        <source>点击查看详细进度</source>
+        <translation>Click to view detailed progress</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>运行中: 0%</source>
+        <translation>Running: 0%</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>终止当前任务</source>
+        <translation>Stop this task</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>打开输出目录</source>
+        <translation>Open output folder</translation>
+    </message>
+</context>
+<context>
+    <name>TaskInterface</name>
+    <message>
+        <location filename="../../view/task_interface.py" line="+38"/>
+        <source>任务进度</source>
+        <translation>Task progress</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>清除任务</source>
+        <translation>Clear finished tasks</translation>
+    </message>
+    <message>
+        <location line="+76"/>
+        <source>任务中止</source>
+        <translation>Task canceled</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>你手动终止了正在执行的任务进程。</source>
+        <translation>You stopped the running task.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>文件路径不存在</source>
+        <translation>Folder not found</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>找不到输出路径: {directory}</source>
+        <translation>Could not find the output folder: {directory}</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>全部完成</source>
+        <translation>All files completed</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>任务完成</source>
+        <translation>Task completed</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>你添加的任务已全部执行完毕。请手动关闭此弹窗! </source>
+        <translation>The task has completed. You can close this notification. </translation>
+    </message>
+</context>
+<context>
     <name>ToolDescriptions</name>
     <message>
         <location filename="../../services/tool_service.py" line="+19"/>
@@ -753,6 +1419,130 @@
         <location line="+9"/>
         <source>发布于</source>
         <translation>Published</translation>
+    </message>
+</context>
+<context>
+    <name>VideoParamCard</name>
+    <message>
+        <location filename="../../components/recode_card_interface.py" line="-1004"/>
+        <source>视频编码设置</source>
+        <translation>Video encoding</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>封装格式:</source>
+        <translation>Container:</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>编码格式:</source>
+        <translation>Codec:</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>使用预设:</source>
+        <translation>Use preset:</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>预设:</source>
+        <translation>Preset:</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>自定义编码设置</source>
+        <translation>Custom encoding settings</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>码率控制:</source>
+        <translation>Rate control:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>恒定质量 (CRF):</source>
+        <translation>Constant quality (CRF):</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>平均码率 (ABR):</source>
+        <translation>Average bitrate (ABR):</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>编码器选项: </source>
+        <translation>Encoder options: </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>编码器预设: </source>
+        <translation>Encoder preset: </translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>编码器调优: </source>
+        <translation>Tune: </translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>编码器配置: </source>
+        <translation>Profile: </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>编码器级别: </source>
+        <translation>Level: </translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>高级选项</source>
+        <translation>Advanced options</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>自定义 FFMpeg 相关视频参数, 例如: -x264-params &quot;key1=value1:key2=value2&quot;</source>
+        <translation>Custom FFmpeg video options, e.g. -x264-params &quot;key1=value1:key2=value2&quot;</translation>
+    </message>
+    <message>
+        <location line="+127"/>
+        <location line="+30"/>
+        <source>恒定质量 (CRF): </source>
+        <translation>Constant quality (CRF): </translation>
+    </message>
+    <message>
+        <location line="-21"/>
+        <location line="+29"/>
+        <location line="+21"/>
+        <location line="+10"/>
+        <source>恒定质量 (CQ): </source>
+        <translation>Constant quality (CQ): </translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <location line="+29"/>
+        <source>恒定质量 (ICQ): </source>
+        <translation>Constant quality (ICQ): </translation>
+    </message>
+    <message>
+        <location line="-22"/>
+        <location line="+29"/>
+        <source>恒定质量 (CQP): </source>
+        <translation>Constant quality (CQP): </translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>0 (最快)</source>
+        <translation>0 (fastest)</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>13 (最慢)</source>
+        <translation>13 (slowest)</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>恒定质量 (QP): </source>
+        <translation>Constant quality (QP): </translation>
     </message>
 </context>
 </TS>

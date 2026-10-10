@@ -1,6 +1,7 @@
 # coding: utf-8
 """AME 错误服务 — 将 CLI 工具的错误输出翻译为用户友好提示"""
 import re
+from PySide6.QtCore import QCoreApplication
 
 
 class ErrorService:
@@ -46,7 +47,7 @@ class ErrorService:
             if fallback:
                 short_err = "\n".join(fallback[-2:])
             else:
-                short_err = lines[-1] if lines else "发生未知错误"
+                short_err = lines[-1] if lines else QCoreApplication.translate("ErrorService", "发生未知错误")
 
         hint = cls._match_hint(short_err)
         return hint if hint else short_err
@@ -80,37 +81,37 @@ class ErrorService:
         t = text.lower()
 
         if "10 bit encode not supported" in t:
-            return "所选视频编码器不支持 10 bit, 请更换编码器或降低位深"
+            return QCoreApplication.translate("ErrorService", "所选视频编码器不支持 10 bit, 请更换编码器或降低位深")
         if "could not write header (incorrect codec parameters ?)" in t:
-            return "编码参数与容器不兼容，请更换编码器或容器格式"
+            return QCoreApplication.translate("ErrorService", "编码参数与容器不兼容，请更换编码器或容器格式")
         if "no capable devices found" in t:
-            return "未找到可用的硬件加速设备"
+            return QCoreApplication.translate("ErrorService", "未找到可用的硬件加速设备")
         if "no such file or directory" in t:
-            return "输入文件或预设路径不存在"
+            return QCoreApplication.translate("ErrorService", "输入文件或预设路径不存在")
         if "unrecognized option" in t or "unknown option" in t:
-            return "CLI 命令中有未知的参数选项，请检查自定义参数"
+            return QCoreApplication.translate("ErrorService", "CLI 命令中有未知的参数选项，请检查自定义参数")
         if "unknown encoder" in t or "invalid encoder" in t:
-            return "当前版本不支持该编码器，请更换编码器"
+            return QCoreApplication.translate("ErrorService", "当前版本不支持该编码器，请更换编码器")
         if "could not open" in t or "cannot open" in t:
-            return "输入文件不存在或路径错误"
+            return QCoreApplication.translate("ErrorService", "输入文件不存在或路径错误")
         if "permission denied" in t:
-            return "文件访问权限不足"
+            return QCoreApplication.translate("ErrorService", "文件访问权限不足")
         if "not supported" in t:
-            return "输入格式不受支持，请检查输入文件"
+            return QCoreApplication.translate("ErrorService", "输入格式不受支持，请检查输入文件")
         if "broken pipe" in t or "error writing" in t:
-            return "管道连接中断 (vspipe)，上游进程异常退出"
+            return QCoreApplication.translate("ErrorService", "管道连接中断 (vspipe)，上游进程异常退出")
         if "invalid data found when processing input" in t:
-            return "输入文件已损坏或格式不正确"
+            return QCoreApplication.translate("ErrorService", "输入文件已损坏或格式不正确")
         if "out of memory" in t:
-            return "系统内存不足，请关闭其他程序后重试"
+            return QCoreApplication.translate("ErrorService", "系统内存不足，请关闭其他程序后重试")
         if "error while decoding" in t:
-            return "解码输入文件时出错，文件可能已损坏"
+            return QCoreApplication.translate("ErrorService", "解码输入文件时出错，文件可能已损坏")
         if "error while encoding" in t:
-            return "编码过程出错，请检查编码器参数"
+            return QCoreApplication.translate("ErrorService", "编码过程出错，请检查编码器参数")
         if "conversion failed" in t:
-            return "转换失败，请检查节点设置或查看日志"
+            return QCoreApplication.translate("ErrorService", "转换失败，请检查节点设置或查看日志")
         if "returncode=1" in t or "return code 1" in t:
-            return "执行返回错误码 1，请检查节点设置或查看日志"
+            return QCoreApplication.translate("ErrorService", "执行返回错误码 1，请检查节点设置或查看日志")
         return None
 
     @classmethod

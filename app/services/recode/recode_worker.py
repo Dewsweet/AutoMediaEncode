@@ -122,7 +122,7 @@ class RecodeWorker(QThread):
         if not ffmpeg_bin_path:
             ffmpeg_bin_path = 'ffmpeg' # fallback
             logger.warning("未在配置或Path中找到ffmpeg对应的程序文件, 停止运行")
-            signalBus.taskError.emit(task_id, "未找到 FFMpeg 程序文件 \n请检查相关设置或查看 log")
+            signalBus.taskError.emit(task_id, self.tr("未找到 FFMpeg 程序文件\n请检查相关设置或查看 log"))
             self._has_error = True
             return
 
@@ -185,7 +185,7 @@ class RecodeWorker(QThread):
                     if self._is_cancelled:
                         return
                     logger.error(f"[Task {task_id}] Subprocess timed out after 60s")
-                    signalBus.taskError.emit(task_id, f"文件 [{file_path.name}] 处理超时(60s)")
+                    signalBus.taskError.emit(task_id, self.tr("文件 [{filename}] 处理超时(60s)").format(filename=file_path.name))
                     self.stop()
                     return
                 except subprocess.CalledProcessError as e:
@@ -194,18 +194,18 @@ class RecodeWorker(QThread):
                     stderr_text = e.stderr.decode('utf-8', errors='replace') if e.stderr else str(e)
                     logger.error(f"[Task {task_id}] Subprocess execution failed: {stderr_text}")
                     main_error = ErrorService.ffmpeg_error(stderr_text)
-                    error_msg = f"文件 [{file_path.name}] 处理失败\n[可能因为]: {main_error}"
+                    error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=file_path.name, error=main_error)
                     signalBus.taskError.emit(task_id, error_msg)
                     self.stop()
                     return
                 # 瞬间跑完则抛出100%完成
-                signalBus.taskProgressUpdated.emit(task_id, idx, total_files, file_path.name, 100.0, "完成")
+                signalBus.taskProgressUpdated.emit(task_id, idx, total_files, file_path.name, 100.0, self.tr("完成"))
                 
         except Exception as e:
             if self._is_cancelled:
                 return
             logger.exception(f"[Task {task_id}] Processing file failed:") # 替代原有的 traceback.format_exc()
-            signalBus.taskError.emit(task_id, f"未能成功打包成FFmpeg命令，可能是界面参数导致异常:\n{str(e)}")
+            signalBus.taskError.emit(task_id, self.tr("未能成功打包成FFmpeg命令，可能是界面参数导致异常:\n{error}").format(error=str(e)))
             self.stop()
         finally:
             if is_video and 'v_kwargs_list' in locals() and len(v_kwargs_list) > 1:
@@ -236,7 +236,7 @@ class RecodeWorker(QThread):
                 
                 # 计算预估剩余时间 (ETA)
                 elapsed = time.time() - start_time
-                time_left_str = "计算中..."
+                time_left_str = self.tr("计算中...")
                 if overall_progress > 0 and overall_progress < 100:
                     total_estimated = elapsed / (overall_progress / 100)
                     remaining = total_estimated - elapsed
@@ -257,7 +257,7 @@ class RecodeWorker(QThread):
             err_msg = str(e)
             logger.exception(f"[Task {task_id}] FfmpegProgress execution failed:") 
             main_error = ErrorService.ffmpeg_error(err_msg)
-            error_msg = f"文件 [{filename}] 处理失败\n[可能因为]: {main_error}"
+            error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=filename, error=main_error)
             signalBus.taskError.emit(task_id, error_msg)
             self.stop()
         finally:

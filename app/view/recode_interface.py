@@ -31,15 +31,15 @@ class RecodeInterface(QWidget):
         self.vBoxLayout.addWidget(self.stackedWidget)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.hearder = HeaderWidget('媒体重编码', '使用 FFMpeg 对视频、音频、图片、字幕进行简单的重编码', '开始转码', self)
+        self.hearder = HeaderWidget(self.tr('媒体重编码'), self.tr('使用 FFMpeg 对视频、音频、图片、字幕进行简单的重编码'), self.tr('开始转码'), self)
         self.hearder.mainLayout.setContentsMargins(0, 0, 25, 0)
 
 
-        v_ext = "视频文件 (" + " ".join(f"*{ext}" for ext in VIDEO_EXTS) + ")"
-        a_ext = "音频文件 (" + " ".join(f"*{ext}" for ext in AUDIO_EXTS) + ")"
-        i_ext = "图片文件 (" + " ".join(f"*{ext}" for ext in IMAGE_EXTS) + ")"
-        s_ext = "字幕文件 (" + " ".join(f"*{ext}" for ext in SUBTITLE_EXTS) + ")"
-        all_ext = "所有文件 (*)"
+        v_ext = self.tr("视频文件 ({extensions})").format(extensions=" ".join(f"*{ext}" for ext in VIDEO_EXTS))
+        a_ext = self.tr("音频文件 ({extensions})").format(extensions=" ".join(f"*{ext}" for ext in AUDIO_EXTS))
+        i_ext = self.tr("图片文件 ({extensions})").format(extensions=" ".join(f"*{ext}" for ext in IMAGE_EXTS))
+        s_ext = self.tr("字幕文件 ({extensions})").format(extensions=" ".join(f"*{ext}" for ext in SUBTITLE_EXTS))
+        all_ext = self.tr("所有文件 (*)")
         self.file_filter = f"{v_ext};;{a_ext};;{i_ext};;{s_ext};;{all_ext}"
 
         self._videoParam_is_horizontal = True
@@ -93,7 +93,7 @@ class RecodeInterface(QWidget):
         self.loadPage.setObjectName("loadPage")
         self.loadLayout = QVBoxLayout(self.loadPage)
 
-        self.loaderComponent = FileLoadInterface(self.file_filter, title="📌 媒体文件重编码 😇", desc="对媒体文件进行简单重编码", parent=self.loadPage)
+        self.loaderComponent = FileLoadInterface(self.file_filter, title=self.tr("📌 媒体文件重编码 😇"), desc=self.tr("对媒体文件进行简单重编码"), parent=self.loadPage)
         self.loaderComponent.setFixedSize(360, 200)
         self.loadLayout.addWidget(self.loaderComponent, 0, Qt.AlignCenter)
 
@@ -158,8 +158,8 @@ class RecodeInterface(QWidget):
         # 文件大小为0 or 文件格式不在支持范围内 or 文件不存在
         if not files or Path(files[0]).suffix.lower() not in VIDEO_EXTS | AUDIO_EXTS | IMAGE_EXTS | SUBTITLE_EXTS or Path(files[0]).stat().st_size == 0:
             InfoBar.warning(
-                title='载入文件失败',
-                content='未检测到有效的媒体文件, 请重新选择',
+                title=self.tr('载入文件失败'),
+                content=self.tr('未检测到有效的媒体文件, 请重新选择'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -175,7 +175,7 @@ class RecodeInterface(QWidget):
             self.stackedWidget.setCurrentIndex(1)
 
     def open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", self.file_filter)
+        files, _ = QFileDialog.getOpenFileNames(self, self.tr("选择文件"), "", self.file_filter)
         if files:
             self.process_loaded_files(files)
             self.fileInfoView.clear_info()
@@ -187,8 +187,8 @@ class RecodeInterface(QWidget):
         
         if not present_types:
             InfoBar.warning(
-                title='载入文件失败',
-                content='未检测到有效的媒体文件, 请重新选择',
+                title=self.tr('载入文件失败'),
+                content=self.tr('未检测到有效的媒体文件, 请重新选择'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -219,9 +219,9 @@ class RecodeInterface(QWidget):
                 info_text = mis.view_info(file_path)
                 self.fileInfoView.update_info(info_text)
             else:
-                self.fileInfoView.update_info("该文件不是一个有效的文件!")
+                self.fileInfoView.update_info(self.tr("该文件不是一个有效的文件!"))
         except Exception as e:
-            self.fileInfoView.update_info(f"读取文件信息失败: {str(e)}")
+            self.fileInfoView.update_info(self.tr("读取文件信息失败: {error}").format(error=str(e)))
 
     def emit_image_size(self):
         """当启用图片基础处理时，获取当前载入的第一张图片的尺寸信息，并更新 imageParam 的原始尺寸状态"""
@@ -252,8 +252,8 @@ class RecodeInterface(QWidget):
         # 空文件列表检查
         if not files:
             InfoBar.warning(
-                title='注意',
-                content='文件列表为空, 请检查输入文件',
+                title=self.tr('注意'),
+                content=self.tr('文件列表为空, 请检查输入文件'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -266,8 +266,8 @@ class RecodeInterface(QWidget):
         for f in files:
             if not Path(f).exists() or not Path(f).is_file():
                 InfoBar.warning(
-                    title='注意',
-                    content=f'文件不存在或已被删除:\n{f}',
+                    title=self.tr('注意'),
+                    content=self.tr("文件不存在或已被删除:\n{file}").format(file=f),
                     orient=Qt.Horizontal,
                     isClosable=False,
                     position=InfoBarPosition.TOP_RIGHT,
@@ -282,8 +282,8 @@ class RecodeInterface(QWidget):
             f = Path(file).suffix.strip(".").lower()
             if f in [video_state.get('container', '').lower(), audio_state.get('encoder_format', '').lower(), image_state.get('encoder_format', '').lower(), subtitle_state.get('encoder_format', '').lower()] and not output_state.get('custom_suffix'):
                 InfoBar.warning(
-                    title='注意',
-                    content=f'输入文件容器与输出容器设置冲突: {f}\n请检查或者启用输出自定义后缀设置',
+                    title=self.tr('注意'),
+                    content=self.tr("输入文件容器与输出容器设置冲突: {format}\n请检查或者启用输出自定义后缀设置").format(format=f),
                     orient=Qt.Horizontal,
                     isClosable=False,
                     position=InfoBarPosition.TOP_RIGHT,
@@ -295,8 +295,8 @@ class RecodeInterface(QWidget):
         # 输出目录设置检查
         if not output_state.get('output_dir') and not output_state.get('use_source_dir'):
             InfoBar.warning(
-                title='注意',
-                content='输出目录未设置, 请检查输出设置',
+                title=self.tr('注意'),
+                content=self.tr('输出目录未设置, 请检查输出设置'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -325,7 +325,7 @@ class RecodeInterface(QWidget):
         self._current_task_is_finished = False
         
         # 禁用转码按钮并修改文本，等待任务完成重置
-        self.hearder.start_button.setText('正在执行中...')
+        self.hearder.start_button.setText(self.tr('正在执行中...'))
         self.hearder.start_button.setEnabled(False)
 
         signalBus.taskAdded.emit(payload)
@@ -336,8 +336,8 @@ class RecodeInterface(QWidget):
     def _check_task_start_success(self, task_id: str):
         if getattr(self, '_current_checking_task_id', '') == task_id and not getattr(self, '_current_task_has_error', False) and not getattr(self, '_current_task_is_finished', False):
             InfoBar.success(
-                title='任务执行成功',
-                content='进入「任务进度」可查看详情',
+                title=self.tr('任务执行成功'),
+                content=self.tr('进入「任务进度」可查看详情'),
                 orient=Qt.Horizontal,
                 isClosable=False,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -350,7 +350,7 @@ class RecodeInterface(QWidget):
         """任务结束(成功/取消)时恢复按钮状态"""
         if getattr(self, '_current_checking_task_id', '') == task_id:
             self._current_task_is_finished = True
-        self.hearder.start_button.setText('开始转码')
+        self.hearder.start_button.setText(self.tr('开始转码'))
         self.hearder.start_button.setEnabled(True)
 
     def _on_global_task_started(self, task_id: str):
@@ -368,7 +368,7 @@ class RecodeInterface(QWidget):
             self.on_task_finished(task_id)  # 发生错误也恢复按钮状态
             self._current_task_has_error = True
             InfoBar.error(
-                title='执行失败',
+                title=self.tr('执行失败'),
                 content=error_msg,
                 orient=Qt.Horizontal,
                 isClosable=True,

@@ -20,7 +20,7 @@ class HeaderWidget(QWidget):
         self.subtitle_label = CaptionLabel(subtitle, self)
         self.subtitle_label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
 
-        self.reload_button = PushButton(FIF.ADD, '重载文件', self)
+        self.reload_button = PushButton(FIF.ADD, self.tr('重载文件'), self)
         self.start_button = PrimaryPushButton(FIF.PLAY, start_name, self)
 
         self.buttonHLayout.addStretch(1)

@@ -29,7 +29,7 @@ class InputFilesCard(HeaderCardWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('载入文件')
+        self.setTitle(self.tr('载入文件'))
 
         self.frame = Frame(self)
         self.input_files_fist = TreeWidget()
@@ -49,10 +49,10 @@ class InputFilesCard(HeaderCardWidget):
         self.input_files_fist.clear()
 
         type_names = {
-            'video': '视频',
-            'audio': '音频',
-            'image': '图片',
-            'subtitle': '字幕'
+            'video': self.tr('视频'),
+            'audio': self.tr('音频'),
+            'image': self.tr('图片'),
+            'subtitle': self.tr('字幕')
         }
 
         # 如果只有一种类型，不显示父节点，直接平铺
@@ -113,8 +113,8 @@ class InputFilesCard(HeaderCardWidget):
         """右键菜单"""
         menu = RoundMenu(parent=self)
         
-        select_all_action = Action('全选', triggered=self.select_all_items)
-        deselect_all_action = Action('全不选', triggered=self.deselect_all_items)
+        select_all_action = Action(self.tr('全选'), triggered=self.select_all_items)
+        deselect_all_action = Action(self.tr('全不选'), triggered=self.deselect_all_items)
         
         menu.addAction(select_all_action)
         menu.addAction(deselect_all_action)
@@ -147,11 +147,11 @@ class InputFilesCard(HeaderCardWidget):
 class FileInfoViewCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('信息预览')
+        self.setTitle(self.tr('信息预览'))
 
         self.info_view = TextEdit()
         self.info_view.setReadOnly(True)
-        self.info_view.setText("点击文件读取信息...")
+        self.info_view.setText(self.tr("点击文件读取信息..."))
 
         self.viewLayout.addWidget(self.info_view)
         self.viewLayout.setContentsMargins(10, 10, 10, 10)
@@ -160,12 +160,12 @@ class FileInfoViewCard(HeaderCardWidget):
         self.info_view.setMarkdown(info_text)
 
     def clear_info(self):
-        self.info_view.setText("点击文件读取信息...")
+        self.info_view.setText(self.tr("点击文件读取信息..."))
 
 class VideoParamCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('视频编码设置')
+        self.setTitle(self.tr('视频编码设置'))
 
         preset_path = PathService.get_config_dir() / 'custom_preset.json'
         try:
@@ -187,7 +187,7 @@ class VideoParamCard(HeaderCardWidget):
         self.encoder_format_box = QWidget()
         self.encoder_format_hBoxLayout = QHBoxLayout(self.encoder_format_box)
 
-        self.container_select_label = BodyLabel("封装格式:")
+        self.container_select_label = BodyLabel(self.tr("封装格式:"))
         self.container_select_combobox = ComboBox()
         self.container_select_combobox.setFixedWidth(90)
         self.container_select_combobox.addItems(["MKV", "MP4", "MOV", "AVI", "WebM", "FLV", "WMV"])
@@ -195,7 +195,7 @@ class VideoParamCard(HeaderCardWidget):
         all_encoders = ["Copy", "FFV1", "AVC (x264)", "AVC (NVEnc)", "AVC (QSV)", "AVC (AMF)", "HEVC (x265)", "HEVC (NVEnc)", "HEVC (QSV)", "HEVC (AMF)", "AV1 (SVT)", "VP9", "MPEG-4"]
         encoder_items = hw_detect_service.get_supported_video_encoders(all_encoders)
 
-        self.encoder_format_label = BodyLabel("编码格式:")
+        self.encoder_format_label = BodyLabel(self.tr("编码格式:"))
         self.encoder_forma_combobox = ComboBox()
         self.encoder_forma_combobox.addItems(encoder_items)
 
@@ -204,20 +204,20 @@ class VideoParamCard(HeaderCardWidget):
         self.using_preset_hBoxLayout = QHBoxLayout(self.using_preset_box)
         self.using_preset_box.setEnabled(False)
 
-        self.using_preset_switch_label = BodyLabel("使用预设:")
+        self.using_preset_switch_label = BodyLabel(self.tr("使用预设:"))
 
         self.using_preset_switch = SwitchButton()
         self.using_preset_switch.setChecked(True) 
         self.using_preset_switch.setOnText("")
         self.using_preset_switch.setOffText("")
 
-        self.using_preset_label = BodyLabel("预设:")
+        self.using_preset_label = BodyLabel(self.tr("预设:"))
 
         self.using_preset_cBox = ComboBox()
 
     def area_custom_encoder_settings(self):
         # 主要布局(共 4 个Box, 两个主要区域)
-        self.custom_encoder_settings_mainBox = QGroupBox("自定义编码设置")
+        self.custom_encoder_settings_mainBox = QGroupBox(self.tr("自定义编码设置"))
         self.custom_encoder_settings_mianLayout = QVBoxLayout(self.custom_encoder_settings_mainBox)
 
         self.custom_encoder_settings_box = QWidget()
@@ -239,9 +239,9 @@ class VideoParamCard(HeaderCardWidget):
 
         
         # Bitrate Control 
-        self.bitrate_control_label = StrongBodyLabel("码率控制:")
+        self.bitrate_control_label = StrongBodyLabel(self.tr("码率控制:"))
 
-        self.crf_rb = RadioButton("恒定质量 (CRF):")
+        self.crf_rb = RadioButton(self.tr("恒定质量 (CRF):"))
         self.crf_rb.setChecked(True) 
         self.crf_value_spinBox = DoubleSpinBox()
         self.crf_value_spinBox.setDecimals(1)
@@ -250,7 +250,7 @@ class VideoParamCard(HeaderCardWidget):
         self.crf_value_spinBox.setSingleStep(1.0)
         self.crf_value_spinBox.setValue(20.0)
 
-        self.abr_rb = RadioButton("平均码率 (ABR):")
+        self.abr_rb = RadioButton(self.tr("平均码率 (ABR):"))
         self.abr_value_pinBox = SpinBox()
         self.abr_value_pinBox.setFixedWidth(140)
         self.abr_value_pinBox.setRange(0, 100000)
@@ -265,9 +265,9 @@ class VideoParamCard(HeaderCardWidget):
         self.bitrate_control_2pass_checkBox.setEnabled(False)
 
         # Base Options
-        self.base_options_label = StrongBodyLabel("编码器选项: ")
+        self.base_options_label = StrongBodyLabel(self.tr("编码器选项: "))
 
-        self.encoder_preset_label = BodyLabel("编码器预设: ")
+        self.encoder_preset_label = BodyLabel(self.tr("编码器预设: "))
 
         self.encoder_preset_value_slider = Slider(Qt.Horizontal)
         self.encoder_preset_value_slider.setRange(0, 9)
@@ -277,25 +277,25 @@ class VideoParamCard(HeaderCardWidget):
         
         self.encoder_preset_value_label = BodyLabel("None")
 
-        self.encoder_tune_label = BodyLabel("编码器调优: ")
+        self.encoder_tune_label = BodyLabel(self.tr("编码器调优: "))
         self.encoder_tune_cBox = ComboBox()
         self.encoder_tune_cBox.setFixedWidth(130)
 
 
-        self.encoder_profile_label = BodyLabel("编码器配置: ")
+        self.encoder_profile_label = BodyLabel(self.tr("编码器配置: "))
         self.encoder_profile_cBox = ComboBox()
         self.encoder_profile_cBox.setFixedWidth(100)
 
-        self.encoder_level_label = BodyLabel("编码器级别: ")
+        self.encoder_level_label = BodyLabel(self.tr("编码器级别: "))
         self.encoder_level_cBox = ComboBox()
         self.encoder_level_cBox.setFixedWidth(80)
 
         # 原定的 x264、x265、svtav1 高级选项, 考虑到参数过多, 目前并不考虑 
-        self.encoder_option_more_button = PrimaryPushButton("高级选项")
+        self.encoder_option_more_button = PrimaryPushButton(self.tr("高级选项"))
         self.encoder_option_more_button.setVisible(False) 
 
         self.custom_options_textEdit = TextEdit()
-        self.custom_options_textEdit.setPlaceholderText("自定义 FFMpeg 相关视频参数, 例如: -x264-params \"key1=value1:key2=value2\"")
+        self.custom_options_textEdit.setPlaceholderText(self.tr("自定义 FFMpeg 相关视频参数, 例如: -x264-params \"key1=value1:key2=value2\""))
 
 
     def _initLayout(self):
@@ -422,7 +422,7 @@ class VideoParamCard(HeaderCardWidget):
             self.encoder_option_more_button.setVisible(False)
 
         if format == "AVC (x264)":
-            self.crf_rb.setText("恒定质量 (CRF): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CRF): "))
             self.using_preset_cBox.addItems(list(self.custom_preset_config.get("x264", {}).keys()))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Ultrafast", "Superfast", "Veryfast", "Faster", "Fast", "Medium", "Slow", "Slower", "Veryslow", "Placebo"])
             self.encoder_tune_cBox.addItems(["None", "Film", "Animation", "Grain", "Still Image", "PSNR", "SSIM", "Zero Latency"])
@@ -431,28 +431,28 @@ class VideoParamCard(HeaderCardWidget):
 
 
         elif format == "AVC (NVEnc)":
-            self.crf_rb.setText("恒定质量 (CQ): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CQ): "))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Fastest", "Faster", "Fast", "Medium", "Slow", "Slower", "Slowest"])
             self.encoder_tune_cBox.addItems(["None"])
             self.encoder_profile_cBox.addItems(["Auto", "Baseline", "Main", "High"])
             self.encoder_level_cBox.addItems(["Auto", "1.0", "1b", "1.1", "1.2", "1.3", "2.0", "2.1", "2.2", "3.0", "3.1", "3.2", "4.0", "4.1", "4.2", "5.0", "5.1", "5.2", "6.0", "6.1", "6.2"])
 
         elif format == "AVC (QSV)":
-            self.crf_rb.setText("恒定质量 (ICQ): ")
+            self.crf_rb.setText(self.tr("恒定质量 (ICQ): "))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Veryfast", "Faster", "Fast", "Medium", "Slow", "Slower", "Veryslow"])
             self.encoder_tune_cBox.addItems(["None"])
             self.encoder_profile_cBox.addItems(["Auto", "Baseline", "Main", "High"])
             self.encoder_level_cBox.addItems(["Auto", "1.0", "1.1", "1.2", "1.3", "2.0", "2.1", "2.2", "3.0", "3.1", "3.2", "4.0", "4.1", "4.2", "5.0", "5.1", "5.2"])
 
         elif format == "AVC (AMF)":
-            self.crf_rb.setText("恒定质量 (CQP): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CQP): "))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Speed", "Balanced", "Quality"])
             self.encoder_tune_cBox.addItems(["None"])
             self.encoder_profile_cBox.addItems(["Auto",  "Main"])
             self.encoder_level_cBox.addItems(["Auto", "1.0", "1b", "1.1", "1.2", "1.3", "2.0", "2.1", "2.2", "3.0", "3.1", "3.2", "4.0", "4.1", "4.2", "5.0", "5.1", "5.2"])
 
         elif format == "HEVC (x265)":
-            self.crf_rb.setText("恒定质量 (CRF): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CRF): "))
             self.using_preset_cBox.addItems(list(self.custom_preset_config.get("x265", {}).keys()))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Ultrafast", "Superfast", "Veryfast", "Faster", "Fast", "Medium", "Slow", "Slower", "Veryslow", "Placebo"])
             self.encoder_tune_cBox.addItems(["None", "Animation", "Grain", "Fast Decode", "PSNR", "SSIM", "Zero Latency"])
@@ -460,38 +460,38 @@ class VideoParamCard(HeaderCardWidget):
             self.encoder_level_cBox.addItems(["Auto", "1.0", "2.0", "2.1", "3.0", "3.1", "4.0", "4.1", "5.0", "5.1", "5.2", "6.0", "6.1", "6.2"])
 
         elif format == "HEVC (NVEnc)":
-            self.crf_rb.setText("恒定质量 (CQ): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CQ): "))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Fastest", "Faster", "Fast", "Medium", "Slow", "Slower", "Slowest"])
             self.encoder_tune_cBox.addItems(["None"])
             self.encoder_profile_cBox.addItems(["Auto", "Main"])
             self.encoder_level_cBox.addItems(["Auto", "1.0", "2.0", "2.1", "3.0", "3.1", "4.0", "4.1", "5.0", "5.1", "5.2", "6.0", "6.1", "6.2"])
 
         elif format == "HEVC (QSV)":
-            self.crf_rb.setText("恒定质量 (ICQ): ")
+            self.crf_rb.setText(self.tr("恒定质量 (ICQ): "))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Veryfast", "Faster", "Fast", "Medium", "Slow", "Slower", "Veryslow"])
             self.encoder_tune_cBox.addItems(["None"])
             self.encoder_profile_cBox.addItems(["Auto", "Main", "Main10"])
             self.encoder_level_cBox.addItems(["Auto", "1.0", "2.0", "2.1", "3.0", "3.1", "4.0", "4.1", "5.0", "5.1", "5.2"])
 
         elif format == "HEVC (AMF)":
-            self.crf_rb.setText("恒定质量 (CQP): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CQP): "))
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["Speed", "Balanced", "Quality"])
             self.encoder_tune_cBox.addItems(["None"])
             self.encoder_profile_cBox.addItems(["Auto", "Main"])
             self.encoder_level_cBox.addItems(["Auto", "1.0", "2.0", "2.1", "3.0", "3.1", "4.0", "4.1", "5.0", "5.1", "5.2"])
 
         elif format == "AV1 (SVT)":
-            self.crf_rb.setText("恒定质量 (CQ): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CQ): "))
             self.crf_value_spinBox.setRange(0, 63)
 
             self.using_preset_cBox.addItems(list(self.custom_preset_config.get("SVTAV1", {}).keys()))
-            self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["0 (最快)", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13 (最慢)"])
+            self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, [self.tr("0 (最快)"), "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", self.tr("13 (最慢)")])
             self.encoder_tune_cBox.addItems(["Auto", "VQ", "iq", "PSNR", "SSIM", "ms-ssim"])
             self.encoder_profile_cBox.addItems(["Auto", "Main"])
             self.encoder_level_cBox.addItems(["Auto", "2.0", "2.1", "2.3", "3.0", "3.1", "4.0", "4.1", "4.3", "5.0", "5.1", "5.2", "5.3", "6.0", "6.1", "6.2", "6.3"])
         
         elif format == "VP9":
-            self.crf_rb.setText("恒定质量 (CQ): ")
+            self.crf_rb.setText(self.tr("恒定质量 (CQ): "))
             self.crf_value_spinBox.setRange(0, 63)
 
             self.using_preset_switch.setChecked(False)
@@ -501,7 +501,7 @@ class VideoParamCard(HeaderCardWidget):
             self.encoder_level_cBox.addItems(["Auto"])
         
         elif format == "MPEG-4":
-            self.crf_rb.setText("恒定质量 (QP): ")
+            self.crf_rb.setText(self.tr("恒定质量 (QP): "))
             self.crf_value_spinBox.setRange(1, 31)
 
             self.slide_value_bind_label_text(self.encoder_preset_value_slider, self.encoder_preset_value_label, ["None"])
@@ -575,12 +575,12 @@ class VideoParamCard(HeaderCardWidget):
 class AudioParamCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('音频编码设置')
+        self.setTitle(self.tr('音频编码设置'))
 
         self.mainLayout = QVBoxLayout()
         
         # 基本控件
-        self.encoder_format_label = BodyLabel("编码格式:")
+        self.encoder_format_label = BodyLabel(self.tr("编码格式:"))
 
         self.encoder_format_combobox = ComboBox()
         self.encoder_format_combobox.addItems(["Copy", "WAV", "FLAC", "ALAC", "AAC", "MP3", "Opus", "Vorbis", "AC3"])
@@ -788,24 +788,24 @@ class ImageParamCard(HeaderCardWidget):
         self._ratio_cw = None
         self._ratio_ch = None
 
-        self.setTitle('图片编码设置')
+        self.setTitle(self.tr('图片编码设置'))
 
         self.mainLayout = QVBoxLayout()
 
         # 基本控件
-        self.encoder_format_label = BodyLabel("编码格式:")
+        self.encoder_format_label = BodyLabel(self.tr("编码格式:"))
 
         self.encoder_format_combobox = ComboBox()
         self.encoder_format_combobox.addItems(["PNG", "JPEG", "WEBP", "AVIF", "JXL", "ICO", "BMP", "TIFF"])
         self.encoder_format_combobox.setFixedWidth(80)
 
-        self.image_Lossless_enable_label = BodyLabel("无损压缩")
+        self.image_Lossless_enable_label = BodyLabel(self.tr("无损压缩"))
         self.image_lossless_enable_switchButton = SwitchButton()
         self.image_lossless_enable_switchButton.setChecked(True)
         self.image_lossless_enable_switchButton.setOnText("")
         self.image_lossless_enable_switchButton.setOffText("")
 
-        self.image_quality_label = BodyLabel("质量:")
+        self.image_quality_label = BodyLabel(self.tr("质量:"))
         self.image_quality_slider = Slider(Qt.Horizontal)
         self.image_quality_slider.setRange(0, 10)
         self.image_quality_slider.setValue(8)
@@ -814,41 +814,52 @@ class ImageParamCard(HeaderCardWidget):
         self.image_quality_slider_label = BodyLabel("80")
         self.image_quality_slider_label.setFixedWidth(25)
 
-        self.enable_image_base_process_label = BodyLabel("基本处理")
+        self.enable_image_base_process_label = BodyLabel(self.tr("基本处理"))
         self.enable_image_base_process_switchButton = SwitchButton()
         self.enable_image_base_process_switchButton.setChecked(False)
         self.enable_image_base_process_switchButton.setOnText("")
         self.enable_image_base_process_switchButton.setOffText("")
 
 
-        self.image_base_process_label = StrongBodyLabel("基本处理: ")
+        self.image_base_process_label = StrongBodyLabel(self.tr("基本处理: "))
         
-        self.image_base_process_rotate_label = BodyLabel("旋转: ")
+        self.image_base_process_rotate_label = BodyLabel(self.tr("旋转: "))
         self.image_base_process_rotate_comboBox = ComboBox()
         self.image_base_process_rotate_comboBox.setFixedWidth(130)
-        self.image_base_process_rotate_comboBox.addItems(["不旋转", "顺时针90度", "逆时针90度", "旋转180度", "根据EXIF旋转"])
+        self.image_base_process_rotate_comboBox.addItem(self.tr("不旋转"), userData="不旋转")
+        self.image_base_process_rotate_comboBox.addItem(self.tr("顺时针90度"), userData="顺时针90度")
+        self.image_base_process_rotate_comboBox.addItem(self.tr("逆时针90度"), userData="逆时针90度")
+        self.image_base_process_rotate_comboBox.addItem(self.tr("旋转180度"), userData="旋转180度")
+        self.image_base_process_rotate_comboBox.addItem(self.tr("根据EXIF旋转"), userData="根据EXIF旋转")
 
-        self.image_base_process_mirror_label = BodyLabel("镜像: ")
+        self.image_base_process_mirror_label = BodyLabel(self.tr("镜像: "))
         self.image_base_process_mirror_comboBox = ComboBox()
-        self.image_base_process_mirror_comboBox.addItems(["不镜像", "水平镜像", "垂直镜像"])
+        self.image_base_process_mirror_comboBox.addItem(self.tr("不镜像"), userData="不镜像")
+        self.image_base_process_mirror_comboBox.addItem(self.tr("水平镜像"), userData="水平镜像")
+        self.image_base_process_mirror_comboBox.addItem(self.tr("垂直镜像"), userData="垂直镜像")
         self.image_base_process_mirror_comboBox.setFixedWidth(100)
 
-        self.image_base_process_crop_ratio_label = BodyLabel("裁剪比例: ")
+        self.image_base_process_crop_ratio_label = BodyLabel(self.tr("裁剪比例: "))
         self.image_base_process_crop_ratio_eComboBox = EditableComboBox()
         self.image_base_process_crop_ratio_eComboBox.setFixedWidth(140)
-        self.image_base_process_crop_ratio_eComboBox.addItems(["不裁剪", "原始比例", "1:1", "4:3", "16:9", "输入比例(x:y)"])
+        self.image_base_process_crop_ratio_eComboBox.addItem(self.tr("不裁剪"), userData="不裁剪")
+        self.image_base_process_crop_ratio_eComboBox.addItem(self.tr("原始比例"), userData="原始比例")
+        self.image_base_process_crop_ratio_eComboBox.addItem("1:1", userData="1:1")
+        self.image_base_process_crop_ratio_eComboBox.addItem("4:3", userData="4:3")
+        self.image_base_process_crop_ratio_eComboBox.addItem("16:9", userData="16:9")
+        self.image_base_process_crop_ratio_eComboBox.addItem(self.tr("输入比例(x:y)"), userData="输入比例(x:y)")
 
 
-        self.image_base_process_crop_dimension_label = BodyLabel("裁剪尺寸: ")
+        self.image_base_process_crop_dimension_label = BodyLabel(self.tr("裁剪尺寸: "))
         self.image_base_process_crop_dimension_width_lineEdit = LineEdit()
-        self.image_base_process_crop_dimension_width_lineEdit.setPlaceholderText("宽度")
-        self.image_base_process_crop_dimension_width_lineEdit.setFixedWidth(60)
+        self.image_base_process_crop_dimension_width_lineEdit.setPlaceholderText(self.tr("宽度"))
+        self.image_base_process_crop_dimension_width_lineEdit.setFixedWidth(90)
 
         self.image_base_process_crop_dimension_multiply_label = BodyLabel("x")
 
         self.image_base_process_crop_dimension_height_lineEdit = LineEdit()
-        self.image_base_process_crop_dimension_height_lineEdit.setPlaceholderText("高度")
-        self.image_base_process_crop_dimension_height_lineEdit.setFixedWidth(60)
+        self.image_base_process_crop_dimension_height_lineEdit.setPlaceholderText(self.tr("高度"))
+        self.image_base_process_crop_dimension_height_lineEdit.setFixedWidth(90)
 
 
         self._initLayout()
@@ -985,7 +996,7 @@ class ImageParamCard(HeaderCardWidget):
 
             self.enable_image_base_process_switchButton.setEnabled(True)
             
-            self.image_base_process_crop_ratio_eComboBox.setCurrentText("不裁剪")
+            self.image_base_process_crop_ratio_eComboBox.setCurrentIndex(0)
             self.image_base_process_crop_ratio_eComboBox.setEnabled(True)
 
             self.image_base_process_crop_dimension_width_lineEdit.setText("")
@@ -1016,13 +1027,20 @@ class ImageParamCard(HeaderCardWidget):
             self.image_base_process_crop_dimension_width_lineEdit.setText("256")
             self.image_base_process_crop_dimension_height_lineEdit.setText("256")
 
+    def _crop_ratio_value(self):
+        """固定选项返回原始值；用户手动输入的 x:y 比例按原文处理。"""
+        combo = self.image_base_process_crop_ratio_eComboBox
+        text = combo.currentText().strip()
+        index = combo.findText(text)
+        return (combo.itemData(index) or text) if index >= 0 else text
+
     def set_crop_dimension_box(self):
         """初始化裁剪尺寸输入框的状态和内容"""
         self.image_base_process_crop_dimension_hBox.setEnabled(True)
         self.image_base_process_crop_dimension_width_lineEdit.setText("")
         self.image_base_process_crop_dimension_height_lineEdit.setText("")
 
-        ratio_text = self.image_base_process_crop_ratio_eComboBox.currentText().strip()
+        ratio_text = self._crop_ratio_value()
         if ratio_text == "不裁剪":
             self.image_base_process_crop_dimension_hBox.setEnabled(False)
         else:
@@ -1036,7 +1054,7 @@ class ImageParamCard(HeaderCardWidget):
 
     def get_crop_ratio(self):
         """根据裁剪比例选项计算宽高比"""
-        ratio_text = self.image_base_process_crop_ratio_eComboBox.currentText().strip()
+        ratio_text = self._crop_ratio_value()
         if ratio_text == "不裁剪":
             self._ratio_cw, self._ratio_ch = None, None
             return self._ratio_cw, self._ratio_ch
@@ -1135,8 +1153,8 @@ class ImageParamCard(HeaderCardWidget):
             "is_lossless": self.image_lossless_enable_switchButton.isChecked() if hasattr(self, 'image_lossless_enable_switchButton') else False,
             "quality_val": quality_val,
             "enbale_base_process": self.enable_image_base_process_switchButton.isChecked() if hasattr(self, 'enable_image_base_process_switchButton') else False,
-            "rotate": self.image_base_process_rotate_comboBox.currentText() if hasattr(self, 'image_base_process_rotate_comboBox') else "",
-            "flip": self.image_base_process_mirror_comboBox.currentText() if hasattr(self, 'image_base_process_mirror_comboBox') else "",
+            "rotate": self.image_base_process_rotate_comboBox.currentData() if hasattr(self, 'image_base_process_rotate_comboBox') else "",
+            "flip": self.image_base_process_mirror_comboBox.currentData() if hasattr(self, 'image_base_process_mirror_comboBox') else "",
             "original_w": self._original_width if hasattr(self, "_original_width") else None,
             "original_h": self._original_height if hasattr(self, "_original_height") else None,
             "crop_w": crop_w if crop_w.isdigit() else None,
@@ -1146,12 +1164,12 @@ class ImageParamCard(HeaderCardWidget):
 class SubtitleParamCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('字幕编码设置')
+        self.setTitle(self.tr('字幕编码设置'))
 
         self.mainLayout = QVBoxLayout()
         self.hBoxLayout = QHBoxLayout()
 
-        self.subtitle_format_label = BodyLabel("字幕格式:")
+        self.subtitle_format_label = BodyLabel(self.tr("字幕格式:"))
         self.subtitle_format_combobox = ComboBox()
         self.subtitle_format_combobox.addItems(["ASS", "SRT", "LRC", "VTT"])
         self.subtitle_format_combobox.setFixedWidth(80)
@@ -1175,22 +1193,22 @@ class SubtitleParamCard(HeaderCardWidget):
 class OutputCard(HeaderCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle('输出设置')
+        self.setTitle(self.tr('输出设置'))
 
         self.mainLayout = QVBoxLayout()
         self.hBoxLayout1 = QHBoxLayout()
         self.hBoxLayout2 = QHBoxLayout()
 
-        self.custom_output_file_name_checkBox = CheckBox("文件名后缀: ")
+        self.custom_output_file_name_checkBox = CheckBox(self.tr("文件名后缀: "))
         self.custom_output_file_name_lineEdit = LineEdit()
         self.custom_output_file_name_lineEdit.setFixedWidth(250)
         self.custom_output_file_name_lineEdit.setEnabled(False)
 
-        self.using_default_output_path_checkBox = CheckBox("使用源目录")
+        self.using_default_output_path_checkBox = CheckBox(self.tr("使用源目录"))
 
-        self.output_path_label = BodyLabel("输出路径: ")
+        self.output_path_label = BodyLabel(self.tr("输出路径: "))
         self.output_path_lineEdit = LineEdit()
-        self.output_browse_button = PushButton("浏览")
+        self.output_browse_button = PushButton(self.tr("浏览"))
 
         self._initLayout()
         self._connect_signals()
@@ -1233,7 +1251,7 @@ class OutputCard(HeaderCardWidget):
             self.output_browse_button.setEnabled(False)
 
     def browse_output_path(self):
-        directory = QFileDialog.getExistingDirectory(self, "选择输出目录", )
+        directory = QFileDialog.getExistingDirectory(self, self.tr("选择输出目录"), )
         if directory:
             self.output_path_lineEdit.setText(directory)
 

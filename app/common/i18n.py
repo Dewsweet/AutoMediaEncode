@@ -18,7 +18,7 @@ def resolve_language(preference: str, system_locale: QLocale | None = None) -> s
 
 
 def install_translations(app, preference: str) -> list[QTranslator]:
-    """安装 Qt、Fluent、AME 翻译，返回需要保持存活的译者列表。"""
+    """安装 Fluent、AME 翻译，返回需要保持存活的译者列表。"""
     language = resolve_language(preference)
     translators = []
 
@@ -30,14 +30,6 @@ def install_translations(app, preference: str) -> list[QTranslator]:
 
     # 报告服务使用实际生效语言，避免保存新偏好或加载回退后与界面不同步。
     app.setProperty("ameLanguage", language)
-
-    # Qt 与 Fluent 的源码是英文，英文模式直接使用原文。
-    if language == "zh_CN":
-        qt = QTranslator(app)
-        if qt.load(":/app/i18n/qt/qtbase_zh_CN.qm") and not qt.isEmpty():
-            translators.append(qt)
-        else:
-            logger.warning("Qt 简体中文翻译资源加载失败: qtbase_zh_CN.qm")
 
     fluent = FluentTranslator(QLocale(language), parent=app)
     if not fluent.isEmpty():
