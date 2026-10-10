@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 import shutil
 
+from PySide6.QtCore import QT_TRANSLATE_NOOP
+
 from .path_service import PathService
 
 class ToolService:
@@ -14,7 +16,7 @@ class ToolService:
             "type": ".exe",
             "aliases": [],
             "title": "FFMpeg",
-            "desc": "领先的多媒体框架",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "领先的多媒体框架"),
             "url": "https://ffmpeg.org/",
             "is_custom": False,
         },
@@ -24,7 +26,7 @@ class ToolService:
             "type": ".dll",
             "aliases": [],
             "title": "MediaInfo",
-            "desc": "媒体文件信息分析工具",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "媒体文件信息分析工具"),
             "url": "https://mediaarea.net/MediaInfo",
             "is_custom": False,
         },
@@ -39,7 +41,7 @@ class ToolService:
                 "mkvpropedit", "mkvpropedit.exe",
             ],
             "title": "MKVToolNix",
-            "desc": "MKV 混流工具",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "MKV 混流工具"),
             "url": "https://www.matroska.org/index.html",
             "is_custom": False,
         },
@@ -53,7 +55,7 @@ class ToolService:
                 "x264-x64", "x264-x64.exe",
             ],
             "title": "x264",
-            "desc": "H.264 视频编码器",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "H.264 视频编码器"),
             "url": "https://github.com/jpsdr/x264",
             "is_custom": False,
         },
@@ -67,7 +69,7 @@ class ToolService:
                 "x265-x64", "x265-x64.exe",
             ],
             "title": "x265",
-            "desc": "H.265 视频编码器",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "H.265 视频编码器"),
             "url": "https://github.com/msg7086/x265-Yuuki-Asuna",
             "is_custom": False,
         },
@@ -80,7 +82,7 @@ class ToolService:
                 "SvtAv1.exe", "svt_av1", "svt-av1",
             ],
             "title": "SVT-AV1",
-            "desc": "SVT-AV1 视频编码器",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "SVT-AV1 视频编码器"),
             "url": "https://gitlab.com/AOMediaCodec/SVT-AV1",
             "is_custom": False,
         },
@@ -90,7 +92,7 @@ class ToolService:
             "type": ".exe",
             "aliases": ["qaac.exe"],
             "title": "qaac",
-            "desc": "AAC 音频编码器，基于 Apple 的 CoreAudio",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "AAC 音频编码器，基于 Apple 的 CoreAudio"),
             "url": "https://github.com/nu774/qaac",
             "is_custom": False,
         },
@@ -100,7 +102,7 @@ class ToolService:
             "type": ".exe",
             "aliases": ["eac3to.exe"],
             "title": "eac3to",
-            "desc": "Blu-ray/HD DVD 轨道探测与无损提取工具",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "Blu-ray/HD DVD 轨道探测与无损提取工具"),
             "url": "https://www.videohelp.com/software/eac3to",
             "is_custom": False,
         },
@@ -110,7 +112,7 @@ class ToolService:
             "type": ".exe",
             "aliases": ["vspipe.exe"],
             "title": "VapourSynth",
-            "desc": "强大的视频处理框架; 不影响软件的基本功能, 有需要请自行指定位置",
+            "desc": QT_TRANSLATE_NOOP("ToolDescriptions", "强大的视频处理框架; 不影响软件的基本功能, 有需要请自行指定位置"),
             "url": "https://github.com/vapoursynth/vapoursynth",
             "is_custom": True,
         },

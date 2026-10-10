@@ -1,0 +1,8 @@
+main.py
+app/view/main_window.py
+app/view/setting_interface.py
+app/components/tools_template_card.py
+app/components/preset_dialog.py
+app/components/update_dialog.py
+app/services/update_service.py
+app/services/tool_service.py

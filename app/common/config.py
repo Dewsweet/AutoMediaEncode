@@ -6,7 +6,7 @@ class Config(QConfig):
     """ 存放应用的全局配置，继承或利用 qconfig """
     
     # 语言和个性化
-    language = OptionsConfigItem("Personalization", "Language", "Auto", OptionsValidator(["Auto", "zh-CN", "en-US"]))
+    language = OptionsConfigItem("Personalization", "Language", "Auto", OptionsValidator(["Auto", "zh-CN", "en-US"]), restart=True)
     bg_image_path = ConfigItem("Personalization", "BackgroundImage", "")
 
     # 定义 vspipe 的自定义路径配置项，默认值为空

@@ -115,6 +115,6 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME 工作流')
 
         self.addSubInterface(self.taskInterface, FIF.DATE_TIME, '任务进度', NavigationItemPosition.BOTTOM)
-        self.addSubInterface(self.settingInterface, FIF.SETTING, '设置', NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr('设置'), NavigationItemPosition.BOTTOM)
 
 

@@ -7,8 +7,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 with redirect_stdout(StringIO()):
-    from qfluentwidgets import FluentTranslator
+    from app.common.i18n import install_translations
 
+from app.common.config import cfg
 from app.common.win11_round_menu_fix import install_win11_round_menu_fix
 from app.view.main_window import MainWindow
 from app.services.task_manager import taskManager  # 导入并常驻后台
@@ -24,8 +25,7 @@ if __name__ == '__main__':
     from app.common.qt_warning_filter import install_warning_filter
     install_warning_filter()
 
-    translation = FluentTranslator()
-    app.installTranslator(translation)
+    translators = install_translations(app, cfg.get(cfg.language))
     
     w = MainWindow()
     w.show()

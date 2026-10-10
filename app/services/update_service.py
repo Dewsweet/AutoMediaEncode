@@ -7,7 +7,7 @@ import urllib.error
 import urllib.request
 from typing import Optional
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QCoreApplication
 from loguru import logger
 
 GITHUB_REPO_URL = "https://github.com/Dewsweet/AutoMediaEncode"
@@ -42,7 +42,7 @@ class UpdateCheckWorker(QThread):
             if self._cancelled:
                 return
             if release is None:
-                self.checkFailed.emit("仓库中暂无可用版本")
+                self.checkFailed.emit(QCoreApplication.translate("UpdateCheckWorker", "仓库中暂无可用版本"))
                 return
             self.checkFinished.emit({
                 "tag_name": release.get("tag_name", ""),
@@ -52,17 +52,17 @@ class UpdateCheckWorker(QThread):
             })
         except urllib.error.HTTPError as e:
             logger.error(f"检查更新失败: HTTP {e.code}")
-            self.checkFailed.emit(f"服务器返回错误 (HTTP {e.code})")
+            self.checkFailed.emit(QCoreApplication.translate("UpdateCheckWorker", "服务器返回错误 (HTTP {code})").format(code=e.code))
         except urllib.error.URLError as e:
             reason = getattr(e, "reason", e)
             logger.error(f"检查更新失败: 无法连接 GitHub ({reason})")
-            self.checkFailed.emit("无法连接 GitHub，请检查网络连接或代理设置")
+            self.checkFailed.emit(QCoreApplication.translate("UpdateCheckWorker", "无法连接 GitHub，请检查网络连接或代理设置"))
         except json.JSONDecodeError as e:
             logger.error(f"检查更新失败: 响应解析失败 ({e})")
-            self.checkFailed.emit("响应数据解析失败")
+            self.checkFailed.emit(QCoreApplication.translate("UpdateCheckWorker", "响应数据解析失败"))
         except Exception as e:
             logger.error(f"检查更新失败: {e}")
-            self.checkFailed.emit(f"未知错误: {str(e)}")
+            self.checkFailed.emit(QCoreApplication.translate("UpdateCheckWorker", "未知错误: {detail}").format(detail=str(e)))
 
     @staticmethod
     def _fetch_latest_release() -> Optional[dict]:

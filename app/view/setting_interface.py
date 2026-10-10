@@ -2,11 +2,11 @@
 import os
 import shutil
 from pathlib import Path
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QUrl, QCoreApplication, QEvent, QAbstractAnimation
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 
-from qfluentwidgets import (ScrollArea, SettingCardGroup, ExpandGroupSettingCard, OptionsSettingCard, CustomColorSettingCard, PrimaryPushSettingCard, ComboBoxSettingCard, PushSettingCard, 
+from qfluentwidgets import (ScrollArea, SettingCardGroup, ExpandGroupSettingCard, OptionsSettingCard, CustomColorSettingCard, PrimaryPushSettingCard, ComboBoxSettingCard, PushSettingCard,
                             qconfig, setTheme, setThemeColor, 
                             TitleLabel, CaptionLabel, BodyLabel, HyperlinkLabel, ToolButton, InfoBar, InfoBarPosition, ToolTipFilter)
 
@@ -50,6 +50,7 @@ class SettingInterface(QWidget):
         self._customCardArea()
         self._aboutCardArea()
         self._initLayout()
+        self._init_expand_card_layouts()
         self._connectSignalToSlot()
         StyleSheet.SETTING_INTERFACE.apply(self)
 
@@ -84,7 +85,7 @@ class SettingInterface(QWidget):
 
         self.tool_widgets = {}
         for tool in ToolService.TOOLS_METADATA:
-            card = MediaToolsCardTemplate(tool["title"], tool["desc"])
+            card = MediaToolsCardTemplate(tool["title"], QCoreApplication.translate("ToolDescriptions", tool["desc"]))
 
             if tool["url"]:
                 card.setWebsite(tool["url"])
@@ -138,8 +139,7 @@ class SettingInterface(QWidget):
             FIF.LANGUAGE,
             self.tr("语言 (Language)"),
             self.tr("选择软件的显示语言"),
-            # texts=["系统默认", "简体中文", "English"],
-            texts=[self.tr("系统默认"), self.tr("简体中文")],
+            texts=[self.tr("系统默认"), "简体中文", "English"],
             parent=self.customCardGroup
         )
 
@@ -164,7 +164,7 @@ class SettingInterface(QWidget):
             self.tr("选择图片"),
             FIF.PHOTO,
             self.tr("自定义背景图片"),
-            self.tr("让程序界面更加花里胡哨😋") + (f" (当前: {Path(qconfig.get(cfg.bg_image_path)).name})" if qconfig.get(cfg.bg_image_path) else ""),
+            self._background_description(),
             parent=self.customCardGroup
         )
         self.clearBgButton = ToolButton(FIF.DELETE, self.bgImageCard)
@@ -187,6 +187,8 @@ class SettingInterface(QWidget):
         self.helpNoteLine2 = BodyLabel(self.tr('感谢VCB-Studio和谜之压制组的开源, 关于媒体处理和编码器可以参考他们的教程:'), self)
         self.helpNoteLine3 = HyperlinkLabel(QUrl('https://iavoe.github.io/'), self.tr('谜之压制组 压制教程: https://iavoe.github.io/'), self)
         self.helpNoteLine4 = HyperlinkLabel(QUrl('https://guides.vcb-s.com/'), self.tr('VCB-Studio 公开教程: https://guides.vcb-s.com/'), self)
+        for line in [self.helpNoteLine1, self.helpNoteLine2]:
+            line.setWordWrap(True)
         for line in [self.helpNoteLine3, self.helpNoteLine4]:
             line.setFixedHeight(line.sizeHint().height()) # 固定高度，防止被设置过大后挤压布局
 
@@ -200,8 +202,7 @@ class SettingInterface(QWidget):
             self.tr('检查更新'),
             FIF.INFO,
             self.tr('关于'),
-            '© ' + self.tr('Copyright') + " " + str(YEAR) + ", " + AUTHOR + ". " +
-            self.tr('Version') + " " + VERSION,
+            self.tr("© 版权所有 {year}, {author}. 版本 {version}").format(year=YEAR, author=AUTHOR, version=VERSION),
             self.aboutCardGroup
         )
 
@@ -231,7 +232,53 @@ class SettingInterface(QWidget):
         self.mainLayout.addWidget(self.scrollArea)
         self.setLayout(self.mainLayout)
 
+    def _init_expand_card_layouts(self):
+        self._expand_cards = (self.toolsCheckCard, self.encoderPresetCard, self.helpCard)
+        self._expand_row_min_heights = {
+            row: row.minimumHeight() for card in self._expand_cards for row in card.widgets
+        }
+        for card in self._expand_cards:
+            # Keep this correction local to Settings, using the existing Fluent card.
+            card._adjustViewSize = lambda current=card: self._update_expand_card_layout(current)
+            card.viewport().installEventFilter(self)
+            card.view.installEventFilter(self)
+            card.expandAni.finished.connect(
+                lambda current=card: self._update_expand_card_layout(current)
+            )
+            self._update_expand_card_layout(card)
+
+    def _update_expand_card_layout(self, card):
+        width = max(card.viewport().width(), card.viewLayout.minimumSize().width())
+        changed = False
+        for row in card.widgets:
+            layout = row.layout()
+            # Word-wrapped labels need the height at the available width, rather
+            # than sizeHint(), which assumes a narrower preferred width.
+            height = (layout.heightForWidth(width) if layout.hasHeightForWidth()
+                      else layout.sizeHint().height())
+            height = max(self._expand_row_min_heights[row], height)
+            if row.minimumHeight() != height or row.maximumHeight() != height:
+                row.setFixedHeight(height)
+                changed = True
+
+        if changed:
+            card.viewLayout.invalidate()
+        height = card.viewLayout.sizeHint().height()
+        card.spaceWidget.setFixedHeight(height)
+        if card.expandAni.state() == QAbstractAnimation.Stopped:
+            card.setFixedHeight(card.card.height() + (height if card.isExpand else 0))
+
+    def eventFilter(self, obj, event):
+        for card in getattr(self, "_expand_cards", ()):
+            if obj is card.viewport() and event.type() == QEvent.Resize:
+                if event.size().width() != event.oldSize().width():
+                    self._update_expand_card_layout(card)
+            elif obj is card.view and event.type() == QEvent.LayoutRequest:
+                self._update_expand_card_layout(card)
+        return super().eventFilter(obj, event)
+
     def _connectSignalToSlot(self):
+        cfg.appRestartSig.connect(self._show_restart_hint)
         qconfig.themeChanged.connect(setTheme)
         self.themeColorCard.colorChanged.connect(lambda c: setThemeColor(c))
 
@@ -256,6 +303,22 @@ class SettingInterface(QWidget):
         self.aboutCard.clicked.connect(self._check_for_updates)
 
 
+    def _show_restart_hint(self):
+        InfoBar.success(
+            title=self.tr("语言设置已保存"),
+            content=self.tr("将在下次启动时生效"),
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=5000,
+            parent=self,
+        )
+
+    def _background_description(self):
+        path = qconfig.get(cfg.bg_image_path)
+        name = Path(path).name if path else self.tr("默认纯色")
+        return self.tr("让程序界面更加花里胡哨😋 (当前: {name})").format(name=name)
+
     def _on_open_tools_folder_clicked(self):
         """打开存放工具的本地文件夹"""
         tools_path = PathService.get_tools_dir()
@@ -273,7 +336,7 @@ class SettingInterface(QWidget):
 
     def _on_vspipe_button_clicked(self):
         """选择 vspipe 路径并更新"""
-        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择 vspipe"), "", "可执行文件 (*.exe);;所有文件 (*.*)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择 vspipe"), "", self.tr("可执行文件 (*.exe);;所有文件 (*.*)"))
         if path:
             p = Path(path)
             card = self.tool_widgets.get("vspipe")
@@ -317,7 +380,7 @@ class SettingInterface(QWidget):
             except Exception as e:
                 InfoBar.error(
                     title=self.tr("导出失败"),
-                    content=self.tr(f"错误信息：{str(e)}"),
+                    content=self.tr("错误信息：{detail}").format(detail=str(e)),
                     orient=Qt.Horizontal,
                     isClosable=True,
                     position=InfoBarPosition.TOP_RIGHT,
@@ -328,7 +391,7 @@ class SettingInterface(QWidget):
     def _on_clear_bg_image_clicked(self):
         """恢复无图片状态"""
         qconfig.set(cfg.bg_image_path, "")
-        self.bgImageCard.setContent(self.tr("让程序界面更加花里胡哨😋") + " (当前: 默认纯色)")
+        self.bgImageCard.setContent(self._background_description())
         if self.window():
             self.window().update()
 
@@ -339,7 +402,7 @@ class SettingInterface(QWidget):
         )
         if path:
             qconfig.set(cfg.bg_image_path, path)
-            self.bgImageCard.setContent(self.tr("让程序界面更加花里胡哨😋") + f" (当前: {Path(path).name})")
+            self.bgImageCard.setContent(self._background_description())
             # 发送更新信号给主窗口
             if self.window():
                 self.window().update()
@@ -384,7 +447,7 @@ class SettingInterface(QWidget):
         elif result < 0:
             InfoBar.warning(
                 title=self.tr("版本检查"),
-                content=self.tr(f"远程版本 ({remote_tag}) 低于当前版本 ({VERSION})，无需更新"),
+                content=self.tr("远程版本 ({remote}) 低于当前版本 ({current})，无需更新").format(remote=remote_tag, current=VERSION),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -394,7 +457,7 @@ class SettingInterface(QWidget):
         else:
             InfoBar.success(
                 title=self.tr("已是最新版本"),
-                content=self.tr(f"当前版本 ({VERSION}) 已是最新"),
+                content=self.tr("当前版本 ({version}) 已是最新").format(version=VERSION),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -407,7 +470,7 @@ class SettingInterface(QWidget):
         self._restore_update_button()
         InfoBar.error(
             title=self.tr("检查更新失败"),
-            content=self.tr(f"{reason}，可稍后重试"),
+            content=self.tr("{reason}，可稍后重试").format(reason=reason),
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP_RIGHT,

@@ -10,7 +10,7 @@ from qfluentwidgets import FluentIcon as FIF
 class MediaToolsCardTemplate(QWidget):
     def __init__(self, title, subtitle, parent=None):
         super().__init__(parent=parent)
-        self.setFixedHeight(60)
+        self.setMinimumHeight(60)
 
         self.mainLayout = QVBoxLayout(self)
 
@@ -28,6 +28,7 @@ class MediaToolsCardTemplate(QWidget):
         self.subtitleLabel = CaptionLabel(subtitle)
         self.subtitleLabel.setFont(QFont("Microsoft YaHei", 8))
         self.subtitleLabel.setStyleSheet("color: gray;")
+        self.subtitleLabel.setWordWrap(True)
 
         self.stateIcon = IconWidget()
         self.stateIcon.setFixedSize(20, 20)
@@ -47,8 +48,7 @@ class MediaToolsCardTemplate(QWidget):
 
         self.hBoxLayout.addWidget(self.stateIcon)
         self.hBoxLayout.addSpacing(10)
-        self.hBoxLayout.addWidget(self.vBox)
-        self.hBoxLayout.addStretch(1)
+        self.hBoxLayout.addWidget(self.vBox, 1)
         self.hBoxLayout.addWidget(self.websiteButton)
         self.hBoxLayout.addSpacing(0)
         self.hBoxLayout.addWidget(self.vspipePathButton)
@@ -70,6 +70,7 @@ class MediaToolsCardTemplate(QWidget):
         self.websiteButton.setVisible(True) 
 
     def checkState(self, state: bool):
+        self.stateIcon.setToolTip(self.tr("工具可用") if state else self.tr("未找到工具"))
         if state:
             self.stateIcon.setIcon(InfoBarIcon.SUCCESS)
         else:

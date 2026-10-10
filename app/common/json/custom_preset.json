@@ -1,15 +1,15 @@
 {
     "x264": {
-        "通用": "--partitions all --rc-lookahead 90 --bframes 12 --b-adapt 2 --me umh --subme 9 --merange 48 --no-fast-pskip --direct auto --weightb --keyint 360 --min-keyint 5 --ref 3 --crf 18 --chroma-qp-offset -2 --aq-mode 3 --aq-strength 0.7 --trellis 2 --deblock 0:0 --psy-rd 0.77:0.22 --fgo 12 --nr 4"
+        "General": "--partitions all --rc-lookahead 90 --bframes 12 --b-adapt 2 --me umh --subme 9 --merange 48 --no-fast-pskip --direct auto --weightb --keyint 360 --min-keyint 5 --ref 3 --crf 18 --chroma-qp-offset -2 --aq-mode 3 --aq-strength 0.7 --trellis 2 --deblock 0:0 --psy-rd 0.77:0.22 --fgo 12 --nr 4"
     },
     "x265": {
-        "通用":  "--high-tier --preset slow --me umh --subme 5 --merange 48 --weightb --aq-mode 4 --bframes 5 --ref 3",
-        "电影": "--high-tier --ctu 64 --tu-intra-depth 4 --tu-inter-depth 4 --limit-tu 1 --rect --tskip --tskip-fast --me star --subme 3 --merange 48 --weightb --ref 4 --max-merge 5 --no-open-gop --min-keyint 3 --keyint 240 --fades --bframes 8 --b-adapt 2 --b-intra --crf 21.8 --crqpoffs -3 --ipratio 1.2 --pbratio 1.5 --rdoq-level 2 --aq-mode 4 --aq-strength 1.1 --qg-size 8 --rd 5 --limit-refs 0 --rskip 0 --rc-lookahead 45 --psy-rd 1.6 --deblock 0:-1 --limit-sao --sao-non-deblock --selective-sao 3",
-        "动画": "--high-tier --tu-intra-depth 4 --tu-inter-depth 4 --max-tu-size 16 --tskip --tskip-fast --me umh --subme 3 --merange 48 --weightb --max-merge 5 --early-skip --ref 3 --no-open-gop --min-keyint 5  --keyint 290 --fades --bframes 16 --b-adapt 2 --bframe-bias 20 --constrained-intra --b-intra --crf 22 --crqpoffs -4 --cbqpoffs -2 --ipratio 1.6 --pbratio 1.3 --cu-lossless --psy-rdoq 2.3 --rdoq-level 2 --hevc-aq --aq-strength 0.9 --qg-size 8 --rd 3 --limit-modes --limit-refs 1 --rskip 1 --rc-lookahead 60 --rect --amp --psy-rd 1.5 --splitrd-skip --rdpenalty 2 --deblock -1:0 --limit-sao --sao-non-deblock"
+        "General":  "--high-tier --preset slow --me umh --subme 5 --merange 48 --weightb --aq-mode 4 --bframes 5 --ref 3",
+        "Movie": "--high-tier --ctu 64 --tu-intra-depth 4 --tu-inter-depth 4 --limit-tu 1 --rect --tskip --tskip-fast --me star --subme 3 --merange 48 --weightb --ref 4 --max-merge 5 --no-open-gop --min-keyint 3 --keyint 240 --fades --bframes 8 --b-adapt 2 --b-intra --crf 21.8 --crqpoffs -3 --ipratio 1.2 --pbratio 1.5 --rdoq-level 2 --aq-mode 4 --aq-strength 1.1 --qg-size 8 --rd 5 --limit-refs 0 --rskip 0 --rc-lookahead 45 --psy-rd 1.6 --deblock 0:-1 --limit-sao --sao-non-deblock --selective-sao 3",
+        "Animation": "--high-tier --tu-intra-depth 4 --tu-inter-depth 4 --max-tu-size 16 --tskip --tskip-fast --me umh --subme 3 --merange 48 --weightb --max-merge 5 --early-skip --ref 3 --no-open-gop --min-keyint 5  --keyint 290 --fades --bframes 16 --b-adapt 2 --bframe-bias 20 --constrained-intra --b-intra --crf 22 --crqpoffs -4 --cbqpoffs -2 --ipratio 1.6 --pbratio 1.3 --cu-lossless --psy-rdoq 2.3 --rdoq-level 2 --hevc-aq --aq-strength 0.9 --qg-size 8 --rd 3 --limit-modes --limit-refs 1 --rskip 1 --rc-lookahead 60 --rect --amp --psy-rd 1.5 --splitrd-skip --rdpenalty 2 --deblock -1:0 --limit-sao --sao-non-deblock"
     },
     "SVTAV1": {
-        "质量": "--preset 2 --keyint 300 --scd 1 --enable-tf 2 --tf-strength 2 --crf 30 --enable-qm 1 --enable-variance-boost 1 --variance-boost-curve 2 --variance-boost-strength 2 --variance-octile 2 --enable-dlf 1 --sharpness 6",
-        "容量": "--preset 2 --keyint 240 --scd 1 --enable-tf 2 --tf-strength 2 --crf 35 --enable-dlf 1 --sharpness 4",
-        "速度": "--preset 2 --scd 1 --scm 0 --enable-tf 2 --tf-strength 2 -crf 40 --tune 0 --enable-variance-boost 1 --variance-boost-curve 2 --variance-boost-strength 2 --variance-octile 2 --sharpness 4"
+        "Quality": "--preset 2 --keyint 300 --scd 1 --enable-tf 2 --tf-strength 2 --crf 30 --enable-qm 1 --enable-variance-boost 1 --variance-boost-curve 2 --variance-boost-strength 2 --variance-octile 2 --enable-dlf 1 --sharpness 6",
+        "File size": "--preset 2 --keyint 240 --scd 1 --enable-tf 2 --tf-strength 2 --crf 35 --enable-dlf 1 --sharpness 4",
+        "Speed": "--preset 2 --scd 1 --scm 0 --enable-tf 2 --tf-strength 2 -crf 40 --tune 0 --enable-variance-boost 1 --variance-boost-curve 2 --variance-boost-strength 2 --variance-octile 2 --sharpness 4"
     }
 }

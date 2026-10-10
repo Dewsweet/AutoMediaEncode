@@ -49,12 +49,12 @@ class PresetEditDialog(MessageBoxBase):
 
         # 这边输入预设名
         self.nameLineEdit = LineEdit(self)
-        self.nameLineEdit.setPlaceholderText("预设名称 (例如: 日常压制)")
+        self.nameLineEdit.setPlaceholderText(self.tr("预设名称 (例如: 日常压制)"))
         self.nameLineEdit.setText(init_name)
 
         # 输入多行参数
         self.paramTextEdit = TextEdit(self)
-        self.paramTextEdit.setPlaceholderText("CLI 参数 (例如: --preset veryslow --crf 18 ...)")
+        self.paramTextEdit.setPlaceholderText(self.tr("CLI 参数 (例如: --preset veryslow --crf 18 ...)"))
         self.paramTextEdit.setText(init_params)
         # 移除固定的setFixedHeight使其能随窗口伸缩
         # self.paramTextEdit.setFixedHeight(120)
@@ -75,8 +75,8 @@ class PresetEditDialog(MessageBoxBase):
             self.widget.setMinimumWidth(380)
             self.widget.setMinimumHeight(280)
         
-        self.yesButton.setText("保存")
-        self.cancelButton.setText("取消")
+        self.yesButton.setText(self.tr("保存"))
+        self.cancelButton.setText(self.tr("取消"))
 
     def get_data(self):
         """返回用户填写的名称和参数"""
@@ -93,7 +93,7 @@ class PresetManagerDialog(MessageBoxBase):
         self.viewLayout.setSpacing(0)
 
         self.encoder_name = encoder_name
-        self.titleLabel = BodyLabel(f"{encoder_name} 预设", self)
+        self.titleLabel = BodyLabel(self.tr("{encoder} 预设").format(encoder=encoder_name), self)
         self.titleLabel.setContentsMargins(20, 20, 0, 0)
         
         # 将数据拷贝为本地状态，点击"应用"时才真实保存
@@ -137,13 +137,13 @@ class PresetManagerDialog(MessageBoxBase):
         # 按照需求调边距，保持和上面统一的 20 像素边距
         self.customButtonLayout.setContentsMargins(20, 5, 20, 20)
         
-        self.addBtn = PushButton("添加", self)
+        self.addBtn = PushButton(self.tr("添加"), self)
         self.addBtn.setFixedWidth(100)
-        self.defaultBtn = PushButton("默认", self)
+        self.defaultBtn = PushButton(self.tr("默认"), self)
         self.defaultBtn.setFixedWidth(100)
-        self.applyBtn = PrimaryPushButton("应用", self)
+        self.applyBtn = PrimaryPushButton(self.tr("应用"), self)
         self.applyBtn.setFixedWidth(100)
-        self.customCancelBtn = PushButton("取消", self)
+        self.customCancelBtn = PushButton(self.tr("取消"), self)
         self.customCancelBtn.setFixedWidth(100)
         
         self.customButtonLayout.addWidget(self.addBtn)
@@ -183,7 +183,7 @@ class PresetManagerDialog(MessageBoxBase):
         self.scrollWidget.update()
 
     def _on_add_clicked(self):
-        dialog = PresetEditDialog("新建预设", parent=self.window())
+        dialog = PresetEditDialog(self.tr("新建预设"), parent=self.window())
         if dialog.exec():
             name, params = dialog.get_data()
             if name and params:
@@ -191,7 +191,7 @@ class PresetManagerDialog(MessageBoxBase):
                 self.refresh_list()
 
     def _on_edit_clicked(self, old_name, old_params):
-        dialog = PresetEditDialog(f"编辑: {old_name}", old_name, old_params, parent=self.window())
+        dialog = PresetEditDialog(self.tr("编辑: {name}").format(name=old_name), old_name, old_params, parent=self.window())
         if dialog.exec():
             new_name, new_params = dialog.get_data()
             if new_name and new_params:
