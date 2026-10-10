@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Text
 
 from PySide6.QtCore import QThread, Signal
-from pymediainfo import MediaInfo
+from app.services.mediainfo_service import parse_media_info
 
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import FileBrowseWidget, NodeTextComboBoxWidget
@@ -450,7 +450,7 @@ class InputBDNormalizerNode(AMENodeBase):
                 logger.info(f'[InputBD] 引用的 m2ts 不存在, 跳过连体盘判定: {p}')
                 return 'unknown'
             try:
-                info = MediaInfo.parse(str(p), library_file=mi)
+                info = parse_media_info(str(p), library_file=mi)
                 gen = info.general_tracks[0] if info.general_tracks else None
                 if gen is None or gen.duration is None:
                     return 'unknown'

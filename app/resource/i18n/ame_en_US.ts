@@ -2,11 +2,195 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US" sourcelanguage="zh_CN">
 <context>
+    <name>FileLoadInterface</name>
+    <message>
+        <location filename="../../components/fileload_interface.py" line="+18"/>
+        <source>所有文件 (*)</source>
+        <translation>All files (*)</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>点击或拖放文件到此区域</source>
+        <translation>Click or drop files here</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+41"/>
+        <source>选择文件</source>
+        <translation>Select files</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/main_window.py" line="+118"/>
+        <location filename="../../view/main_window.py" line="+111"/>
+        <source>媒体信息</source>
+        <translation>Media information</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>设置</source>
         <translation>Settings</translation>
+    </message>
+</context>
+<context>
+    <name>MediaInfoService</name>
+    <message>
+        <location filename="../../view/mediainfo_interface.py" line="+33"/>
+        <location filename="../../services/mediainfo_service.py" line="+121"/>
+        <location line="+23"/>
+        <location line="+86"/>
+        <source>无法读取媒体信息，请检查文件和 MediaInfo DLL。</source>
+        <translation>Could not read media information. Check the file and MediaInfo DLL.</translation>
+    </message>
+    <message>
+        <location filename="../../services/mediainfo_service.py" line="-171"/>
+        <location line="+11"/>
+        <location line="+16"/>
+        <location line="+61"/>
+        <location line="+102"/>
+        <source>未知</source>
+        <translation>Unknown</translation>
+    </message>
+    <message>
+        <location line="-136"/>
+        <source>文件不存在，请检查路径是否正确。</source>
+        <translation>File not found. Check the path.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>文件为空，请检查文件是否损坏。</source>
+        <translation>The file is empty. Check whether it is damaged.</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+116"/>
+        <location line="+75"/>
+        <source>未添加 MediaInfo DLL, 请确认相关工具路径</source>
+        <translation>MediaInfo DLL not found. Check the tool path.</translation>
+    </message>
+    <message>
+        <location line="-65"/>
+        <source>**格式: {format}** ; {size}</source>
+        <translation>**Format: {format}** ; {size}</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+3"/>
+        <source>未知格式</source>
+        <translation>Unknown format</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+6"/>
+        <source>**%n** 个视频流: {codecs}</source>
+        <translation>
+            <numerusform>**%n** video stream: {codecs}</numerusform>
+            <numerusform>**%n** video streams: {codecs}</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location line="+3"/>
+        <source>**%n** 个音频流: {codecs}</source>
+        <translation>
+            <numerusform>**%n** audio stream: {codecs}</numerusform>
+            <numerusform>**%n** audio streams: {codecs}</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location line="+3"/>
+        <source>**%n** 个字幕流: {codecs}</source>
+        <translation>
+            <numerusform>**%n** subtitle stream: {codecs}</numerusform>
+            <numerusform>**%n** subtitle streams: {codecs}</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>#### 视频 {index}</source>
+        <translation>#### Video {index}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+15"/>
+        <location line="+10"/>
+        <source>- 语言: {language}   </source>
+        <translation>- Language: {language}   </translation>
+    </message>
+    <message>
+        <location line="-24"/>
+        <source>- 编码格式: {format} ({profile})   </source>
+        <translation>- Codec: {format} ({profile})   </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+30"/>
+        <source>- 分辨率: {width} x {height} ({ratio})   </source>
+        <translation>- Resolution: {width} x {height} ({ratio})   </translation>
+    </message>
+    <message>
+        <location line="-28"/>
+        <source>- 帧率: {rate}   </source>
+        <translation>- Frame rate: {rate}   </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 视频码率: {bitrate}   </source>
+        <translation>- Video bit rate: {bitrate}   </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 位深: {depth}   </source>
+        <translation>- Bit depth: {depth}   </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 色彩抽样: {color}{chroma}   </source>
+        <translation>- Color space / chroma subsampling: {color}{chroma}   </translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>#### 音频 {index}</source>
+        <translation>#### Audio {index}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>- 编码格式: {format}   </source>
+        <translation>- Codec: {format}   </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 音频码率: {bitrate}   </source>
+        <translation>- Audio bit rate: {bitrate}   </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 采样率: {rate}   </source>
+        <translation>- Sampling rate: {rate}   </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 声道数: {channels}   </source>
+        <translation>- Channels: {channels}   </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>#### 字幕 {index}</source>
+        <translation>#### Subtitle {index}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>- 类型: {format}   </source>
+        <translation>- Type: {format}   </translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>#### 图片 {index}</source>
+        <translation>#### Image {index}</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>- 格式: {format}   </source>
+        <translation>- Format: {format}   </translation>
     </message>
 </context>
 <context>
@@ -25,6 +209,70 @@
         <location line="+0"/>
         <source>未找到工具</source>
         <translation>Tool not found</translation>
+    </message>
+</context>
+<context>
+    <name>MediaifInterface</name>
+    <message>
+        <location filename="../../view/mediainfo_interface.py" line="+41"/>
+        <source>媒体信息</source>
+        <translation>Media information</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>使用 MediaInfo 查询媒体信息</source>
+        <translation>Inspect media files with MediaInfo</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>重新载入文件</source>
+        <translation>Reload files</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>直接拖入文本框也行✨</source>
+        <translation>You can also drop files into the text area ✨</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+102"/>
+        <source>查看详细信息</source>
+        <translation>Show details</translation>
+    </message>
+    <message>
+        <location line="-60"/>
+        <source>📌 媒体文件信息 😇</source>
+        <translation>📌 Media file information 😇</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>查询媒体文件相关信息</source>
+        <translation>Inspect media file information</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>选择文件</source>
+        <translation>Select files</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>所有文件 (*)</source>
+        <translation>All files (*)</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>正在分析基本媒体信息...</source>
+        <translation>Analyzing basic media information...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>查看基本信息</source>
+        <translation>Show summary</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>正在分析完整媒体信息...</source>
+        <translation>Analyzing detailed media information...</translation>
     </message>
 </context>
 <context>

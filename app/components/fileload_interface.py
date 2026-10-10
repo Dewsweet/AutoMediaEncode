@@ -13,14 +13,14 @@ class FileLoadInterface(SimpleCardWidget):
     # 定义信号：发送包含文件完整路径的列表
     filesReady = Signal(list)
 
-    def __init__(self, file_filter: str="所有文件 (*)", title: str="", desc: str="", parent=None):
+    def __init__(self, file_filter: str | None = None, title: str="", desc: str="", parent=None):
         super().__init__(parent)
-        self.file_filter = file_filter
+        self.file_filter = self.tr("所有文件 (*)") if file_filter is None else file_filter
         # 设置组件属性
         self.setAcceptDrops(True) # 允许拖放
         self.setMinimumSize(360, 200)
         self.setCursor(Qt.PointingHandCursor)
-        self.setToolTip("点击或拖放文件到此区域")
+        self.setToolTip(self.tr("点击或拖放文件到此区域"))
         # self.installEventFilter(ToolTipFilter(self)) 
 
         
@@ -29,7 +29,7 @@ class FileLoadInterface(SimpleCardWidget):
         self.titleLabel = SubtitleLabel(title, self)
         self.descLabel = CaptionLabel(desc, self)
         
-        self.inputButton = PrimaryPushButton('选择文件', self, FluentIcon.FOLDER_ADD)
+        self.inputButton = PrimaryPushButton(self.tr('选择文件'), self, FluentIcon.FOLDER_ADD)
         self.inputButton.setMinimumSize(120, 40)
         self.inputButton.clicked.connect(self._open_file_dialog) 
         
@@ -70,7 +70,7 @@ class FileLoadInterface(SimpleCardWidget):
         super().mouseReleaseEvent(event)
     
     def _open_file_dialog(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", self.file_filter)
+        files, _ = QFileDialog.getOpenFileNames(self, self.tr("选择文件"), "", self.file_filter)
         if files:
             self.filesReady.emit(files)
 

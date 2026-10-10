@@ -108,7 +108,7 @@ class MainWindow(FluentWindow):
 
     def initNavigation(self):
         # 添加子页面到侧边导航栏
-        self.addSubInterface(self.mediaInfoInterface, FIF.INFO, '媒体信息')
+        self.addSubInterface(self.mediaInfoInterface, FIF.INFO, self.tr('媒体信息'))
         self.addSubInterface(self.recodeInterface, FIF.VIDEO, '媒体重编码')
         self.addSubInterface(self.demuxingInterface, FIF.MOVIE, '媒体抽流')
         self.addSubInterface(self.muxingInterface, FIF.MEDIA, '媒体混流')
@@ -118,3 +118,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr('设置'), NavigationItemPosition.BOTTOM)
 
 
+
+    def closeEvent(self, event):
+        self.mediaInfoInterface.shutdown()
+        super().closeEvent(event)

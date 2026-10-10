@@ -28,6 +28,9 @@ def install_translations(app, preference: str) -> list[QTranslator]:
             logger.error("AME 英文翻译资源加载失败，本次启动回退简体中文")
             language = "zh_CN"
 
+    # 报告服务使用实际生效语言，避免保存新偏好或加载回退后与界面不同步。
+    app.setProperty("ameLanguage", language)
+
     # Qt 与 Fluent 的源码是英文，英文模式直接使用原文。
     if language == "zh_CN":
         qt = QTranslator(app)

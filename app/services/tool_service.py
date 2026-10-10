@@ -242,6 +242,18 @@ class ToolService:
         return None
 
     @staticmethod
+    def get_mediainfo_language_path(library_path: str | None, language: str = "zh-CN") -> Path | None:
+        """只查找实际使用的 DLL 所配套的语言表，不混用其他工具目录。"""
+        if not library_path:
+            return None
+        directory = Path(library_path).resolve().parent
+        for folder in (directory, directory / "Language", directory / "Plugin" / "Language"):
+            candidate = folder / f"{language}.csv"
+            if candidate.is_file():
+                return candidate
+        return None
+
+    @staticmethod
     def force_clear_cache(tool_name: str = None):
         """
         清除路径缓存。

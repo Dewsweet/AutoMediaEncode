@@ -4,6 +4,7 @@ from typing import Dict, List, Any
 from pymediainfo import MediaInfo
 
 from app.services.tool_service import ToolService
+from app.services.mediainfo_service import parse_media_info
 
 class DemuxProbeService:
     def __init__(self):
@@ -18,7 +19,7 @@ class DemuxProbeService:
             
         file_path_str = str(file_path)
         try:
-            media_info = MediaInfo.parse(file_path_str, library_file=self.mi_path)
+            media_info = parse_media_info(file_path_str, library_file=self.mi_path)
             return self.parse_mediainfo_output(media_info)
         except Exception as e:
             print(f"Error probing file {file_path_str}: {e}")

@@ -6,3 +6,6 @@ app/components/preset_dialog.py
 app/components/update_dialog.py
 app/services/update_service.py
 app/services/tool_service.py
+app/view/mediainfo_interface.py
+app/components/fileload_interface.py
+app/services/mediainfo_service.py
