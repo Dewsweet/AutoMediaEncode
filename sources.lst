@@ -1,4 +1,4 @@
-main.py
+AutoMediaEncode.py
 app/view/main_window.py
 app/view/setting_interface.py
 app/components/tools_template_card.py

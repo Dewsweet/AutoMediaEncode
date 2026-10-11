@@ -15,7 +15,7 @@ class Config(QConfig):
 YEAR = 2026
 AUTHOR = "Dewsweet"
 WINDOW_NAME = "Auto Media Encode"
-VERSION = "0.9.2"
+VERSION = "1.0.0"
 
 cfg = Config()
 qconfig.themeMode.value = Theme.AUTO

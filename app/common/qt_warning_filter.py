@@ -1,4 +1,5 @@
 from PySide6.QtCore import qInstallMessageHandler, QtMsgType
+import sys
 
 
 # Qt 警告关键字列表，包含任一关键字的 warning 将被静默
@@ -53,6 +54,9 @@ def install_warning_filter():
     def handler(msg_type: QtMsgType, context, message: str):
         if msg_type == QtMsgType.QtWarningMsg and _is_ignored(message):
             return  # 静默已知无害的 Qt 警告
-        original_handler(msg_type, context, message)
+        if original_handler is not None:
+            original_handler(msg_type, context, message)
+        elif sys.stderr is not None:
+            print(message, file=sys.stderr)
 
     qInstallMessageHandler(handler)
