@@ -1,6 +1,7 @@
 """AME 画布快捷键模块
 每个操作定义为独立函数，快捷键和未来右键菜单共用这些函数引用。
 """
+from PySide6.QtCore import QCoreApplication
 
 from PySide6.QtGui import QShortcut, QKeySequence
 
@@ -42,7 +43,7 @@ def save_session(graph):
         graph.save_session(current)
     else:
         from PySide6.QtWidgets import QFileDialog
-        path, _ = QFileDialog.getSaveFileName(None, "保存工作流", "",
+        path, _ = QFileDialog.getSaveFileName(None, QCoreApplication.translate('AMEHotkeys', '保存工作流'), "",
                                                "AME Workflow (*.json)")
         if path:
             graph.save_session(path)
@@ -50,7 +51,7 @@ def save_session(graph):
 
 def load_session(graph):
     from PySide6.QtWidgets import QFileDialog
-    path, _ = QFileDialog.getOpenFileName(None, "加载工作流", "",
+    path, _ = QFileDialog.getOpenFileName(None, QCoreApplication.translate('AMEHotkeys', '加载工作流'), "",
                                            "AME Workflow (*.json)")
     if path:
         graph.load_session(path)

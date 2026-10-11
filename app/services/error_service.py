@@ -117,10 +117,10 @@ class ErrorService:
     @classmethod
     def format_node_error(cls, node_name: str, detail: str):
         """格式化节点错误信息，供 InfoBar 显示"""
-        msg = f"节点『{node_name}』执行失败"
+        msg = QCoreApplication.translate("ErrorService", "节点『{node_name}』执行失败").format(node_name=node_name)
         if detail:
             detail_short = detail[:200] + "…" if len(detail) > 200 else detail
             msg += f"\n{detail_short}"
         else:
-            msg += "，请检查节点设置或查看日志"
+            msg += QCoreApplication.translate("ErrorService", "，请检查节点设置或查看日志")
         return msg

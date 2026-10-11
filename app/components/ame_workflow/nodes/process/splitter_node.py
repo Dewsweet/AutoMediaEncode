@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
 from .._base import AMENodeBase, C, P, HIDDEN
@@ -8,15 +9,15 @@ from app.services.error_service import ErrorService
 
 
 class SplitterNode(AMENodeBase):
-    NODE_NAME = '分离器'
-    DESCRIPTION = '默认 video_1 + audio_1。探测后按实际轨道动态追加 video_2/audio_2/subtitle_1 等'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", '分离器')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", '默认 video_1 + audio_1。探测后按实际轨道动态追加 video_2/audio_2/subtitle_1 等')
     CATEGORY = '工具'; CATEGORY_COLOR = C['Orange']
     MENU_KEY = 'splitter'
     INPUTS  = [('file', P['any'])]
     OUTPUTS = [('video_1', P['video']), ('audio_1', P['audio'])]
 
     def _setup_widgets(self):
-        self.add_custom_widget(ActionButtonWidget(self.view, 'probe_btn', '探测轨道', self._on_probe))
+        self.add_custom_widget(ActionButtonWidget(self.view, 'probe_btn', QCoreApplication.translate('AMENodes', '探测轨道'), self._on_probe))
         self.create_property('cached_tracks', [], widget_type=HIDDEN, tab='')
 
     def _on_probe(self):
@@ -61,12 +62,12 @@ class SplitterNode(AMENodeBase):
         logger.info('\n' * 2 + '=' * 40 + ' [Splitter] ' + '=' * 40)
         src_files = inputs.get('file', [])
         if not src_files:
-            self._last_error = '分离器未接收到输入文件'
+            self._last_error = QCoreApplication.translate('AMENodes', '分离器未接收到输入文件')
             return None
         src = src_files[0]
         ff = ToolService.get_tool_path('ffmpeg')
         if not ff:
-            self._last_error = '分离器找不到 ffmpeg，请检查工具路径'
+            self._last_error = QCoreApplication.translate('AMENodes', '分离器找不到 ffmpeg，请检查工具路径')
             return None
 
         tracks = self._probe(ff, src)
@@ -97,7 +98,7 @@ class SplitterNode(AMENodeBase):
                 logger.error(f'[Splitter] 提取异常: {e}')
 
         if not result:
-            self._last_error = ErrorService.cli_error('ffmpeg', '未能提取任何已连接的轨道')
+            self._last_error = ErrorService.cli_error('ffmpeg', QCoreApplication.translate('AMENodes', '未能提取任何已连接的轨道'))
         return result if result else None
 
     def _probe(self, ff: str, src: str) -> list:

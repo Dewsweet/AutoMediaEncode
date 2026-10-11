@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import subprocess, shlex, re, time
 from pathlib import Path
 from .._base import AMENodeBase, C, P, HIDDEN
@@ -9,15 +10,15 @@ from app.common.logger import logger
 class FFmpegProcessorWidget(CustomTextWidget):
     def __init__(self, parent, name, placeholder={}):
         super().__init__(parent, name, placeholder)
-        self.set_lebal_text('FFmpeg 命令行参数: ')
-        self.set_btn_name('插入')
+        self.set_lebal_text(QCoreApplication.translate('AMENodes', 'FFmpeg 命令行参数: '))
+        self.set_btn_name(QCoreApplication.translate('AMENodes', '插入'))
         self.set_text('-i {input} -c:v libx264 -preset veryslow -crf 18 {output}.mkv')
-        self.set_text_placeholder('在这输入 FFmpeg 命令行参数，使用 插入 来添加输入/输出占位符')
+        self.set_text_placeholder(QCoreApplication.translate('AMENodes', '在这输入 FFmpeg 命令行参数，使用 插入 来添加输入/输出占位符'))
         self.set_text_height(120)
 
 class FFmpegProcessorNode(AMENodeBase):
-    NODE_NAME = 'FFmpeg CLI'
-    DESCRIPTION = '自定义 FFmpeg 命令行处理'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'FFmpeg CLI')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", '自定义 FFmpeg 命令行处理')
     CATEGORY = '工具'; CATEGORY_COLOR = C['Orange']
     INPUTS = [('input_1', P['any']), ('input_2', P['any']), ('input_3', P['any'])]
     OUTPUTS = [('file', P['any'])]
@@ -25,10 +26,10 @@ class FFmpegProcessorNode(AMENodeBase):
 
     def _setup_widgets(self):
         plachholder = {
-            '输入文件': '{input}',
-            '使用 image2 分离器': '{image2}', 
-            '使用 concat  分离器': '{concat_list}',
-            '输出文件路径': '{output}',
+            QCoreApplication.translate('AMENodes', '输入文件'): '{input}',
+            QCoreApplication.translate('AMENodes', '使用 image2 分离器'): '{image2}',
+            QCoreApplication.translate('AMENodes', '使用 concat  分离器'): '{concat_list}',
+            QCoreApplication.translate('AMENodes', '输出文件路径'): '{output}',
         }
         self.add_custom_widget(FFmpegProcessorWidget(self.view, 'ffmpeg_processor', placeholder=plachholder))
 
@@ -122,7 +123,7 @@ class FFmpegProcessorNode(AMENodeBase):
                 else:
                     logger.warning(f"[{self.NODE_NAME}] 占位符 {{input_{idx}}} 超出输入文件总数")
                     return match.group(0)
-            
+
             part = input_regex.sub(replace_input, part)
 
             # 替换输出路径 {output}
@@ -140,10 +141,10 @@ class FFmpegProcessorNode(AMENodeBase):
         # 7. 轮询执行
         logger.info(f'[{self.NODE_NAME}] 执行命令: {" ".join(cmd)}')
         cf = subprocess.CREATE_NO_WINDOW
-        
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True, encoding='utf-8', errors='replace', creationflags=cf, bufsize=1)
-        
+
         output_lines = []
         cancelled = getattr(self, '_ame_cancelled', lambda: False)
         paused = getattr(self, '_ame_paused', None)
@@ -163,13 +164,13 @@ class FFmpegProcessorNode(AMENodeBase):
 
         # 8. 清理临时 concat 列表
         # if concat_txt and concat_txt.exists():
-        #     concat_txt.unlink() 
+        #     concat_txt.unlink()
 
         if proc.returncode == 0 and final_out_path and final_out_path.is_file() and final_out_path.stat().st_size > 0:
             logger.info(f'[{self.NODE_NAME}] 处理成功: {final_out_path.name}')
             return {'file': [str(final_out_path)]}
         else:
             logger.error(f'[{self.NODE_NAME}] 处理失败: returncode={proc.returncode}')
-            err_text = "\n".join(output_lines[-10:]) if output_lines else "无输出"
+            err_text = "\n".join(output_lines[-10:]) if output_lines else QCoreApplication.translate('AMENodes', '无输出')
             self._last_error = ErrorService.ffmpeg_error(err_text)
             return None

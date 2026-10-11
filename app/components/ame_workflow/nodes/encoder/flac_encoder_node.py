@@ -1,10 +1,11 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import StapleAudioEncoderWidget
 from .._helpers import _do_ffmpeg_audio
 
 class EncoderFLACNode(AMENodeBase):
-    NODE_NAME = 'FLAC 编码(ffmpeg)'
-    DESCRIPTION = 'FLAC 无损音频编码'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'FLAC 编码(ffmpeg)')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'FLAC 无损音频编码')
     CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
     INPUTS = [('file', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]

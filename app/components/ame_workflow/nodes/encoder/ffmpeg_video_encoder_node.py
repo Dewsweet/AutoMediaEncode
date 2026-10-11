@@ -1,10 +1,11 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import FfmpegSimpleOptionsWidget
 from .._helpers import _do_ffmpeg_video
 
 class EncoderFFmpegVideoNode(AMENodeBase):
-    NODE_NAME = 'ffmpeg 视频编码'
-    DESCRIPTION = 'FFmpeg 视频编码器'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'ffmpeg 视频编码')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'FFmpeg 视频编码器')
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
     INPUTS = [('file', P['video']), ('pipe', P['script'])]
     OUTPUTS = [('video', P['video'])]

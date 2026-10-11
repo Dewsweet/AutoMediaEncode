@@ -35,7 +35,7 @@ class AMEWorkflowExecutor(QThread):
             return
         order = self._topo_sort()
         if order is None:
-            self.error_occurred.emit('工作流中存在循环依赖')
+            self.error_occurred.emit(self.tr('工作流中存在循环依赖'))
             return
         connected = set()
         for fn, fp, tid, tp in self._edges:
@@ -89,7 +89,7 @@ class AMEWorkflowExecutor(QThread):
                 logger.error(f'[AME] 节点 {node.name()} 返回 None, 执行失败')
                 self.node_status_changed.emit(node.id, 'error')
                 detail = getattr(node, '_last_error', '')
-                msg = f"节点 '{node.name()}' 执行失败"
+                msg = self.tr("节点 '{name}' 执行失败").format(name=getattr(node, 'display_name', node.name)())
                 if detail:
                     msg += f"\n{detail[:200]}"
                 self.error_occurred.emit(msg)

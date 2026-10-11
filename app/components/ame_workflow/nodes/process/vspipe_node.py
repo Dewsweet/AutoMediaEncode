@@ -1,3 +1,4 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
 from .._base import AMENodeBase, C, P, HIDDEN
@@ -7,8 +8,8 @@ from app.common.config import cfg, qconfig
 
 
 class VSPipeNode(AMENodeBase):
-    NODE_NAME = 'vspipe 加载器'
-    DESCRIPTION = 'VapourSynth 管道输出。检测 vspipe API 版本后组装管道命令连接编码器'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'vspipe 加载器')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'VapourSynth 管道输出。检测 vspipe API 版本后组装管道命令连接编码器')
     CATEGORY = '工具'; CATEGORY_COLOR = C['Purple']
     INPUTS = [('script', P['script'])]
     OUTPUTS = [('pipe', P['script'])]

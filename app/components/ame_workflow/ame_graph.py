@@ -1,6 +1,6 @@
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.constants import PipeLayoutEnum
-from PySide6.QtCore import Qt, QEvent, QObject, QPoint
+from PySide6.QtCore import Qt, QEvent, QObject, QPoint, QCoreApplication
 from PySide6.QtWidgets import QGraphicsView, QGraphicsProxyWidget, QAbstractScrollArea
 
 from qfluentwidgets import isDarkTheme, qconfig
@@ -154,10 +154,23 @@ class _ProxyEventFilter(QObject):
         sb.setValue(max(0, min(sb.maximum(), new_val)))
         return True
 
+class AMENodeGraph(NodeGraph):
+    def toggle_node_search(self):
+        """Translate the search catalog without changing node registration names."""
+        viewer = self.viewer()
+        if viewer.underMouse():
+            names = {}
+            for name, node_types in self.node_factory.names.items():
+                label = QCoreApplication.translate('AMENodes', name)
+                names.setdefault(label, []).extend(node_types)
+            viewer.tab_search_set_nodes(names)
+            viewer.tab_search_toggle()
+
+
 class AMEGraph:
     def __init__(self, parent=None):
         _patch_model_set_property()
-        self.graph = NodeGraph(parent=parent)
+        self.graph = AMENodeGraph(parent=parent)
         self.graph.set_pipe_style(PipeLayoutEnum.CURVED.value)
 
         for cls in ALL_NODE_CLASSES:

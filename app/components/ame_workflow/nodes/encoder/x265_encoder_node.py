@@ -1,10 +1,11 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import PresetSwitchWidget, CLITextWidget
 from .._helpers import _do_cli_encode
 
 class EncoderX265Node(AMENodeBase):
-    NODE_NAME = 'x265 编码'
-    DESCRIPTION = 'x265 CLI 编码器'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'x265 编码')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'x265 CLI 编码器')
     CATEGORY = '编码'; CATEGORY_COLOR = C['Red']
     INPUTS = [('file', P['video']), ('pipe', P['script'])]
     OUTPUTS = [('video', P['video'])]

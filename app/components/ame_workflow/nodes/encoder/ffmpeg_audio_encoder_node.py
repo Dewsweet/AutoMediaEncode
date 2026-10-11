@@ -1,10 +1,11 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import FfmpegSimpleOptionsWidget
 from .._helpers import _do_ffmpeg_audio
 
 class EncoderFFmpegAudioNode(AMENodeBase):
-    NODE_NAME = 'ffmpeg 音频编码'
-    DESCRIPTION = 'FFmpeg 音频编码器'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'ffmpeg 音频编码')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'FFmpeg 音频编码器')
     CATEGORY = '编码'; CATEGORY_COLOR = C['Blue']
     INPUTS = [('file', P['audio'])]
     OUTPUTS = [('audio', P['audio'])]

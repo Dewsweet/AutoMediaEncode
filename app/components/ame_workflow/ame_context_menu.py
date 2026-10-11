@@ -1,5 +1,5 @@
 """AME 画布右键菜单 — 文件/编辑/节点/视图 四级结构 + 节点右键菜单"""
-from PySide6.QtCore import Qt, QPointF, Signal
+from PySide6.QtCore import Qt, QPointF, Signal, QCoreApplication
 
 from qfluentwidgets import RoundMenu, Action
 
@@ -36,40 +36,40 @@ class AMEConextMenu(RoundMenu):
         self._scene_pos = pos
 
     def _add_file_menu(self):
-        m = RoundMenu("文件", self)
-        m.addAction(Action("保存工作流", shortcut="Ctrl+S",
+        m = RoundMenu(self.tr('文件'), self)
+        m.addAction(Action(self.tr('保存工作流'), shortcut="Ctrl+S",
                             triggered=lambda: self.save_clicked.emit()))
         # m.addAction(Action("返回加载页", shortcut="Ctrl+O",
         #                     triggered=lambda: self.load_clicked.emit()))
         m.addSeparator()
-        m.addAction(Action("导出 JSON", triggered=lambda: self.export_clicked.emit()))
-        m.addAction(Action("导入 JSON", triggered=lambda: self.import_clicked.emit()))
+        m.addAction(Action(self.tr('导出 JSON'), triggered=lambda: self.export_clicked.emit()))
+        m.addAction(Action(self.tr('导入 JSON'), triggered=lambda: self.import_clicked.emit()))
         self.addMenu(m)
 
     # ── 编辑 ──
     def _add_edit_menu(self):
         g = self._graph
-        m = RoundMenu("编辑", self)
+        m = RoundMenu(self.tr('编辑'), self)
 
-        m.addAction(Action("撤销", shortcut="Ctrl+Z", triggered=lambda: undo(g)))
-        m.addAction(Action("重做", shortcut="Ctrl+Shift+Z", triggered=lambda: redo(g)))
+        m.addAction(Action(self.tr('撤销'), shortcut="Ctrl+Z", triggered=lambda: undo(g)))
+        m.addAction(Action(self.tr('重做'), shortcut="Ctrl+Shift+Z", triggered=lambda: redo(g)))
         m.addSeparator()
-        m.addAction(Action("复制", shortcut="Ctrl+C", triggered=lambda: copy_nodes(g)))
-        m.addAction(Action("剪切", shortcut="Ctrl+X", triggered=lambda: cut_nodes(g)))
-        m.addAction(Action("粘贴", shortcut="Ctrl+V", triggered=lambda: paste_nodes(g)))
-        m.addAction(Action("删除", shortcut="Delete", triggered=lambda: delete_selected(g)))
+        m.addAction(Action(self.tr('复制'), shortcut="Ctrl+C", triggered=lambda: copy_nodes(g)))
+        m.addAction(Action(self.tr('剪切'), shortcut="Ctrl+X", triggered=lambda: cut_nodes(g)))
+        m.addAction(Action(self.tr('粘贴'), shortcut="Ctrl+V", triggered=lambda: paste_nodes(g)))
+        m.addAction(Action(self.tr('删除'), shortcut="Delete", triggered=lambda: delete_selected(g)))
         m.addSeparator()
-        m.addAction(Action("全选", shortcut="Ctrl+A", triggered=lambda: select_all(g)))
-        m.addAction(Action("复制选中", shortcut="Ctrl+D", triggered=lambda: duplicate_selected(g)))
-        m.addAction(Action("适应选中", shortcut="F", triggered=lambda: fit_selection(g)))
+        m.addAction(Action(self.tr('全选'), shortcut="Ctrl+A", triggered=lambda: select_all(g)))
+        m.addAction(Action(self.tr('复制选中'), shortcut="Ctrl+D", triggered=lambda: duplicate_selected(g)))
+        m.addAction(Action(self.tr('适应选中'), shortcut="F", triggered=lambda: fit_selection(g)))
         self.addMenu(m)
 
     # ── 节点 (复用 NodePaletteMenu 结构) ──
     def _add_node_menu(self):
-        m = RoundMenu("节点", self)
+        m = RoundMenu(self.tr('节点'), self)
         self._build_palette_tree(m, NODE_PALETTE_STRUCTURE)
         m.addSeparator()
-        m.addAction(Action("添加组", triggered=lambda: self.add_group_clicked.emit()))
+        m.addAction(Action(self.tr('添加组'), triggered=lambda: self.add_group_clicked.emit()))
         self.addMenu(m)
 
     def _build_palette_tree(self, parent_menu, items):
@@ -79,6 +79,7 @@ class AMEConextMenu(RoundMenu):
                 parent_menu.addSeparator()
                 continue
             label, target = item
+            label = QCoreApplication.translate("AMENodePalette", label)
             if isinstance(target, list):
                 sub = RoundMenu(label, parent_menu)
                 self._build_palette_tree(sub, target)
@@ -93,14 +94,14 @@ class AMEConextMenu(RoundMenu):
     # ── 视图 ──
     def _add_view_menu(self):
         g = self._graph
-        m = RoundMenu("视图", self)
-        m.addAction(Action("重置缩放", shortcut="Ctrl+0", triggered=lambda: reset_zoom(g)))
+        m = RoundMenu(self.tr('视图'), self)
+        m.addAction(Action(self.tr('重置缩放'), shortcut="Ctrl+0", triggered=lambda: reset_zoom(g)))
         m.addSeparator()
-        m.addAction(Action("背景: 网格线",
+        m.addAction(Action(self.tr('背景: 网格线'),
                             triggered=lambda: g.set_grid_mode(ViewerEnum.GRID_DISPLAY_LINES.value)))
-        m.addAction(Action("背景: 点阵",
+        m.addAction(Action(self.tr('背景: 点阵'),
                             triggered=lambda: g.set_grid_mode(ViewerEnum.GRID_DISPLAY_DOTS.value)))
-        m.addAction(Action("背景: 无",
+        m.addAction(Action(self.tr('背景: 无'),
                             triggered=lambda: g.set_grid_mode(ViewerEnum.GRID_DISPLAY_NONE.value)))
         self.addMenu(m)
 
@@ -115,30 +116,30 @@ class AMENodeContextMenu(RoundMenu):
         super().__init__(parent=parent)
         self._graph = graph
 
-        self.addAction(Action("复制", shortcut="Ctrl+C",
+        self.addAction(Action(self.tr('复制'), shortcut="Ctrl+C",
                               triggered=lambda: copy_nodes(graph)))
-        self.addAction(Action("剪切", shortcut="Ctrl+X",
+        self.addAction(Action(self.tr('剪切'), shortcut="Ctrl+X",
                               triggered=lambda: cut_nodes(graph)))
-        self.addAction(Action("删除", shortcut="Delete",
+        self.addAction(Action(self.tr('删除'), shortcut="Delete",
                               triggered=lambda: delete_selected(graph)))
-        self.addAction(Action("复制选中", shortcut="Ctrl+D",
+        self.addAction(Action(self.tr('复制选中'), shortcut="Ctrl+D",
                               triggered=lambda: duplicate_selected(graph)))
         self.addSeparator()
-        self._disable_action = Action("禁用", triggered=self._toggle_disable)
+        self._disable_action = Action(self.tr('禁用'), triggered=self._toggle_disable)
         self.addAction(self._disable_action)
         self.addSeparator()
-        self.addAction(Action("全选", shortcut="Ctrl+A",
+        self.addAction(Action(self.tr('全选'), shortcut="Ctrl+A",
                               triggered=lambda: select_all(graph)))
-        self.addAction(Action("适应选中", shortcut="F",
+        self.addAction(Action(self.tr('适应选中'), shortcut="F",
                               triggered=lambda: fit_selection(graph)))
 
     def exec(self, *args, **kwargs):
         nodes = self._graph.selected_nodes()
         if not nodes:
-            self._disable_action.setText("禁用")
+            self._disable_action.setText(self.tr('禁用'))
         else:
             all_disabled = all(n.disabled() for n in nodes)
-            self._disable_action.setText("启用" if all_disabled else "禁用")
+            self._disable_action.setText(self.tr('启用') if all_disabled else self.tr('禁用'))
         super().exec(*args, **kwargs)
 
     def _toggle_disable(self):

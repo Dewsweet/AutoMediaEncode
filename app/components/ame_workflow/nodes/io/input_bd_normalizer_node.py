@@ -8,6 +8,7 @@
 - 三层切换时机：探测预判(时长对比) → 扫描回退(eac3to 失败用 mkvmerge -J) → 运行时兜底(单轨提取失败重试)
 - 探测结果与 backend 随工作流保存，重新打开时用缓存重建端口（不重跑 eac3to）
 """
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import json
 import re
 import subprocess
@@ -196,8 +197,8 @@ class _ProbeThread(QThread):
 class InputBDNormalizerNode(AMENodeBase):
     """选择 m2ts/mpls 后自动 eac3to 探测轨道并生成输出端口的 BD 输入节点"""
 
-    NODE_NAME = 'BD 规范化输入'
-    DESCRIPTION = 'm2ts/mpls 输入, eac3to 探测轨道; 连体盘自动切换 mkvmerge'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'BD 规范化输入')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'm2ts/mpls 输入, eac3to 探测轨道; 连体盘自动切换 mkvmerge')
     CATEGORY = '输入'; CATEGORY_COLOR = C['Gray']
     MENU_KEY = 'input_bd_normalizer'
     INPUTS  = [(''
@@ -219,13 +220,13 @@ class InputBDNormalizerNode(AMENodeBase):
         # PropertyChangedCmd 会同步 widget.set_value, 若写入 backend 会覆盖下拉框
         self.create_property('resolved_backend', '', widget_type=HIDDEN, tab='')
 
-        EXT = "蓝光 M2TS (*.m2ts *.mts);;蓝光播放列表 MPLS (*.mpls);;所有文件 (*.*)"
-        w_file = FileBrowseWidget(self.view, 'input_file', '选择输入文件', exts=EXT)
+        EXT = QCoreApplication.translate('AMENodes', '蓝光 M2TS (*.m2ts *.mts);;蓝光播放列表 MPLS (*.mpls);;所有文件 (*.*)')
+        w_file = FileBrowseWidget(self.view, 'input_file', QCoreApplication.translate('AMENodes', '选择输入文件'), exts=EXT)
         self.add_custom_widget(w_file)
         # add_custom_widget 已将 value_changed 接到 set_property，这里额外挂自动探测回调
         w_file.value_changed.connect(lambda k, v: self._on_file_changed(v))
 
-        w_backend = NodeTextComboBoxWidget(self.view, 'backend', ['Auto', 'Eac3to', 'Mkvmerge'],'提取程序: ')
+        w_backend = NodeTextComboBoxWidget(self.view, 'backend', ['Auto', 'Eac3to', 'Mkvmerge'],QCoreApplication.translate('AMENodes', '提取程序: '))
         self.add_custom_widget(w_backend)
         w_backend.value_changed.connect(lambda k, v: self._on_backend_changed(v))
 
@@ -687,14 +688,14 @@ class InputBDNormalizerNode(AMENodeBase):
         logger.info('\n' * 2 + '=' * 40 + ' [InputBD] ' + '=' * 40)
         src = str(self.property('input_file', '') or '').strip()
         if not src:
-            self._last_error = 'BD 规范化输入未设置有效的输入文件'
+            self._last_error = QCoreApplication.translate('AMENodes', 'BD 规范化输入未设置有效的输入文件')
             return None
         src = str(Path(src).resolve())  # 统一 Windows 反斜杠
         if not Path(src).is_file():
-            self._last_error = 'BD 规范化输入未设置有效的输入文件'
+            self._last_error = QCoreApplication.translate('AMENodes', 'BD 规范化输入未设置有效的输入文件')
             return None
         if Path(src).suffix.lower() not in BD_INPUT_EXTS:
-            self._last_error = f'BD 规范化输入仅支持 m2ts/mpls, 收到: {Path(src).suffix}'
+            self._last_error = QCoreApplication.translate('AMENodes', 'BD 规范化输入仅支持 m2ts/mpls, 收到: {extension}').format(extension=Path(src).suffix)
             return None
 
         tracks = []
@@ -706,7 +707,7 @@ class InputBDNormalizerNode(AMENodeBase):
             # 缓存缺失或决策缺失 → 现探测(运行于子线程, 不写回属性)
             tracks, backend = self._resolve_tracks(src)
         if not tracks:
-            self._last_error = f'未能从文件探测到轨道: {src}'
+            self._last_error = QCoreApplication.translate('AMENodes', '未能从文件探测到轨道: {src}').format(src=src)
             return None
         logger.info(f'[InputBD] backend={backend}, 共 {len(tracks)} 条轨道: '
                     f'{[(t["type"], t["idx"]) for t in tracks]}')
@@ -716,5 +717,5 @@ class InputBDNormalizerNode(AMENodeBase):
         else:
             result = self._extract_eac3to(src, tracks, temp_dir)
         if not result:
-            self._last_error = ErrorService.cli_error(backend, '未能提取任何已连接的轨道')
+            self._last_error = ErrorService.cli_error(backend, QCoreApplication.translate('AMENodes', '未能提取任何已连接的轨道'))
         return result or None

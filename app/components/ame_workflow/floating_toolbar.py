@@ -39,20 +39,20 @@ class FloatingToolbar(QFrame):
         self._drag_pos = None
         self._expanded = False
 
-        self.start_btn = PrimaryPushButton(FIF.PLAY, "开始任务", self)
+        self.start_btn = PrimaryPushButton(FIF.PLAY, self.tr('开始任务'), self)
         self.start_btn.setFixedWidth(105)
 
         self.pause_btn = ToolButton(FIF.PAUSE, self)
         self.pause_btn.setFixedSize(32, 32)
-        self.pause_btn.setToolTip("暂停")
+        self.pause_btn.setToolTip(self.tr('暂停'))
 
         self.cancel_btn = ToolButton(FIF.CLOSE, self)
         self.cancel_btn.setFixedSize(32, 32)
-        self.cancel_btn.setToolTip("取消")
+        self.cancel_btn.setToolTip(self.tr('取消'))
 
         self.gear_btn = ToolButton(FIF.SETTING, self)
         self.gear_btn.setFixedSize(32, 32)
-        self.gear_btn.setToolTip("更多设置")
+        self.gear_btn.setToolTip(self.tr('更多设置'))
         self.gear_btn.clicked.connect(self._toggle_expand)
 
         row1.addWidget(self.start_btn)
@@ -68,13 +68,13 @@ class FloatingToolbar(QFrame):
         row2_layout.setContentsMargins(0, 0, 0, 0)
         row2_layout.setSpacing(4)
 
-        self.save_btn = PushButton(FIF.SAVE, '导出Json', self)
+        self.save_btn = PushButton(FIF.SAVE, self.tr('导出Json'), self)
         self.save_btn.setFixedHeight(32)
-        self.save_btn.setToolTip("保存工作流")
+        self.save_btn.setToolTip(self.tr('保存工作流'))
 
-        self.load_btn = PushButton(FIF.FOLDER, '导入Json', self)
+        self.load_btn = PushButton(FIF.FOLDER, self.tr('导入Json'), self)
         self.load_btn.setFixedHeight(32)
-        self.load_btn.setToolTip("打开工作流文件")
+        self.load_btn.setToolTip(self.tr('打开工作流文件'))
 
         row2_layout.addStretch()
         row2_layout.addWidget(self.save_btn)
@@ -88,9 +88,9 @@ class FloatingToolbar(QFrame):
         row3_layout.setContentsMargins(0, 0, 0, 0)
         row3_layout.setSpacing(4)
 
-        self.back_btn = PushButton(FIF.HOME, '返回首页', self)
+        self.back_btn = PushButton(FIF.HOME, self.tr('返回首页'), self)
         self.back_btn.setFixedHeight(32)
-        self.back_btn.setToolTip("返回加载页")
+        self.back_btn.setToolTip(self.tr('返回加载页'))
 
         row3_layout.addStretch()
         row3_layout.addWidget(self.back_btn)
@@ -129,21 +129,21 @@ class FloatingToolbar(QFrame):
         self._state = state
         if state == 'running':
             self.start_btn.setEnabled(False)
-            self.start_btn.setText("运行中")
+            self.start_btn.setText(self.tr('运行中'))
             self.pause_btn.setEnabled(True)
             self.cancel_btn.setEnabled(True)
             self._row2.setEnabled(False)
             self._row3.setEnabled(False)
         elif state == 'paused':
             self.start_btn.setEnabled(True)
-            self.start_btn.setText("继续")
+            self.start_btn.setText(self.tr('继续'))
             self.pause_btn.setEnabled(False)
             self.cancel_btn.setEnabled(True)
             self._row2.setEnabled(False)
             self._row3.setEnabled(False)
         else:
             self.start_btn.setEnabled(True)
-            self.start_btn.setText("开始任务")
+            self.start_btn.setText(self.tr('开始任务'))
             self.pause_btn.setEnabled(False)
             self.cancel_btn.setEnabled(False)
             self._row2.setEnabled(True)

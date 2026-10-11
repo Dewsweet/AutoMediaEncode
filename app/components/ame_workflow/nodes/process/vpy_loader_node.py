@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import re, shutil
 from pathlib import Path
 from .._base import AMENodeBase, C, P, HIDDEN
@@ -16,15 +17,15 @@ SOURCE_PATTERNS = [
 
 
 class VPYLoaderNode(AMENodeBase):
-    NODE_NAME = 'vpy 加载器'
-    DESCRIPTION = '载入 .vpy 脚本，自动替换 __INPUT_FILE__ 或匹配源滤镜路径'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", 'vpy 加载器')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", '载入 .vpy 脚本，自动替换 __INPUT_FILE__ 或匹配源滤镜路径')
     CATEGORY = '工具'; CATEGORY_COLOR = C['Purple']
     INPUTS = [('file', P['video'])]
     OUTPUTS = [('script', P['script'])]
     MENU_KEY = 'vpy_loader'
 
     def _setup_widgets(self):
-        self.add_custom_widget(FileBrowseWidget(self.view, 'vpy_path', '选择vpy', exts='VPY (*.vpy);;All (*)'))
+        self.add_custom_widget(FileBrowseWidget(self.view, 'vpy_path', QCoreApplication.translate('AMENodes', '选择vpy'), exts='VPY (*.vpy);;All (*)'))
 
     def execute(self, inputs, temp_dir):
         vpy_src = self.property('vpy_path', '')

@@ -112,7 +112,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.recodeInterface, FIF.VIDEO, self.tr('媒体重编码'))
         self.addSubInterface(self.demuxingInterface, FIF.MOVIE, self.tr('媒体抽流'))
         self.addSubInterface(self.muxingInterface, FIF.MEDIA, self.tr('媒体混流'))
-        self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, 'AME 工作流')
+        self.addSubInterface(self.ameWorkflowInterface, FIF.TILES, self.tr('AME 工作流'))
 
         self.addSubInterface(self.taskInterface, FIF.DATE_TIME, self.tr('任务进度'), NavigationItemPosition.BOTTOM)
         self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr('设置'), NavigationItemPosition.BOTTOM)

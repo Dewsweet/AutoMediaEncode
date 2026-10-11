@@ -4,6 +4,7 @@
 - 选择输入文件后自动 ffmpeg 探测轨道，动态追加 video_N/audio_N/subtitle_N 输出端口
 - 探测结果随工作流保存，重新打开时直接用缓存重建端口（不重跑 ffmpeg）
 """
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
 
@@ -39,8 +40,8 @@ def _codec_ext(codec: str) -> str:
 class InputVideoNormalizerNode(AMENodeBase):
     """选择文件后自动探测轨道并生成输出端口的输入源节点"""
 
-    NODE_NAME = '视频规范化输入'
-    DESCRIPTION = '选择文件后自动探测轨道并生成输出端口'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", '视频规范化输入')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", '选择文件后自动探测轨道并生成输出端口')
     CATEGORY = '输入'; CATEGORY_COLOR = C['Gray']
     MENU_KEY = 'input_video_normalizer'
     INPUTS  = [('workspace', P['any'])]
@@ -56,8 +57,9 @@ class InputVideoNormalizerNode(AMENodeBase):
         self.create_property('tracks_src', '', widget_type=HIDDEN, tab='') # 缓存探测源文件路径
         self.create_property('tracks', [], widget_type=HIDDEN, tab='') # 缓存探测结果: [{'type': 'video', 'idx': 0, 'codec': 'h264'}, ...]
 
-        EXT = "视频文件 (" + ' '.join(f'*{e}' for e in VIDEO_EXTS) + ');;'
-        w = FileBrowseWidget(self.view, 'input_file', '选择输入文件', exts=EXT)
+        EXT = QCoreApplication.translate('AMENodes', '视频文件 ({patterns});;').format(
+            patterns=' '.join(f'*{e}' for e in VIDEO_EXTS))
+        w = FileBrowseWidget(self.view, 'input_file', QCoreApplication.translate('AMENodes', '选择输入文件'), exts=EXT)
         self.add_custom_widget(w)
         # add_custom_widget 已将 value_changed 接到 set_property，这里额外挂自动探测回调
         w.value_changed.connect(lambda k, v: self._on_file_changed(v))
@@ -205,11 +207,11 @@ class InputVideoNormalizerNode(AMENodeBase):
         logger.info('\n' * 2 + '=' * 40 + ' [InputVideoNormalizerNode] ' + '=' * 40)
         src = str(self.property('input_file', '') or '').strip()
         if not src or not Path(src).is_file():
-            self._last_error = '输入分离器未设置有效的输入文件'
+            self._last_error = QCoreApplication.translate('AMENodes', '输入分离器未设置有效的输入文件')
             return None
         ff = ToolService.get_tool_path('ffmpeg')
         if not ff:
-            self._last_error = '分离器找不到 ffmpeg，请检查工具路径'
+            self._last_error = QCoreApplication.translate('AMENodes', '分离器找不到 ffmpeg，请检查工具路径')
             return None
 
         # 优先使用与当前文件一致的探测缓存, 否则现探测(不写回属性, execute 运行于子线程)
@@ -219,7 +221,7 @@ class InputVideoNormalizerNode(AMENodeBase):
         if not tracks:
             tracks = self._probe_streams(ff, src)
         if not tracks:
-            self._last_error = f'未能从文件探测到轨道: {src}'
+            self._last_error = QCoreApplication.translate('AMENodes', '未能从文件探测到轨道: {src}').format(src=src)
             return None
         logger.info(f'[InputVideoNormalizerNode] 共 {len(tracks)} 条轨道: '
                     f'{[(t["type"], t["idx"]) for t in tracks]}')
@@ -252,5 +254,5 @@ class InputVideoNormalizerNode(AMENodeBase):
                 logger.error(f'[InputVideoNormalizerNode] 提取异常: {e}')
 
         if not result:
-            self._last_error = ErrorService.cli_error('ffmpeg', '未能提取任何已连接的轨道')
+            self._last_error = ErrorService.cli_error('ffmpeg', QCoreApplication.translate('AMENodes', '未能提取任何已连接的轨道'))
         return result if result else None

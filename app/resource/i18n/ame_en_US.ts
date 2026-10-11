@@ -2,6 +2,1022 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US" sourcelanguage="zh_CN">
 <context>
+    <name>AMEConextMenu</name>
+    <message>
+        <location filename="../../components/ame_workflow/ame_context_menu.py" line="+39"/>
+        <source>文件</source>
+        <translation>File</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>保存工作流</source>
+        <translation>Save workflow</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>导出 JSON</source>
+        <translation>Export JSON</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>导入 JSON</source>
+        <translation>Import JSON</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>编辑</source>
+        <translation>Edit</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>撤销</source>
+        <translation>Undo</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>重做</source>
+        <translation>Redo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>复制</source>
+        <translation>Copy</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>剪切</source>
+        <translation>Cut</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>粘贴</source>
+        <translation>Paste</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>删除</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>全选</source>
+        <translation>Select all</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>复制选中</source>
+        <translation>Duplicate selection</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>适应选中</source>
+        <translation>Fit selection</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>节点</source>
+        <translation>Nodes</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>添加组</source>
+        <translation>Add group</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>视图</source>
+        <translation>View</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>重置缩放</source>
+        <translation>Reset zoom</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>背景: 网格线</source>
+        <translation>Background: Grid lines</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>背景: 点阵</source>
+        <translation>Background: Dots</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>背景: 无</source>
+        <translation>Background: None</translation>
+    </message>
+</context>
+<context>
+    <name>AMEHotkeys</name>
+    <message>
+        <location filename="../../components/ame_workflow/ame_hotkeys.py" line="+46"/>
+        <source>保存工作流</source>
+        <translation>Save workflow</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>加载工作流</source>
+        <translation>Load workflow</translation>
+    </message>
+</context>
+<context>
+    <name>AMELoaderPage</name>
+    <message>
+        <location filename="../../components/ame_workflow/ame_loader_page.py" line="+120"/>
+        <source>节点式工作流</source>
+        <translation>Node workflow</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>新建</source>
+        <translation>New</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>打开</source>
+        <translation>Open</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>导入</source>
+        <translation>Import</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>导出</source>
+        <translation>Export</translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>重命名</source>
+        <translation>Rename</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>新名称:</source>
+        <translation>New name:</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>选择封面</source>
+        <translation>Choose cover</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>导入 JSON</source>
+        <translation>Import JSON</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>已导入</source>
+        <translation>Imported</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>工作流: {name}</source>
+        <translation>Workflow: {name}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>导出 JSON</source>
+        <translation>Export JSON</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>已导出</source>
+        <translation>Exported</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>工作流已导出</source>
+        <translation>Workflow exported</translation>
+    </message>
+</context>
+<context>
+    <name>AMENodeContextMenu</name>
+    <message>
+        <location filename="../../components/ame_workflow/ame_context_menu.py" line="+15"/>
+        <source>复制</source>
+        <translation>Copy</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>剪切</source>
+        <translation>Cut</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>删除</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>复制选中</source>
+        <translation>Duplicate selection</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+11"/>
+        <location line="+3"/>
+        <source>禁用</source>
+        <translation>Disable</translation>
+    </message>
+    <message>
+        <location line="-11"/>
+        <source>全选</source>
+        <translation>Select all</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>适应选中</source>
+        <translation>Fit selection</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>启用</source>
+        <translation>Enable</translation>
+    </message>
+</context>
+<context>
+    <name>AMENodePalette</name>
+    <message>
+        <location filename="../../components/ame_workflow/node_palette.py" line="+8"/>
+        <source>系统</source>
+        <translation>System</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>工作区</source>
+        <translation>Workspace</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>纯文本</source>
+        <translation>Text</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>自定义文件名</source>
+        <translation>Custom filename</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>工具</source>
+        <translation>Tools</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>分离器</source>
+        <translation>Splitter</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>ffmpeg处理器</source>
+        <translation>FFmpeg processor</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入/输出</source>
+        <translation>Input/Output</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>普通输入</source>
+        <translation>File input</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>多文件输入</source>
+        <translation>Multiple file input</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>视频规范化输入</source>
+        <translation>Video input normalizer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>BD 规范化输入</source>
+        <translation>BD input normalizer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>普通输出</source>
+        <translation>File output</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>视频编码</source>
+        <translation>Video encoding</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>ffmpeg (视频)</source>
+        <translation>FFmpeg (video)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>音频编码</source>
+        <translation>Audio encoding</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>ffmpeg (音频)</source>
+        <translation>FFmpeg (audio)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>封装</source>
+        <translation>Muxing</translation>
+    </message>
+</context>
+<context>
+    <name>AMENodes</name>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/_base.py" line="+92"/>
+        <source>已禁用</source>
+        <translation>Disabled</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/aac_encoder_node.py" line="+8"/>
+        <source>AAC 编码 (qaac)</source>
+        <translation>AAC encoder (qaac)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>AAC 音频编码, 使用 qaac 编码器的 CVBR 模式</source>
+        <translation>AAC audio encoding using qaac in CVBR mode</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/ffmpeg_audio_encoder_node.py" line="+7"/>
+        <source>ffmpeg 音频编码</source>
+        <translation>FFmpeg audio encoder</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>FFmpeg 音频编码器</source>
+        <translation>FFmpeg audio encoder</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/ffmpeg_video_encoder_node.py" line="+7"/>
+        <source>ffmpeg 视频编码</source>
+        <translation>FFmpeg video encoder</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>FFmpeg 视频编码器</source>
+        <translation>FFmpeg video encoder</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/flac_encoder_node.py" line="+7"/>
+        <source>FLAC 编码(ffmpeg)</source>
+        <translation>FLAC encoder (FFmpeg)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>FLAC 无损音频编码</source>
+        <translation>Lossless FLAC audio encoding</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/opus_encoder_node.py" line="+7"/>
+        <source>Opus 编码 (ffmpeg)</source>
+        <translation>Opus encoder (FFmpeg)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Opus 音频编码 (CBR 128k)</source>
+        <translation>Opus audio encoding (CBR 128k)</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/svtav1_encoder_node.py" line="+7"/>
+        <source>SVT-AV1</source>
+        <translation>SVT-AV1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>SVT-AV1 编码器, 需要 ffmpeg 内置 SVT-AV1 支持</source>
+        <translation>SVT-AV1 encoder; requires FFmpeg with SVT-AV1 support</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/x264_encoder_node.py" line="+7"/>
+        <source>x264 编码</source>
+        <translation>x264 encoder</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>x264 CLI 编码器</source>
+        <translation>x264 CLI encoder</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/encoder/x265_encoder_node.py" line="+7"/>
+        <source>x265 编码</source>
+        <translation>x265 encoder</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>x265 CLI 编码器</source>
+        <translation>x265 CLI encoder</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/io/input_bd_normalizer_node.py" line="+200"/>
+        <source>BD 规范化输入</source>
+        <translation>BD input normalizer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>m2ts/mpls 输入, eac3to 探测轨道; 连体盘自动切换 mkvmerge</source>
+        <translation>M2TS/MPLS input with eac3to track probing; automatically switches to mkvmerge for trimmed playlists</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>蓝光 M2TS (*.m2ts *.mts);;蓝光播放列表 MPLS (*.mpls);;所有文件 (*.*)</source>
+        <translation>Blu-ray M2TS (*.m2ts *.mts);;Blu-ray playlists MPLS (*.mpls);;All files (*.*)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="+62"/>
+        <source>选择输入文件</source>
+        <translation>Choose input file</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>提取程序: </source>
+        <translation>Tool: </translation>
+    </message>
+    <message>
+        <location line="+462"/>
+        <location line="+4"/>
+        <source>BD 规范化输入未设置有效的输入文件</source>
+        <translation>No valid input file is set for the BD input normalizer</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>BD 规范化输入仅支持 m2ts/mpls, 收到: {extension}</source>
+        <translation>The BD input normalizer only supports M2TS/MPLS; received: {extension}</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="+162"/>
+        <source>未能从文件探测到轨道: {src}</source>
+        <translation>Could not detect tracks in file: {src}</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="+33"/>
+        <location filename="../../components/ame_workflow/nodes/process/splitter_node.py" line="+101"/>
+        <source>未能提取任何已连接的轨道</source>
+        <translation>Could not extract any connected tracks</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/io/input_file_node.py" line="+7"/>
+        <location filename="../../components/ame_workflow/nodes/process/ffmpeg_processor_node.py" line="+29"/>
+        <source>输入文件</source>
+        <translation>Input file</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>载入媒体文件</source>
+        <translation>Load a media file</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_files_node.py" line="+15"/>
+        <source>视频文件 ({video});;音频文件 ({audio});;图片文件 ({image});;字幕文件 ({subtitle});;所有文件 (*.*)</source>
+        <translation>Video files ({video});;Audio files ({audio});;Image files ({image});;Subtitle files ({subtitle});;All files (*.*)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_files_node.py" line="+6"/>
+        <source>选择文件</source>
+        <translation>Choose file</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/io/input_files_node.py" line="-14"/>
+        <source>多文件输入</source>
+        <translation>Multiple file input</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>批量载入多个文件</source>
+        <translation>Load multiple files in a batch</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="-214"/>
+        <source>视频规范化输入</source>
+        <translation>Video input normalizer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>选择文件后自动探测轨道并生成输出端口</source>
+        <translation>Automatically detect tracks and create output ports after selecting a file</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>视频文件 ({patterns});;</source>
+        <translation>Video files ({patterns});;</translation>
+    </message>
+    <message>
+        <location line="+150"/>
+        <source>输入分离器未设置有效的输入文件</source>
+        <translation>No valid input file is set for the input splitter</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location filename="../../components/ame_workflow/nodes/process/splitter_node.py" line="-31"/>
+        <source>分离器找不到 ffmpeg，请检查工具路径</source>
+        <translation>The splitter cannot find FFmpeg. Check the tool path.</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/io/output_node.py" line="+9"/>
+        <source>输出文件</source>
+        <translation>Output file</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>最终输出文件路径。可开启运行后清理缓存</source>
+        <translation>Set the final output directory. Optionally clear the cache after execution.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>选择输出目录</source>
+        <translation>Output folder</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>运行后清理缓存文件夹</source>
+        <translation>Clear cache folder</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/muxer/ffmpeg_muxer_node.py" line="+10"/>
+        <source>封装 (FFmpeg)</source>
+        <translation>Muxer (FFmpeg)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>FFmpeg 封装 MP4/MOV，接收单视频单音频</source>
+        <translation>Mux MP4/MOV with FFmpeg using one video and one audio track</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/muxer/mkvmerge_muxer_node.py" line="+11"/>
+        <source>封装 (mkvmerge)</source>
+        <translation>Muxer (mkvmerge)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>mkvmerge 封装器，支持多轨道动态添加</source>
+        <translation>mkvmerge muxer with support for dynamically adding tracks</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/process/ffmpeg_processor_node.py" line="-16"/>
+        <source>FFmpeg 命令行参数: </source>
+        <translation>FFmpeg args: </translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>插入</source>
+        <translation>Insert</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>在这输入 FFmpeg 命令行参数，使用 插入 来添加输入/输出占位符</source>
+        <translation>Insert I/O placeholders</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>FFmpeg CLI</source>
+        <translation>FFmpeg CLI</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>自定义 FFmpeg 命令行处理</source>
+        <translation>Process media using custom FFmpeg arguments</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>使用 image2 分离器</source>
+        <translation>Use image2 demuxer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>使用 concat  分离器</source>
+        <translation>Use concat demuxer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>输出文件路径</source>
+        <translation>Output file path</translation>
+    </message>
+    <message>
+        <location line="+142"/>
+        <source>无输出</source>
+        <translation>No output</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/process/splitter_node.py" line="-58"/>
+        <source>分离器</source>
+        <translation>Splitter</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>默认 video_1 + audio_1。探测后按实际轨道动态追加 video_2/audio_2/subtitle_1 等</source>
+        <translation>Starts with video_1 and audio_1. Probing adds ports such as video_2, audio_2 and subtitle_1 for detected tracks.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>探测轨道</source>
+        <translation>Probe tracks</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>分离器未接收到输入文件</source>
+        <translation>The splitter received no input file</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/process/vpy_loader_node.py" line="+20"/>
+        <source>vpy 加载器</source>
+        <translation>VPY loader</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>载入 .vpy 脚本，自动替换 __INPUT_FILE__ 或匹配源滤镜路径</source>
+        <translation>Load a .vpy script and replace __INPUT_FILE__ or the source filter path automatically</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>选择vpy</source>
+        <translation>Choose VPY script</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/process/vspipe_node.py" line="+11"/>
+        <source>vspipe 加载器</source>
+        <translation>vspipe loader</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VapourSynth 管道输出。检测 vspipe API 版本后组装管道命令连接编码器</source>
+        <translation>Pipe VapourSynth output to an encoder using commands matching the detected vspipe API version</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/system/custom_name_node.py" line="+12"/>
+        <source>自定义文件名</source>
+        <translation>Custom filename</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>重命名文件。{input_name} 替换为输入文件名(不含扩展名)，{datetime} 替换为当前时间</source>
+        <translation>Rename files. {input_name} is the input filename without its extension; {datetime} is the current date and time.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>输入文件名</source>
+        <translation>Input filename</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>日期时间</source>
+        <translation>Date and time</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>序列化</source>
+        <translation>Sequence number</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>复制文件到缓存目录</source>
+        <translation>Copy to cache</translation>
+    </message>
+    <message>
+        <source>复制</source>
+        <translation type="vanished">Copy</translation>
+    </message>
+    <message>
+        <source>重命名</source>
+        <translation type="vanished">Rename</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/system/text_node.py" line="+8"/>
+        <source>输入文本内容...</source>
+        <translation>Enter text...</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>纯文本</source>
+        <translation>Text</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>输入文本内容，纯文本提示节点</source>
+        <translation>Enter text for a note node</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>输入文本内容</source>
+        <translation>Enter text</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/system/workspace_node.py" line="+6"/>
+        <source>工作区</source>
+        <translation>Workspace</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>设定中间文件存储目录，连接输入节点后所有中间文件写入该目录</source>
+        <translation>Set the directory for intermediate files. Connect to an input node to use it throughout the workflow.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>选择工作区目录</source>
+        <translation>Select workspace</translation>
+    </message>
+</context>
+<context>
+    <name>AMEWorkflowExecutor</name>
+    <message>
+        <location filename="../../services/ame_workflow/workflow_executor.py" line="+38"/>
+        <source>工作流中存在循环依赖</source>
+        <translation>The workflow contains a dependency cycle</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>节点 &apos;{name}&apos; 执行失败</source>
+        <translation>Node &apos;{name}&apos; failed</translation>
+    </message>
+</context>
+<context>
+    <name>AMEWorkflowInterface</name>
+    <message>
+        <location filename="../../view/ame_workflow_interface.py" line="+110"/>
+        <source>新建工作流</source>
+        <translation>New workflow</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>输入工作流名称:</source>
+        <translation>Workflow name:</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <location line="+11"/>
+        <source>已保存</source>
+        <translation>Saved</translation>
+    </message>
+    <message>
+        <location line="-10"/>
+        <location line="+10"/>
+        <source>保存到: {name}</source>
+        <translation>Saved to: {name}</translation>
+    </message>
+    <message>
+        <location line="-6"/>
+        <source>保存工作流</source>
+        <translation>Save workflow</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>输入名称:</source>
+        <translation>Name:</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>导入 JSON</source>
+        <translation>Import JSON</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>已导入</source>
+        <translation>Imported</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>导入完成</source>
+        <translation>Import completed</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>导出 JSON</source>
+        <translation>Export JSON</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>已导出</source>
+        <translation>Exported</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>导出完成</source>
+        <translation>Export completed</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>组</source>
+        <translation>Group</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>工作流不完整</source>
+        <translation>Incomplete workflow</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>请至少添加一个输出节点</source>
+        <translation>Add at least one output node</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>处理完成</source>
+        <translation>Processing completed</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>AME 工作流已执行完毕</source>
+        <translation>AME workflow completed</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>工作流执行失败</source>
+        <translation>Workflow execution failed</translation>
+    </message>
+</context>
+<context>
+    <name>AMEWorkflowWidgets</name>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/_widgets.py" line="+106"/>
+        <source>浏览</source>
+        <translation>Browse</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>选择文件夹</source>
+        <translation>Choose folder</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>选择目录</source>
+        <translation>Choose directory</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>选择输入文件</source>
+        <translation>Choose input file</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+32"/>
+        <source>选择文件</source>
+        <translation>Choose file</translation>
+    </message>
+    <message>
+        <location line="-25"/>
+        <source>选择多个输入文件</source>
+        <translation>Select files</translation>
+    </message>
+    <message>
+        <location line="+67"/>
+        <source>(无)</source>
+        <translation>(None)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>使用预设:</source>
+        <translation>Preset:</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>编码器选项:</source>
+        <translation>Encoder:</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>自定义参数:</source>
+        <translation>CLI args:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入自定义 FFmpeg CLI 参数...</source>
+        <translation>FFmpeg args...</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>输入自定义 CLI 参数...</source>
+        <translation>CLI args...</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>压缩级别:</source>
+        <translation>Level:</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <location line="+52"/>
+        <source>自定义文件名称:</source>
+        <translation>Filename:</translation>
+    </message>
+    <message>
+        <location line="-50"/>
+        <source>输入自定义文件名称, 不要输入扩展名</source>
+        <translation>Name without extension</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>添加</source>
+        <translation>Add</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>清除</source>
+        <translation>Clear</translation>
+    </message>
+    <message>
+        <location line="+63"/>
+        <source>自定义 CLI 参数...</source>
+        <translation>CLI args...</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <location line="+80"/>
+        <source>轨道设置</source>
+        <translation>Settings</translation>
+    </message>
+    <message>
+        <location line="-75"/>
+        <source>默认轨道:</source>
+        <translation>Default:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>是</source>
+        <translation>Yes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>否</source>
+        <translation>No</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>语言:</source>
+        <translation>Language:</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>名称:</source>
+        <translation>Name:</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>自定义轨道参数:</source>
+        <translation>Track args:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>输入轨道额外参数...</source>
+        <translation>Extra track args...</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>确认</source>
+        <translation>Confirm</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>取消</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>视频</source>
+        <translation>Video</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>音频</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>字幕</source>
+        <translation>Subtitle</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>章节</source>
+        <translation>Chapters</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>附件</source>
+        <translation>Attachments</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>{title_prefix} 参数设置</source>
+        <translation>{title_prefix} settings</translation>
+    </message>
+</context>
+<context>
     <name>AttachmentCard</name>
     <message>
         <location filename="../../components/muxing_card_interface.py" line="+922"/>
@@ -331,6 +1347,16 @@ See logs/ame_run.log for details.</translation>
         <source>执行返回错误码 1，请检查节点设置或查看日志</source>
         <translation>The process returned error code 1. Please check the node settings or the log.</translation>
     </message>
+    <message>
+        <location line="+6"/>
+        <source>节点『{node_name}』执行失败</source>
+        <translation>Node &apos;{node_name}&apos; failed</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>，请检查节点设置或查看日志</source>
+        <translation>. Check the node settings or view the log.</translation>
+    </message>
 </context>
 <context>
     <name>FileInfoViewCard</name>
@@ -363,6 +1389,70 @@ See logs/ame_run.log for details.</translation>
         <location line="+41"/>
         <source>选择文件</source>
         <translation>Select files</translation>
+    </message>
+</context>
+<context>
+    <name>FloatingToolbar</name>
+    <message>
+        <location filename="../../components/ame_workflow/floating_toolbar.py" line="+42"/>
+        <location line="+104"/>
+        <source>开始任务</source>
+        <translation>Start</translation>
+    </message>
+    <message>
+        <location line="-99"/>
+        <source>暂停</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>取消</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>更多设置</source>
+        <translation>More settings</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>导出Json</source>
+        <translation>Export</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>保存工作流</source>
+        <translation>Save workflow</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>导入Json</source>
+        <translation>Import</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>打开工作流文件</source>
+        <translation>Open workflow file</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>返回首页</source>
+        <translation>Back</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>返回加载页</source>
+        <translation>Back to workflow list</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>运行中</source>
+        <translation>Running</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>继续</source>
+        <translation>Resume</translation>
     </message>
 </context>
 <context>
@@ -698,7 +1788,12 @@ See logs/ame_run.log for details.</translation>
         <translation>Muxing</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+1"/>
+        <source>AME 工作流</source>
+        <translation>AME workflow</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>任务进度</source>
         <translation>Task progress</translation>
     </message>
@@ -1135,6 +2230,19 @@ See logs/ame_run.log for details.</translation>
         <location line="+1"/>
         <source>提取时删除字幕中的子集化信息</source>
         <translation>Remove font subset prefixes and metadata from extracted subtitles.</translation>
+    </message>
+</context>
+<context>
+    <name>NameInputDialog</name>
+    <message>
+        <location filename="../../components/ame_workflow/ame_loader_page.py" line="-240"/>
+        <source>确定</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>取消</source>
+        <translation>Cancel</translation>
     </message>
 </context>
 <context>
@@ -2358,6 +3466,42 @@ Possible cause: {error}</translation>
         <location line="+16"/>
         <source>恒定质量 (QP): </source>
         <translation>Constant quality (QP): </translation>
+    </message>
+</context>
+<context>
+    <name>WorkflowCard</name>
+    <message>
+        <location filename="../../components/ame_workflow/ame_loader_page.py" line="+74"/>
+        <source>删除</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>重命名</source>
+        <translation>Rename</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>设置封面</source>
+        <translation>Set cover</translation>
+    </message>
+</context>
+<context>
+    <name>WorkflowValidator</name>
+    <message>
+        <location filename="../../services/ame_workflow/workflow_validator.py" line="+12"/>
+        <source>工作流中没有节点</source>
+        <translation>The workflow has no nodes</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>缺少输出节点</source>
+        <translation>Missing output node</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>工作流中存在循环依赖</source>
+        <translation>The workflow contains a dependency cycle</translation>
     </message>
 </context>
 </TS>

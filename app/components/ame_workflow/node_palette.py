@@ -1,40 +1,40 @@
-from PySide6.QtCore import Qt, QPointF, Signal
+from PySide6.QtCore import Qt, QPointF, Signal, QCoreApplication, QT_TRANSLATE_NOOP
 
 from qfluentwidgets import RoundMenu, Action
 
 from .nodes import MENU_KEY_MAP
 
 NODE_PALETTE_STRUCTURE = [
-    ('系统', [
-        ('工作区', 'workspace'),
-        ('纯文本', 'text'),
-        ('自定义文件名', 'custom_name'),
+    (QT_TRANSLATE_NOOP("AMENodePalette", '系统'), [
+        (QT_TRANSLATE_NOOP("AMENodePalette", '工作区'), 'workspace'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", '纯文本'), 'text'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", '自定义文件名'), 'custom_name'),
     ]),
-    ('工具', [
-        ('分离器', 'splitter'),
+    (QT_TRANSLATE_NOOP("AMENodePalette", '工具'), [
+        (QT_TRANSLATE_NOOP("AMENodePalette", '分离器'), 'splitter'),
         ('VapourSynth', 'vs_compound'),
-        ('ffmpeg处理器', 'ffmpeg_processor'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", 'ffmpeg处理器'), 'ffmpeg_processor'),
     ]),
-    ('输入/输出', [
-        ('普通输入', 'input_file'),
-        ('多文件输入', 'input_multi'),
-        ('视频规范化输入', 'input_video_normalizer'),
-        ('BD 规范化输入', 'input_bd_normalizer'),
-        ('普通输出', 'output'),
+    (QT_TRANSLATE_NOOP("AMENodePalette", '输入/输出'), [
+        (QT_TRANSLATE_NOOP("AMENodePalette", '普通输入'), 'input_file'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", '多文件输入'), 'input_multi'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", '视频规范化输入'), 'input_video_normalizer'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", 'BD 规范化输入'), 'input_bd_normalizer'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", '普通输出'), 'output'),
     ]),
-    ('视频编码', [
+    (QT_TRANSLATE_NOOP("AMENodePalette", '视频编码'), [
         ('x264', 'encoder_x264'),
         ('x265', 'encoder_x265'),
         ('svtav1', 'encoder_svtav1'),
-        ('ffmpeg (视频)', 'encoder_ffmpeg_video'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", 'ffmpeg (视频)'), 'encoder_ffmpeg_video'),
         ]),
-    ('音频编码', [
+    (QT_TRANSLATE_NOOP("AMENodePalette", '音频编码'), [
         ('flac', 'encoder_flac'),            
         ('aac', 'encoder_aac'),
         ('opus', 'encoder_opus'),
-        ('ffmpeg (音频)', 'encoder_ffmpeg_audio'),
+        (QT_TRANSLATE_NOOP("AMENodePalette", 'ffmpeg (音频)'), 'encoder_ffmpeg_audio'),
         ]),
-    ('封装', [
+    (QT_TRANSLATE_NOOP("AMENodePalette", '封装'), [
         ('mkvmerge', 'muxer_mkvmerge'),
         ('ffmpeg', 'muxer_ffmpeg'),
     ]),
@@ -61,6 +61,7 @@ class NodePaletteMenu(RoundMenu):
                 parent_menu.addSeparator()
                 continue
             label, target = item
+            label = QCoreApplication.translate("AMENodePalette", label)
             if isinstance(target, list):
                 submenu = RoundMenu(label, parent_menu)
                 self._build_tree(submenu, target)

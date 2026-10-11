@@ -1,3 +1,4 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 import subprocess, types
 from pathlib import Path
 from .._base import AMENodeBase, C, P, HIDDEN
@@ -7,8 +8,8 @@ from app.common.logger import logger
 
 
 class MuxerMkvmergeNode(AMENodeBase):
-    NODE_NAME = '封装 (mkvmerge)'
-    DESCRIPTION = 'mkvmerge 封装器，支持多轨道动态添加'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", '封装 (mkvmerge)')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'mkvmerge 封装器，支持多轨道动态添加')
     CATEGORY = '封装'; CATEGORY_COLOR = C['Green']
     INPUTS = [('video', P['video']),
               ('audio', P['audio']),

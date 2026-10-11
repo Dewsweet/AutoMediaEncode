@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import re
 import shutil
 from pathlib import Path
@@ -8,8 +9,8 @@ from .._widgets import CustomTextWidget, SwitchButtonWidget, CheckBoxWidget
 from app.common.logger import logger
 
 class CustomNameNode(AMENodeBase):
-    NODE_NAME = '自定义文件名'
-    DESCRIPTION = '重命名文件。{input_name} 替换为输入文件名(不含扩展名)，{datetime} 替换为当前时间'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", '自定义文件名')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", '重命名文件。{input_name} 替换为输入文件名(不含扩展名)，{datetime} 替换为当前时间')
     CATEGORY = '输出'; CATEGORY_COLOR = C['Gray']
     INPUTS = [('file', P['any'])]
     OUTPUTS = [('file', P['any'])]
@@ -17,12 +18,12 @@ class CustomNameNode(AMENodeBase):
 
     def _setup_widgets(self):
         placeholders = {
-            '输入文件名': '{input_name}',
-            '日期时间': '{datetime}',
-            '序列化': '{index:00}',
+            QCoreApplication.translate('AMENodes', '输入文件名'): '{input_name}',
+            QCoreApplication.translate('AMENodes', '日期时间'): '{datetime}',
+            QCoreApplication.translate('AMENodes', '序列化'): '{index:00}',
             }
         self.add_custom_widget(CustomTextWidget(self.view, 'custom_name', placeholder=placeholders))
-        self.add_custom_widget(CheckBoxWidget(self.view, 'copy2_temp', '复制文件到缓存目录'))
+        self.add_custom_widget(CheckBoxWidget(self.view, 'copy2_temp', QCoreApplication.translate('AMENodes', '复制文件到缓存目录')))
 
     def execute(self, inputs, temp_dir):
         logger.info('\n' * 2 + '=' * 40 + f' [{self.NODE_NAME}] ' + '=' * 40)
@@ -89,7 +90,7 @@ class CustomNameNode(AMENodeBase):
                         shutil.move(str(src), str(dst))
                         # logger.info(f'[{self.NODE_NAME}] 重命名: {src.name} -> {dst.name}')
                 except Exception as e:
-                    action_name = "复制" if is_copy else "重命名"
+                    action_name = '复制' if is_copy else '重命名'
                     logger.error(f'[{self.NODE_NAME}] {action_name}失败 {src.name}: {e}')
                     result.append(str(src))
                     continue

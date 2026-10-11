@@ -107,7 +107,7 @@ class AMEWorkflowInterface(QWidget):
 
     # ── 新建 ──
     def _on_new_workflow(self):
-        dlg = NameInputDialog("新建工作流", "输入工作流名称:", self.window())
+        dlg = NameInputDialog(self.tr('新建工作流'), self.tr('输入工作流名称:'), self.window())
         if dlg.exec():
             name = dlg.get_text().strip()
             if name:
@@ -128,35 +128,35 @@ class AMEWorkflowInterface(QWidget):
         """保存当前工作流，如果之前已保存过则覆盖，否则提示输入名称"""
         if self._current_workflow_name:
             preset_service.save_with_thumbnail(self._current_workflow_name, self._ame_graph.graph)
-            InfoBar.success(title="已保存",
-                            content=f"保存到: {self._current_workflow_name}",
+            InfoBar.success(title=self.tr('已保存'),
+                            content=self.tr('保存到: {name}').format(name=self._current_workflow_name),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=2000, parent=self)
         else:
-            dlg = NameInputDialog("保存工作流", "输入名称:", self.window())
+            dlg = NameInputDialog(self.tr('保存工作流'), self.tr('输入名称:'), self.window())
             if dlg.exec():
                 name = dlg.get_text().strip()
                 if name:
                     self._current_workflow_name = name
                     preset_service.save_with_thumbnail(name, self._ame_graph.graph)
-                    InfoBar.success(title="已保存", content=f"保存到: {name}",
+                    InfoBar.success(title=self.tr('已保存'), content=self.tr('保存到: {name}').format(name=name),
                                     orient=Qt.Horizontal, isClosable=True,
                                     position=InfoBarPosition.TOP, duration=2000, parent=self)
 
     # ── 导入/导出 JSON ──
     def _on_import_json(self):
-        path, _ = QFileDialog.getOpenFileName(self, "导入 JSON", "", "JSON (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr('导入 JSON'), "", "JSON (*.json)")
         if path:
             self._ame_graph.load_session(path)
-            InfoBar.success(title="已导入", content=f"导入完成",
+            InfoBar.success(title=self.tr('已导入'), content=self.tr('导入完成'),
                                 orient=Qt.Horizontal, isClosable=False,
                                 position=InfoBarPosition.TOP, duration=2000, parent=self)
 
     def _on_export_json(self):
-        path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", "", "JSON (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, self.tr('导出 JSON'), "", "JSON (*.json)")
         if path:
             self._ame_graph.save_session(path)
-            InfoBar.success(title="已导出", content=f"导出完成",
+            InfoBar.success(title=self.tr('已导出'), content=self.tr('导出完成'),
                             orient=Qt.Horizontal, isClosable=False,
                             position=InfoBarPosition.TOP, duration=2000, parent=self)
 
@@ -190,7 +190,7 @@ class AMEWorkflowInterface(QWidget):
         g = self._ame_graph.graph
         cur = g.cursor_pos()
         backdrop = g.create_node('nodeGraphQt.nodes.BackdropNode',
-                                 name='组', pos=[cur[0], cur[1]], push_undo=False)
+                                 name=self.tr('组'), pos=[cur[0], cur[1]], push_undo=False)
         selected = g.selected_nodes()
         if selected:
             backdrop.wrap_nodes(selected)
@@ -217,7 +217,7 @@ class AMEWorkflowInterface(QWidget):
         out_cls = self._find_output_class()
         nodes = self._ame_graph.all_nodes()
         if not any(isinstance(n, out_cls) for n in nodes):
-            InfoBar.warning(title='工作流不完整', content='请至少添加一个输出节点',
+            InfoBar.warning(title=self.tr('工作流不完整'), content=self.tr('请至少添加一个输出节点'),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
@@ -273,7 +273,7 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.set_state('idle')
         signalBus.taskExecutionEnded.emit('ame_workflow')
         if self._progress.value() >= 100:
-            InfoBar.success(title='处理完成', content='AME 工作流已执行完毕',
+            InfoBar.success(title=self.tr('处理完成'), content=self.tr('AME 工作流已执行完毕'),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=5000, parent=self)
 
@@ -282,7 +282,7 @@ class AMEWorkflowInterface(QWidget):
         self._toolbar.set_state('idle')
         self._progress.setVisible(False)
         signalBus.taskExecutionEnded.emit('ame_workflow')
-        InfoBar.error(title='工作流执行失败', content=msg,
+        InfoBar.error(title=self.tr('工作流执行失败'), content=msg,
                       orient=Qt.Horizontal, isClosable=True,
                       position=InfoBarPosition.TOP, duration=15000, parent=self)
 
@@ -305,7 +305,7 @@ class AMEWorkflowInterface(QWidget):
     def _reposition_overlays(self):
         if self._stack.currentIndex() == 1:
             w, h = self.width(), self.height()
-            self._toolbar.setGeometry(20, 12, 220, self._toolbar.height())
+            self._toolbar.move(20, 12)
             self._progress.setGeometry(0, h - 6, w, 6)
             self._toolbar.raise_()
             self._progress.raise_()

@@ -274,7 +274,7 @@
       "custom":{
         "preset_cfg":{
           "use_preset":true,
-          "preset":"\u65e5\u5e38"
+          "preset":"General"
         },
         "custom_cli":""
       }

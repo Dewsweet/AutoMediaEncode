@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                 QLabel, QFileDialog)
 
-from qfluentwidgets import (TitleLabel, BodyLabel, CaptionLabel, PrimaryPushButton, PushButton,
+from qfluentwidgets import (TitleLabel, SubtitleLabel, BodyLabel, CaptionLabel, PrimaryPushButton, PushButton,
                             RoundMenu, Action, InfoBar, InfoBarPosition,
                             isDarkTheme, FluentIcon as FIF, FlowLayout,
                             MessageBoxBase, LineEdit, ElevatedCardWidget, ScrollArea)
@@ -16,12 +16,14 @@ class NameInputDialog(MessageBoxBase):
     def __init__(self, title, label, parent=None):
         super().__init__(parent)
         self.widget.setMinimumSize(QSize(300, 200))
+        self.titleLabel = SubtitleLabel(title, self)
+        self.viewLayout.addWidget(self.titleLabel)
         self._label = BodyLabel(label, self)
         self._edit = LineEdit(self)
         self.viewLayout.addWidget(self._label)
         self.viewLayout.addWidget(self._edit)
-        self.yesButton.setText("确定")
-        self.cancelButton.setText("取消")
+        self.yesButton.setText(self.tr('确定'))
+        self.cancelButton.setText(self.tr('取消'))
 
     def get_text(self):
         return self._edit.text()
@@ -95,9 +97,9 @@ class WorkflowCard(ElevatedCardWidget):
 
     def contextMenuEvent(self, event):
         menu = RoundMenu(parent=self)
-        menu.addAction(Action("删除", triggered=lambda: self.delete_requested.emit(self._info)))
-        menu.addAction(Action("重命名", triggered=lambda: self.rename_requested.emit(self._info)))
-        menu.addAction(Action("设置封面", triggered=lambda: self.set_thumb_requested.emit(self._info)))
+        menu.addAction(Action(self.tr('删除'), triggered=lambda: self.delete_requested.emit(self._info)))
+        menu.addAction(Action(self.tr('重命名'), triggered=lambda: self.rename_requested.emit(self._info)))
+        menu.addAction(Action(self.tr('设置封面'), triggered=lambda: self.set_thumb_requested.emit(self._info)))
         menu.exec(event.globalPos())
 
 
@@ -115,7 +117,7 @@ class AMELoaderPage(QWidget):
         layout.setContentsMargins(0, 20, 0, 20)
         layout.setSpacing(10)
 
-        title = TitleLabel("节点式工作流", self)
+        title = TitleLabel(self.tr('节点式工作流'), self)
         # desc = CaptionLabel("可视化编辑节点 快速搭建编码工作流", self)
 
         layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -137,11 +139,11 @@ class AMELoaderPage(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setContentsMargins(20, 0, 20, 0)
         btn_row.setSpacing(10)
-        self._new_btn = PrimaryPushButton(FIF.ADD, "新建", self)
-        self._open_btn = PushButton(FIF.PLAY, "打开", self)
+        self._new_btn = PrimaryPushButton(FIF.ADD, self.tr('新建'), self)
+        self._open_btn = PushButton(FIF.PLAY, self.tr('打开'), self)
         self._open_btn.setEnabled(False)
-        self._import_btn = PushButton(FIF.DOWN, "导入", self)
-        self._export_btn = PushButton(FIF.UP, "导出", self)
+        self._import_btn = PushButton(FIF.DOWN, self.tr('导入'), self)
+        self._export_btn = PushButton(FIF.UP, self.tr('导出'), self)
         self._export_btn.setEnabled(False)
         for btn in [self._new_btn, self._open_btn, self._import_btn, self._export_btn]:
             btn.setFixedHeight(32)
@@ -198,7 +200,7 @@ class AMELoaderPage(QWidget):
         self.load()
 
     def _on_card_rename(self, info):
-        dlg = NameInputDialog("重命名", "新名称:", self.window())
+        dlg = NameInputDialog(self.tr('重命名'), self.tr('新名称:'), self.window())
         dlg._edit.setText(info.name)
         if dlg.exec():
             new_name = dlg.get_text().strip()
@@ -207,7 +209,7 @@ class AMELoaderPage(QWidget):
                 self.load()
 
     def _on_card_thumb(self, info):
-        path, _ = QFileDialog.getOpenFileName(self, "选择封面", "", "Images (*.png *.jpg *.jpeg)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr('选择封面'), "", "Images (*.png *.jpg *.jpeg)")
         if path:
             preset_service.set_thumbnail(info.name, path)
             self.load()
@@ -237,33 +239,33 @@ class AMELoaderPage(QWidget):
         super().mousePressEvent(event)
 
     def _on_import(self):
-        path, _ = QFileDialog.getOpenFileName(self, "导入 JSON", "", "JSON (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, self.tr('导入 JSON'), "", "JSON (*.json)")
         if path:
             name = preset_service.import_file(path)
             if name:
                 self.load()
                 InfoBar.success(
-                    title="已导入", 
-                    content=f"工作流: {name}",
-                    orient=Qt.Horizontal, 
+                    title=self.tr('已导入'),
+                    content=self.tr('工作流: {name}').format(name=name),
+                    orient=Qt.Horizontal,
                     isClosable=False,
-                    position=InfoBarPosition.TOP_RIGHT, 
-                    duration=2000, 
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=2000,
                     parent=self
                     )
 
     def _on_export(self):
         if not self._selected:
             return
-        path, _ = QFileDialog.getSaveFileName(self, "导出 JSON", "", "JSON (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, self.tr('导出 JSON'), "", "JSON (*.json)")
         if path:
             preset_service.export(self._selected.name, path)
             InfoBar.success(
-                title="已导出", 
-                content=f"工作流已导出",
-                orient=Qt.Horizontal, 
-                isClosable=False, 
-                position=InfoBarPosition.TOP_RIGHT, 
-                duration=2000, 
+                title=self.tr('已导出'),
+                content=self.tr('工作流已导出'),
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=2000,
                 parent=self
                 )

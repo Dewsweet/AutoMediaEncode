@@ -19,7 +19,11 @@ I/O 契约：
     返回 dict (包括空 {}) = 成功继续
 """
 import types
+import re
+from html import escape
+from PySide6.QtCore import QCoreApplication
 from NodeGraphQt import BaseNode
+from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.constants import NodePropWidgetEnum as NPE
 
 HIDDEN = NPE.HIDDEN.value
@@ -51,6 +55,45 @@ P = {
 }
 
 
+class AMENodeItem(NodeItem):
+    """Translate painted labels while retaining NodeGraphQt's stored name."""
+
+    def __init__(self):
+        self.default_name = ''
+        self.description = ''
+        super().__init__()
+
+    def display_name(self):
+        name = self.name
+        if not self.default_name:
+            return name
+        # Accept older default titles without spaces, plus NodeGraphQt's numbered copies.
+        pattern = re.escape(self.default_name).replace(r'\ ', r'\s*')
+        match = re.fullmatch(pattern + r'( \d+)?', name)
+        if match:
+            return QCoreApplication.translate('AMENodes', self.default_name) + (match.group(1) or '')
+        return name
+
+    @NodeItem.name.setter
+    def name(self, value):
+        NodeItem.name.fset(self, value)
+        self.refresh_title()
+
+    def refresh_title(self):
+        self.text_item.setPlainText(self.display_name())
+        if self.scene():
+            self.align_label()
+        self._tooltip_disable(self.disabled)
+        self.update()
+
+    def _tooltip_disable(self, state):
+        title = escape(self.display_name())
+        if state:
+            title += ' <b>(' + escape(QCoreApplication.translate('AMENodes', '已禁用')) + ')</b>'
+        description = QCoreApplication.translate('AMENodes', self.description)
+        self.setToolTip(f'<b>{title}</b><br/>{escape(description)}<br/>{escape(self.type_)}')
+
+
 class AMENodeBase(BaseNode):
     __identifier__ = 'ame'
     CATEGORY = '系统'
@@ -63,7 +106,10 @@ class AMENodeBase(BaseNode):
     SUPPORTS_DYNAMIC_PORTS = False
 
     def __init__(self):
-        super().__init__()
+        super().__init__(qgraphics_item=AMENodeItem)
+        self.view.default_name = type(self).NODE_NAME
+        self.view.description = self.DESCRIPTION
+        self.view.refresh_title()
         self._status = 'idle'
         self._original_color = self.CATEGORY_COLOR
         self.set_color(*self.CATEGORY_COLOR)
@@ -74,6 +120,9 @@ class AMENodeBase(BaseNode):
             
         self._patch_view_layout()
         self._setup_widgets()
+
+    def display_name(self):
+        return self.view.display_name()
 
     def set_status(self, status: str):
         self._status = status

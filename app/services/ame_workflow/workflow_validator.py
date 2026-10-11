@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication
 from collections import deque
 
 
@@ -8,17 +9,17 @@ class WorkflowValidator:
     def validate(self, nodes: list, edges: list) -> bool:
         self.errors.clear()
         if not nodes:
-            self.errors.append("工作流中没有节点")
+            self.errors.append(QCoreApplication.translate('WorkflowValidator', '工作流中没有节点'))
             return False
 
         node_ids = {n.id for n in nodes}
         output_nodes = [n for n in nodes if 'OutputNode' in n.type_]
         if not output_nodes:
-            self.errors.append("缺少输出节点")
+            self.errors.append(QCoreApplication.translate('WorkflowValidator', '缺少输出节点'))
             return False
 
         if self._has_cycle(nodes, edges, node_ids):
-            self.errors.append("工作流中存在循环依赖")
+            self.errors.append(QCoreApplication.translate('WorkflowValidator', '工作流中存在循环依赖'))
             return False
         return len(self.errors) == 0
 

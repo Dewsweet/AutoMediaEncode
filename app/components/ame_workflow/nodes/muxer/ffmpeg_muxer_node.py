@@ -1,3 +1,4 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
 from .._base import AMENodeBase, C, P
@@ -6,8 +7,8 @@ from app.services.tool_service import ToolService
 from app.common.logger import logger
 
 class MuxerFFmpegNode(AMENodeBase):
-    NODE_NAME = '封装 (FFmpeg)'
-    DESCRIPTION = 'FFmpeg 封装 MP4/MOV，接收单视频单音频'
+    NODE_NAME = QT_TRANSLATE_NOOP("AMENodes", '封装 (FFmpeg)')
+    DESCRIPTION = QT_TRANSLATE_NOOP("AMENodes", 'FFmpeg 封装 MP4/MOV，接收单视频单音频')
     CATEGORY = '封装'; CATEGORY_COLOR = C['Green']
     INPUTS = [('video', P['video']), ('audio', P['audio'])]
     OUTPUTS = [('file', P['any'])]

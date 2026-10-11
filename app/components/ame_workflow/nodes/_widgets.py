@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QCoreApplication
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFileDialog, QFrame, QApplication
 from qfluentwidgets import PushButton, PrimaryPushButton, LineEdit, ComboBox, SwitchButton, BodyLabel, CheckBox,TextEdit, RoundMenu, Action, Slider, TransparentPushButton, TransparentToolButton, MessageBoxBase, FluentIcon as FIF
@@ -101,7 +101,9 @@ class NodeTextComboBoxWidget(NodeBaseWidget):
 
 # path browse widget area
 class PathBrowseWidget(NodeBaseWidget):
-    def __init__(self, parent, name, btn_text='浏览'):
+    def __init__(self, parent, name, btn_text=None):
+        if btn_text is None:
+            btn_text = QCoreApplication.translate("AMEWorkflowWidgets", '浏览')
         super().__init__(parent, name)
         self.btn_text = btn_text
         row = QWidget()
@@ -132,26 +134,32 @@ class PathBrowseWidget(NodeBaseWidget):
             self._edit.setText(str(value))
 
 class DirBrowseWidget(PathBrowseWidget):
-    def __init__(self, parent, name, btn_text='选择文件夹'):
+    def __init__(self, parent, name, btn_text=None):
+        if btn_text is None:
+            btn_text = QCoreApplication.translate("AMEWorkflowWidgets", '选择文件夹')
         super().__init__(parent, name, btn_text=btn_text)
 
     def _browse(self):
-        p = QFileDialog.getExistingDirectory(None, '选择目录')
+        p = QFileDialog.getExistingDirectory(None, QCoreApplication.translate('AMEWorkflowWidgets', '选择目录'))
         if p:
             self._edit.setText(p)
 
 class FileBrowseWidget(PathBrowseWidget):
-    def __init__(self, parent, name, btn_text='选择输入文件', exts=''):
+    def __init__(self, parent, name, btn_text=None, exts=''):
+        if btn_text is None:
+            btn_text = QCoreApplication.translate("AMEWorkflowWidgets", '选择输入文件')
         self._ext_filter = exts
         super().__init__(parent, name, btn_text=btn_text)
 
     def _browse(self):
-        p, _ = QFileDialog.getOpenFileName(None, '选择文件', '', self._ext_filter or 'All Files (*)')
+        p, _ = QFileDialog.getOpenFileName(None, QCoreApplication.translate('AMEWorkflowWidgets', '选择文件'), '', self._ext_filter or 'All Files (*)')
         if p:
             self._edit.setText(p)
 
 class FilesBrowseWidget(NodeBaseWidget):
-    def __init__(self, parent, name, btn_text='选择多个输入文件', exts=''):
+    def __init__(self, parent, name, btn_text=None, exts=''):
+        if btn_text is None:
+            btn_text = QCoreApplication.translate("AMEWorkflowWidgets", '选择多个输入文件')
         super().__init__(parent, name)
         self._ext_filter = exts
         self.btn_text = btn_text
@@ -176,7 +184,7 @@ class FilesBrowseWidget(NodeBaseWidget):
         self.set_custom_widget(row)
         
     def _browse(self):
-        paths, _ = QFileDialog.getOpenFileNames(None, '选择文件', '', self._ext_filter or 'All Files (*)')
+        paths, _ = QFileDialog.getOpenFileNames(None, QCoreApplication.translate('AMEWorkflowWidgets', '选择文件'), '', self._ext_filter or 'All Files (*)')
         if paths:
             self._edit.setPlainText('\n'.join(paths))
 
@@ -218,11 +226,11 @@ class PresetSwitchWidget(NodeBaseWidget):
             if presets:
                 self._cb.addItems(presets)
             else:
-                self._cb.addItem('(无)')
+                self._cb.setText(QCoreApplication.translate('AMEWorkflowWidgets', '(无)'))
         except Exception:
             pass
 
-        layout.addWidget(BodyLabel('使用预设:', row))
+        layout.addWidget(BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '使用预设:'), row))
         layout.addWidget(self._sw)
         layout.addWidget(self._cb)
         self.set_custom_widget(row)
@@ -254,13 +262,13 @@ class FfmpegSimpleOptionsWidget(NodeBaseWidget):
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.setSpacing(0)
 
-        self._encoderLabel = BodyLabel('编码器选项:', mianbox)
+        self._encoderLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '编码器选项:'), mianbox)
         self._encoder = NodeComboBox(mianbox)
         self._encoder.addItems(coder_items)
 
-        self._customLabel = BodyLabel('自定义参数:', mianbox)
+        self._customLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '自定义参数:'), mianbox)
         self._customEdit = TextEdit(mianbox)
-        self._customEdit.setPlaceholderText('输入自定义 FFmpeg CLI 参数...')
+        self._customEdit.setPlaceholderText(QCoreApplication.translate('AMEWorkflowWidgets', '输入自定义 FFmpeg CLI 参数...'))
         self._customEdit.setMinimumHeight(64)
         self._customEdit.setMaximumHeight(100)
 
@@ -314,7 +322,7 @@ class StapleAudioEncoderWidget(NodeBaseWidget):
         self._encoderModelUnit = BodyLabel('kbps', self.mainbox)
 
         self._encoderParamLine = TextEdit(self.mainbox)
-        self._encoderParamLine.setPlaceholderText('输入自定义 CLI 参数...')
+        self._encoderParamLine.setPlaceholderText(QCoreApplication.translate('AMEWorkflowWidgets', '输入自定义 CLI 参数...'))
         self._encoderParamLine.setMinimumSize(220, 100)
         self._encoderParamLine.setMaximumHeight(140)
 
@@ -356,7 +364,7 @@ class StapleAudioEncoderWidget(NodeBaseWidget):
             self.mainLayout.addWidget(self._encoderParamLine)
             self.set_custom_widget(self.mainbox)
         elif self._encoder_name == 'flac':
-            self._encoderModelLabel.setText('压缩级别:')
+            self._encoderModelLabel.setText(QCoreApplication.translate('AMEWorkflowWidgets', '压缩级别:'))
             self._encoderParamLine.setVisible(False)
             self._encoderModelLine.setVisible(False)
             self._encoderModelUnit.setVisible(False)
@@ -401,13 +409,13 @@ class CustomTextWidget(NodeBaseWidget):
 
         self.btnHLayout = QHBoxLayout()
 
-        self._nameLabel = BodyLabel('自定义文件名称:', self.mainbox)
+        self._nameLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '自定义文件名称:'), self.mainbox)
         self._nameEdit = TextEdit(self.mainbox)
-        self._nameEdit.setPlaceholderText('输入自定义文件名称, 不要输入扩展名')
+        self._nameEdit.setPlaceholderText(QCoreApplication.translate('AMEWorkflowWidgets', '输入自定义文件名称, 不要输入扩展名'))
         self._nameEdit.setMaximumHeight(60)
         self._nameEdit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
-        self._placeHolderBtn = PushButton('添加', self.mainbox)
-        self._clearBtn = PushButton('清除', self.mainbox)
+        self._placeHolderBtn = PushButton(QCoreApplication.translate('AMEWorkflowWidgets', '添加'), self.mainbox)
+        self._clearBtn = PushButton(QCoreApplication.translate('AMEWorkflowWidgets', '清除'), self.mainbox)
 
         self._placeHolderBtn.clicked.connect(self._add_placeholder)
         self._clearBtn.clicked.connect(lambda: self._nameEdit.clear())
@@ -451,7 +459,9 @@ class CustomTextWidget(NodeBaseWidget):
     def set_text_placeholder(self, text: str=None):
         self._nameEdit.setPlaceholderText(text)
 
-    def set_lebal_text(self, text: str='自定义文件名称:'):
+    def set_lebal_text(self, text: str=None):
+        if text is None:
+            text = QCoreApplication.translate('AMEWorkflowWidgets', '自定义文件名称:')
         self._nameLabel.setText(text)
 
     def set_text_height(self, height: int=60):
@@ -468,7 +478,7 @@ class CLITextWidget(NodeBaseWidget):
     def __init__(self, parent, name):
         super().__init__(parent, name)
         self._edit = TextEdit()
-        self._edit.setPlaceholderText('自定义 CLI 参数...')
+        self._edit.setPlaceholderText(QCoreApplication.translate('AMEWorkflowWidgets', '自定义 CLI 参数...'))
         self._edit.setMinimumHeight(48)
         self._edit.setMaximumHeight(100)
         self._edit.textChanged.connect(lambda: self.on_value_changed(self.get_value()))
@@ -484,37 +494,39 @@ class CLITextWidget(NodeBaseWidget):
 # mkv track config dialog and inline button
 class MkvTrackConfigDialog(MessageBoxBase):
     """用于设置 MKV 轨道的参数"""
-    def __init__(self, parent=None, title='轨道设置', data=None):
+    def __init__(self, parent=None, title=None, data=None):
+        if title is None:
+            title = QCoreApplication.translate("AMEWorkflowWidgets", '轨道设置')
         super().__init__(parent)
         self.titleLabel = BodyLabel(title, self)
 
         self.defaultTrackHLayout = QHBoxLayout()
-        self._defaultTrackLabel = BodyLabel('默认轨道:', self)
+        self._defaultTrackLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '默认轨道:'), self)
         self._defaultTrackSwitch = SwitchButton(self)
         self._defaultTrackSwitch.setChecked(True) # 默认就是默认轨道
-        self._defaultTrackSwitch.setOnText('是')
-        self._defaultTrackSwitch.setOffText('否')
+        self._defaultTrackSwitch.setOnText(QCoreApplication.translate('AMEWorkflowWidgets', '是'))
+        self._defaultTrackSwitch.setOffText(QCoreApplication.translate('AMEWorkflowWidgets', '否'))
         self.defaultTrackHLayout.addWidget(self._defaultTrackLabel)
         self.defaultTrackHLayout.addWidget(self._defaultTrackSwitch)
         self.defaultTrackHLayout.addStretch(1)
 
         self.trackLanguageHLayout = QHBoxLayout()
-        self._trackLanguageLabel = BodyLabel('语言:', self)
+        self._trackLanguageLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '语言:'), self)
         self._trackLanguageEdit = LineEdit(self)
         self._trackLanguageEdit.setPlaceholderText('')
         self.trackLanguageHLayout.addWidget(self._trackLanguageLabel)
         self.trackLanguageHLayout.addWidget(self._trackLanguageEdit)
 
         self.trackNameHLayout = QHBoxLayout()
-        self._trackNameLabel = BodyLabel('名称:', self)
+        self._trackNameLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '名称:'), self)
         self._trackNameEdit = LineEdit(self)
         self.trackNameHLayout.addWidget(self._trackNameLabel)
         self.trackNameHLayout.addWidget(self._trackNameEdit)
 
         self.trackCustomVLayout = QVBoxLayout()
-        self._trackCustomLabel = BodyLabel('自定义轨道参数:', self)
+        self._trackCustomLabel = BodyLabel(QCoreApplication.translate('AMEWorkflowWidgets', '自定义轨道参数:'), self)
         self._trackCustomEdit = TextEdit(self)
-        self._trackCustomEdit.setPlaceholderText('输入轨道额外参数...')
+        self._trackCustomEdit.setPlaceholderText(QCoreApplication.translate('AMEWorkflowWidgets', '输入轨道额外参数...'))
         self._trackCustomEdit.setMinimumHeight(80)
         self._trackCustomEdit.setMaximumHeight(150)
         self.trackCustomVLayout.addWidget(self._trackCustomLabel)
@@ -532,8 +544,8 @@ class MkvTrackConfigDialog(MessageBoxBase):
             target_h = 250
             self.widget.setMinimumSize(target_w, target_h)
         
-        self.yesButton.setText("确认")
-        self.cancelButton.setText("取消")
+        self.yesButton.setText(QCoreApplication.translate('AMEWorkflowWidgets', '确认'))
+        self.cancelButton.setText(QCoreApplication.translate('AMEWorkflowWidgets', '取消'))
 
         if data:
             self._defaultTrackSwitch.setChecked(data.get('default_track', False))
@@ -564,7 +576,7 @@ class MkvInlineConfigButton(NodeBaseWidget):
         layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(4)
 
-        self.btn = TransparentPushButton('轨道设置', self.mainbox)
+        self.btn = TransparentPushButton(QCoreApplication.translate('AMEWorkflowWidgets', '轨道设置'), self.mainbox)
         self.btn.clicked.connect(self._open_dialog)
         layout.addWidget(self.btn)
 
@@ -589,7 +601,13 @@ class MkvInlineConfigButton(NodeBaseWidget):
         self._value = {}
 
     def _open_dialog(self):
-        title_map = {'video': '视频', 'audio': '音频', 'subtitle': '字幕', 'chapter': '章节', 'attachment': '附件'}
+        title_map = {
+            'video': QCoreApplication.translate('AMEWorkflowWidgets', '视频'),
+            'audio': QCoreApplication.translate('AMEWorkflowWidgets', '音频'),
+            'subtitle': QCoreApplication.translate('AMEWorkflowWidgets', '字幕'),
+            'chapter': QCoreApplication.translate('AMEWorkflowWidgets', '章节'),
+            'attachment': QCoreApplication.translate('AMEWorkflowWidgets', '附件'),
+        }
 
         # 兼容 track_1_video 等动态命名格式
         lookup_name = self.port_name
@@ -597,7 +615,7 @@ class MkvInlineConfigButton(NodeBaseWidget):
             lookup_name = self.port_name.split("_")[-1]
 
         title_prefix = title_map.get(lookup_name, self.port_name)
-        dialog = MkvTrackConfigDialog(QApplication.activeWindow(), f'{title_prefix} 参数设置', self._value)
+        dialog = MkvTrackConfigDialog(QApplication.activeWindow(), QCoreApplication.translate('AMEWorkflowWidgets', '{title_prefix} 参数设置').format(title_prefix=title_prefix), self._value)
         if dialog.exec():
             self._value = dialog.get_data()
             self.on_value_changed(self._value)
