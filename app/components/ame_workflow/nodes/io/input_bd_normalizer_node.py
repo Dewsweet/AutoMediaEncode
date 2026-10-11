@@ -574,7 +574,7 @@ class InputBDNormalizerNode(AMENodeBase):
             port = self.outputs().get(pn)
             if not port or not port.connected_ports():
                 continue
-            dst = Path(temp_dir) / f"track_{pn}{_eac3to_ext(t)}"
+            dst = Path(temp_dir) / f"track_{self.id}_{pn}{_eac3to_ext(t)}"
             ok = False
             try:
                 cmd = [eac, src, f"{t['idx']}:{dst}"]
@@ -613,7 +613,7 @@ class InputBDNormalizerNode(AMENodeBase):
             port = self.outputs().get(pn)
             if not port or not port.connected_ports():
                 continue
-            dst = Path(temp_dir) / f"track_{pn}{_eac3to_ext(t)}"
+            dst = Path(temp_dir) / f"track_{self.id}_{pn}{_eac3to_ext(t)}"
             ok = False
             try:
                 cmd = [eac, src, f"{t['idx']}:{dst}"]
@@ -675,7 +675,7 @@ class InputBDNormalizerNode(AMENodeBase):
             logger.error('[InputBD] 找不到 mkvmerge, 请检查工具路径')
             return None
         ext = MKVMERGE_EXTS.get(tt, '.mks')
-        dst = Path(temp_dir) / f"track_{pn}{ext}"
+        dst = Path(temp_dir) / f"track_{self.id}_{pn}{ext}"
         if tt == 'video':
             sel, no = ['--video-tracks', str(tid)], ['-A', '-S', '--no-chapters']
         elif tt == 'audio':
@@ -699,7 +699,7 @@ class InputBDNormalizerNode(AMENodeBase):
 
     def _extract_chapters_mkvmerge(self, src: str, video_file, temp_dir: str, pn: str):
         """mkvmerge backend 的章节: 优先 mkvextract 从已输出容器抽取, 回退 -J JSON 生成 OGM"""
-        dst = Path(temp_dir) / f"track_{pn}.txt"
+        dst = Path(temp_dir) / f"track_{self.id}_{pn}.txt"
         mkx = ToolService.get_tool_path('mkvextract')
         if mkx and video_file and Path(video_file).is_file():
             try:

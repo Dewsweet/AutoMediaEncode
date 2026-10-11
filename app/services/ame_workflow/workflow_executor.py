@@ -52,6 +52,11 @@ class AMEWorkflowExecutor(QThread):
         logger.info(f'[AME] 开始执行工作流, {len(self._nodes)} 个节点, {len(self._edges)} 条连线')
         if not self._nodes:
             return
+        from app.components.ame_workflow.nodes.io.output_node import OutputNode
+        output_nodes = [node for node in self._nodes if isinstance(node, OutputNode)]
+        if len(output_nodes) > 1:
+            self.error_occurred.emit(self.tr('工作流仅支持一个输出节点，请仅保留一个输出节点'))
+            return
         order = self._topo_sort()
         if order is None:
             self.error_occurred.emit(self.tr('工作流中存在循环依赖'))
@@ -63,6 +68,9 @@ class AMEWorkflowExecutor(QThread):
         logger.info(f'[AME] 拓扑排序: {[n.name() for n in order]}')
         if not order:
             order = [n for n in self._nodes if 'Output' in n.__class__.__name__]
+        if output_nodes:
+            # 唯一输出节点最后执行，包括未连线的输出节点（由其报告缺少输入）。
+            order = [node for node in order if node not in output_nodes] + output_nodes
         total = len(order) if order else 1
         self._resolve_temp_dir()
         logger.info(f'[AME] 临时目录: {self._temp_dir}')
@@ -81,12 +89,14 @@ class AMEWorkflowExecutor(QThread):
             inputs = self._collect(node, port_data)
             logger.info(f'[AME] 输入: {list(inputs.keys())}')
             result = None
+            node._last_error = ''
             try:
                 result = node.execute(inputs, self._temp_dir)
             except ProcessCancelled:
                 self.node_status_changed.emit(node.id, 'cancelled')
                 return
             except Exception as e:
+                node._last_error = str(e)
                 logger.error(f'[AME] 节点 {node.name()} 执行异常: {e}')
                 import traceback
                 logger.error(traceback.format_exc())
@@ -95,7 +105,7 @@ class AMEWorkflowExecutor(QThread):
                 self.node_status_changed.emit(node.id, 'cancelled')
                 return
 
-            if result is not None or node.__class__.__name__ == 'OutputNode':
+            if isinstance(result, dict):
                 if result:
                     logger.info(f'[AME] 输出: {list(result.keys())}')
                     for pn, files in result.items():
@@ -106,7 +116,7 @@ class AMEWorkflowExecutor(QThread):
                     logger.info(f'[AME] 输出: 空')
                 self.node_status_changed.emit(node.id, 'done')
             else:
-                logger.error(f'[AME] 节点 {node.name()} 返回 None, 执行失败')
+                logger.error(f'[AME] 节点 {node.name()} 未返回有效结果, 执行失败')
                 self.node_status_changed.emit(node.id, 'error')
                 detail = getattr(node, '_last_error', '')
                 msg = self.tr("节点 '{name}' 执行失败").format(name=getattr(node, 'display_name', node.name)())
@@ -162,6 +172,8 @@ class AMEWorkflowExecutor(QThread):
         for n in self._nodes:
             if 'Output' in n.__class__.__name__:
                 op = n.property('output', '')
+                if not op:
+                    continue
                 if Path(op).is_dir():
                     self._temp_dir = Path(op) / 'temp'
                     self._temp_dir.mkdir(exist_ok=True)

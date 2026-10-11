@@ -239,7 +239,7 @@ class InputVideoNormalizerNode(AMENodeBase):
                 continue
 
             ext = _codec_ext(t['codec'])
-            dst = Path(temp_dir) / f"track_{pn}{ext}"
+            dst = Path(temp_dir) / f"track_{self.id}_{pn}{ext}"
             codec_param = _resolve_codec(t['codec'], t.get('depth', ''))
             cmd = [ff, '-i', src, '-map', f"0:{t['idx']}", *codec_param, dst, '-y']
             logger.info(f'[InputVideoNormalizerNode] 提取: {" ".join(str(c) for c in cmd)}')

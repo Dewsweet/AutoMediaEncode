@@ -279,13 +279,20 @@ class AMEWorkflowInterface(QWidget):
             return
         out_cls = self._find_output_class()
         nodes = self._ame_graph.all_nodes()
+        output_count = sum(isinstance(node, out_cls) for node in nodes)
+        if output_count > 1:
+            InfoBar.warning(title=self.tr('输出节点过多'),
+                            content=self.tr('工作流仅支持一个输出节点，请仅保留一个输出节点'),
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=5000, parent=self)
+            return
         if any(getattr(node, '_probe_threads', []) for node in nodes):
             InfoBar.warning(title=self.tr('输入文件正在探测'),
                             content=self.tr('请等待轨道探测完成后再开始任务'),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
-        if not any(isinstance(n, out_cls) for n in nodes):
+        if output_count == 0:
             InfoBar.warning(title=self.tr('工作流不完整'), content=self.tr('请至少添加一个输出节点'),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=3000, parent=self)
