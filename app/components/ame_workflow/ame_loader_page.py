@@ -193,7 +193,11 @@ class AMELoaderPage(QWidget):
         self._emit_selected()
 
     def _on_card_delete(self, info):
-        preset_service.delete(info.name)
+        try:
+            preset_service.delete(info.name)
+        except Exception as error:
+            self._file_error(self.tr('删除失败'), error)
+            return
         self._selected = None
         self._open_btn.setEnabled(False)
         self._export_btn.setEnabled(False)
@@ -205,13 +209,21 @@ class AMELoaderPage(QWidget):
         if dlg.exec():
             new_name = dlg.get_text().strip()
             if new_name and new_name != info.name:
-                preset_service.rename(info.name, new_name)
+                try:
+                    preset_service.rename(info.name, new_name)
+                except Exception as error:
+                    self._file_error(self.tr('重命名失败'), error)
+                    return
                 self.load()
 
     def _on_card_thumb(self, info):
         path, _ = QFileDialog.getOpenFileName(self, self.tr('选择封面'), "", "Images (*.png *.jpg *.jpeg)")
         if path:
-            preset_service.set_thumbnail(info.name, path)
+            try:
+                preset_service.set_thumbnail(info.name, path)
+            except Exception as error:
+                self._file_error(self.tr('设置封面失败'), error)
+                return
             self.load()
 
     def _on_new(self):
@@ -241,7 +253,11 @@ class AMELoaderPage(QWidget):
     def _on_import(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr('导入 JSON'), "", "JSON (*.json)")
         if path:
-            name = preset_service.import_file(path)
+            try:
+                name = preset_service.import_file(path)
+            except Exception as error:
+                self._file_error(self.tr('导入失败'), error)
+                return
             if name:
                 self.load()
                 InfoBar.success(
@@ -259,7 +275,11 @@ class AMELoaderPage(QWidget):
             return
         path, _ = QFileDialog.getSaveFileName(self, self.tr('导出 JSON'), "", "JSON (*.json)")
         if path:
-            preset_service.export(self._selected.name, path)
+            try:
+                preset_service.export(self._selected.name, path)
+            except Exception as error:
+                self._file_error(self.tr('导出失败'), error)
+                return
             InfoBar.success(
                 title=self.tr('已导出'),
                 content=self.tr('工作流已导出'),
@@ -269,3 +289,8 @@ class AMELoaderPage(QWidget):
                 duration=2000,
                 parent=self
                 )
+
+    def _file_error(self, title, error):
+        InfoBar.error(title=title, content=str(error), orient=Qt.Horizontal,
+                      isClosable=True, position=InfoBarPosition.TOP_RIGHT,
+                      duration=8000, parent=self)

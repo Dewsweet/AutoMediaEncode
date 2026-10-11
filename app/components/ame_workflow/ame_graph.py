@@ -7,6 +7,7 @@ from qfluentwidgets import isDarkTheme, qconfig
 
 from .nodes import ALL_NODE_CLASSES
 from .ame_hotkeys import register as register_hotkeys
+from app.services.ame_workflow.workflow_serializer import load_workflow, save_workflow
 
 
 def _patch_model_set_property():
@@ -264,10 +265,10 @@ class AMEGraph:
         return self.graph.all_nodes()
 
     def save_session(self, path):
-        self.graph.save_session(path)
+        save_workflow(self.graph, path, update_session=False)
 
     def load_session(self, path):
-        self.graph.load_session(path)
+        load_workflow(self.graph, path)
         self._fix_all_node_views()
 
     def delete_node(self, node):

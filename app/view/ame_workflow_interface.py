@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import Qt, QPointF, QRectF
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QStackedWidget, QFileDialog
 from PySide6.QtGui import QShortcut, QKeySequence
@@ -31,6 +33,8 @@ class AMEWorkflowInterface(QWidget):
         self._executor = None
         self._running = False
         self._current_workflow_name = None
+        self._current_workflow_saved = False
+        self._suggested_workflow_name = ''
 
         self._progress.setRange(0, 100)
         self._progress.setValue(0)
@@ -59,7 +63,8 @@ class AMEWorkflowInterface(QWidget):
         viewer = self._ame_graph.viewer()
         if viewer:
             viewer.customContextMenuRequested.connect(self._on_viewer_menu)
-            QShortcut(QKeySequence('Ctrl+S'), viewer, activated=self._on_save)
+            self._save_shortcut = QShortcut(QKeySequence('Ctrl+S'), self, activated=self._on_save)
+            self._save_shortcut.setContext(Qt.WidgetWithChildrenShortcut)
             # QShortcut(QKeySequence('Ctrl+O'), viewer, activated=self._on_back_to_loader)
 
         self._toolbar.start_clicked.connect(self._on_start)
@@ -101,53 +106,100 @@ class AMEWorkflowInterface(QWidget):
         self._loader.load()
 
     def _on_back_to_loader(self):
-        if self._current_workflow_name:
-            preset_service.save(self._current_workflow_name, self._ame_graph.graph)
         self._switch_to_loader()
+
+    def _file_error(self, title, error):
+        InfoBar.error(title=title, content=str(error), orient=Qt.Horizontal,
+                      isClosable=True, position=InfoBarPosition.TOP,
+                      duration=8000, parent=self)
+
+    def _can_replace_canvas(self):
+        if self._running or (self._executor and self._executor.isRunning()):
+            InfoBar.warning(title=self.tr('任务正在运行'),
+                            content=self.tr('请等待任务结束后再替换工作流'),
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=3000, parent=self)
+            return False
+        return True
 
     # ── 新建 ──
     def _on_new_workflow(self):
+        if not self._can_replace_canvas():
+            return
         dlg = NameInputDialog(self.tr('新建工作流'), self.tr('输入工作流名称:'), self.window())
         if dlg.exec():
             name = dlg.get_text().strip()
             if name:
+                try:
+                    preset_service.validate_name(name)
+                    if preset_service.exists(name):
+                        raise FileExistsError(self.tr('同名工作流已存在，请使用其他名称'))
+                except Exception as error:
+                    self._file_error(self.tr('新建失败'), error)
+                    return
                 self._current_workflow_name = name
+                self._current_workflow_saved = False
+                self._suggested_workflow_name = ''
                 self._ame_graph.graph.clear_session()
                 self._ame_graph.setup_default_nodes()
                 self._switch_to_canvas()
 
     # ── 加载 ──
     def _on_load_workflow(self, name: str):
-        if preset_service.load(name, self._ame_graph.graph):
+        if not self._can_replace_canvas():
+            return
+        try:
+            if not preset_service.load(name, self._ame_graph.graph):
+                raise FileNotFoundError(self.tr('工作流文件不存在'))
             self._current_workflow_name = name
+            self._current_workflow_saved = True
+            self._suggested_workflow_name = ''
             self._ame_graph._fix_all_node_views()
             self._switch_to_canvas()
+        except Exception as error:
+            self._file_error(self.tr('加载失败'), error)
 
     # ── 保存 ──
     def _on_save(self):
         """保存当前工作流，如果之前已保存过则覆盖，否则提示输入名称"""
-        if self._current_workflow_name:
-            preset_service.save_with_thumbnail(self._current_workflow_name, self._ame_graph.graph)
-            InfoBar.success(title=self.tr('已保存'),
-                            content=self.tr('保存到: {name}').format(name=self._current_workflow_name),
-                            orient=Qt.Horizontal, isClosable=True,
-                            position=InfoBarPosition.TOP, duration=2000, parent=self)
-        else:
+        if self._stack.currentIndex() != 1:
+            return
+        name = self._current_workflow_name
+        if not name:
             dlg = NameInputDialog(self.tr('保存工作流'), self.tr('输入名称:'), self.window())
-            if dlg.exec():
-                name = dlg.get_text().strip()
-                if name:
-                    self._current_workflow_name = name
-                    preset_service.save_with_thumbnail(name, self._ame_graph.graph)
-                    InfoBar.success(title=self.tr('已保存'), content=self.tr('保存到: {name}').format(name=name),
-                                    orient=Qt.Horizontal, isClosable=True,
-                                    position=InfoBarPosition.TOP, duration=2000, parent=self)
+            dlg._edit.setText(self._suggested_workflow_name)
+            if not dlg.exec():
+                return
+            name = dlg.get_text().strip()
+        try:
+            preset_service.save_with_thumbnail(
+                name, self._ame_graph.graph, overwrite=self._current_workflow_saved)
+        except Exception as error:
+            self._file_error(self.tr('保存失败'), error)
+            return
+        self._current_workflow_name = name
+        self._current_workflow_saved = True
+        self._suggested_workflow_name = ''
+        InfoBar.success(title=self.tr('已保存'), content=self.tr('保存到: {name}').format(name=name),
+                        orient=Qt.Horizontal, isClosable=True,
+                        position=InfoBarPosition.TOP, duration=2000, parent=self)
 
     # ── 导入/导出 JSON ──
     def _on_import_json(self):
+        if not self._can_replace_canvas():
+            return
         path, _ = QFileDialog.getOpenFileName(self, self.tr('导入 JSON'), "", "JSON (*.json)")
         if path:
-            self._ame_graph.load_session(path)
+            try:
+                self._ame_graph.load_session(path)
+            except Exception as error:
+                self._file_error(self.tr('导入失败'), error)
+                return
+            self._current_workflow_name = None
+            self._current_workflow_saved = False
+            self._suggested_workflow_name = Path(path).stem
+            self._ame_graph.graph.model.session = ''
+            self._switch_to_canvas()
             InfoBar.success(title=self.tr('已导入'), content=self.tr('导入完成'),
                                 orient=Qt.Horizontal, isClosable=False,
                                 position=InfoBarPosition.TOP, duration=2000, parent=self)
@@ -155,7 +207,11 @@ class AMEWorkflowInterface(QWidget):
     def _on_export_json(self):
         path, _ = QFileDialog.getSaveFileName(self, self.tr('导出 JSON'), "", "JSON (*.json)")
         if path:
-            self._ame_graph.save_session(path)
+            try:
+                self._ame_graph.save_session(path)
+            except Exception as error:
+                self._file_error(self.tr('导出失败'), error)
+                return
             InfoBar.success(title=self.tr('已导出'), content=self.tr('导出完成'),
                             orient=Qt.Horizontal, isClosable=False,
                             position=InfoBarPosition.TOP, duration=2000, parent=self)
