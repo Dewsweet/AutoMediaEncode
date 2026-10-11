@@ -66,7 +66,8 @@ class AMEWorkflowExecutor(QThread):
             target = self._node_map[target_id]
             if self._is_disabled(source) and not self._is_disabled(target):
                 self.error_occurred.emit(self.tr("节点 '{target}' 仍依赖已禁用节点 '{source}'，请启用上游节点或调整连线").format(
-                    target=target.name(), source=source.name()))
+                    target=getattr(target, 'display_name', target.name)(),
+                    source=getattr(source, 'display_name', source.name)()))
                 return
         for node in self._nodes:
             if self._is_disabled(node):

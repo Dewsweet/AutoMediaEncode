@@ -58,3 +58,6 @@ app/components/ame_workflow/nodes/system/text_node.py
 app/components/ame_workflow/nodes/system/workspace_node.py
 app/services/ame_workflow/workflow_executor.py
 app/services/ame_workflow/workflow_validator.py
+app/services/ame_workflow/ame_preset_service.py
+app/services/ame_workflow/workflow_serializer.py
+app/services/ame_workflow/thumbnail_service.py

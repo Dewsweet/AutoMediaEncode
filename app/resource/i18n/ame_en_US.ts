@@ -125,12 +125,12 @@
 <context>
     <name>AMELoaderPage</name>
     <message>
-        <location filename="../../components/ame_workflow/ame_loader_page.py" line="+120"/>
+        <location filename="../../components/ame_workflow/ame_loader_page.py" line="+139"/>
         <source>节点式工作流</source>
         <translation>Node workflow</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>新建</source>
         <translation>New</translation>
     </message>
@@ -150,7 +150,12 @@
         <translation>Export</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+79"/>
+        <source>删除失败</source>
+        <translation>Delete failed</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>重命名</source>
         <translation>Rename</translation>
     </message>
@@ -160,17 +165,32 @@
         <translation>New name:</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+8"/>
+        <source>重命名失败</source>
+        <translation>Rename failed</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>选择封面</source>
         <translation>Choose cover</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+21"/>
+        <source>设置封面失败</source>
+        <translation>Could not set cover</translation>
+    </message>
+    <message>
+        <location line="+35"/>
         <source>导入 JSON</source>
         <translation>Import JSON</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
+        <source>导入失败</source>
+        <translation>Import failed</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>已导入</source>
         <translation>Imported</translation>
     </message>
@@ -185,7 +205,12 @@
         <translation>Export JSON</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
+        <source>导出失败</source>
+        <translation>Export failed</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>已导出</source>
         <translation>Exported</translation>
     </message>
@@ -421,7 +446,7 @@
         <translation>x265 CLI encoder</translation>
     </message>
     <message>
-        <location filename="../../components/ame_workflow/nodes/io/input_bd_normalizer_node.py" line="+200"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_bd_normalizer_node.py" line="+222"/>
         <source>BD 规范化输入</source>
         <translation>BD input normalizer</translation>
     </message>
@@ -437,7 +462,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="+62"/>
+        <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="+63"/>
         <source>选择输入文件</source>
         <translation>Choose input file</translation>
     </message>
@@ -447,7 +472,12 @@
         <translation>Tool: </translation>
     </message>
     <message>
-        <location line="+462"/>
+        <location line="+478"/>
+        <source>无法提取真实章节: {error}</source>
+        <translation>Failed to extract chapters: {error}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <location line="+4"/>
         <source>BD 规范化输入未设置有效的输入文件</source>
         <translation>No valid input file is set for the BD input normalizer</translation>
@@ -466,13 +496,13 @@
     <message>
         <location line="+10"/>
         <location filename="../../components/ame_workflow/nodes/io/input_video_normalizer_node.py" line="+33"/>
-        <location filename="../../components/ame_workflow/nodes/process/splitter_node.py" line="+101"/>
+        <location filename="../../components/ame_workflow/nodes/process/splitter_node.py" line="+102"/>
         <source>未能提取任何已连接的轨道</source>
         <translation>Could not extract any connected tracks</translation>
     </message>
     <message>
         <location filename="../../components/ame_workflow/nodes/io/input_file_node.py" line="+7"/>
-        <location filename="../../components/ame_workflow/nodes/process/ffmpeg_processor_node.py" line="+29"/>
+        <location filename="../../components/ame_workflow/nodes/process/ffmpeg_processor_node.py" line="+30"/>
         <source>输入文件</source>
         <translation>Input file</translation>
     </message>
@@ -530,7 +560,7 @@
         <translation>The splitter cannot find FFmpeg. Check the tool path.</translation>
     </message>
     <message>
-        <location filename="../../components/ame_workflow/nodes/io/output_node.py" line="+9"/>
+        <location filename="../../components/ame_workflow/nodes/io/output_node.py" line="+10"/>
         <source>输出文件</source>
         <translation>Output file</translation>
     </message>
@@ -550,7 +580,37 @@
         <translation>Clear cache folder</translation>
     </message>
     <message>
-        <location filename="../../components/ame_workflow/nodes/muxer/ffmpeg_muxer_node.py" line="+10"/>
+        <location line="+7"/>
+        <source>输出节点未接收到文件，请连接上游节点</source>
+        <translation>Output node has no files. Connect an upstream node</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>请选择有效的输出目录</source>
+        <translation>Select a valid output folder</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>输出源文件不存在或为空: {path}</source>
+        <translation>Output source file is missing or empty: {path}</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>未设置有效的缓存目录</source>
+        <translation>No valid cache folder is set</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>缓存清理路径无效，或输出目录位于缓存目录内</source>
+        <translation>Invalid cache cleanup path or output folder is inside the cache folder</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>输出文件写入不完整: {path}</source>
+        <translation>Output file is incomplete: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/muxer/ffmpeg_muxer_node.py" line="+12"/>
         <source>封装 (FFmpeg)</source>
         <translation>Muxer (FFmpeg)</translation>
     </message>
@@ -560,7 +620,17 @@
         <translation>Mux MP4/MOV with FFmpeg using one video and one audio track</translation>
     </message>
     <message>
-        <location filename="../../components/ame_workflow/nodes/muxer/mkvmerge_muxer_node.py" line="+11"/>
+        <location line="+19"/>
+        <source>封装节点未接收到视频或音频</source>
+        <translation>Muxer node has no video or audio input</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>FFmpeg 未生成有效的封装文件</source>
+        <translation>FFmpeg did not create a valid muxed file</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/muxer/mkvmerge_muxer_node.py" line="+12"/>
         <source>封装 (mkvmerge)</source>
         <translation>Muxer (mkvmerge)</translation>
     </message>
@@ -610,7 +680,7 @@
         <translation>Output file path</translation>
     </message>
     <message>
-        <location line="+142"/>
+        <location line="+127"/>
         <source>无输出</source>
         <translation>No output</translation>
     </message>
@@ -650,7 +720,7 @@
         <translation>Choose VPY script</translation>
     </message>
     <message>
-        <location filename="../../components/ame_workflow/nodes/process/vspipe_node.py" line="+11"/>
+        <location filename="../../components/ame_workflow/nodes/process/vspipe_node.py" line="+12"/>
         <source>vspipe 加载器</source>
         <translation>vspipe loader</translation>
     </message>
@@ -660,7 +730,12 @@
         <translation>Pipe VapourSynth output to an encoder using commands matching the detected vspipe API version</translation>
     </message>
     <message>
-        <location filename="../../components/ame_workflow/nodes/system/custom_name_node.py" line="+12"/>
+        <location line="+10"/>
+        <source>未设置有效的 VapourSynth 脚本文件</source>
+        <translation>No valid VapourSynth script is set</translation>
+    </message>
+    <message>
+        <location filename="../../components/ame_workflow/nodes/system/custom_name_node.py" line="+13"/>
         <source>自定义文件名</source>
         <translation>Custom filename</translation>
     </message>
@@ -688,6 +763,16 @@
         <location line="+3"/>
         <source>复制文件到缓存目录</source>
         <translation>Copy to cache</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>缓存目录无效，无法复制文件</source>
+        <translation>Cannot copy files: invalid cache folder</translation>
+    </message>
+    <message>
+        <location line="+61"/>
+        <source>文件操作失败: {error}</source>
+        <translation>File operation failed: {error}</translation>
     </message>
     <message>
         <source>复制</source>
@@ -734,14 +819,86 @@
     </message>
 </context>
 <context>
+    <name>AMEPresetService</name>
+    <message>
+        <location filename="../../services/ame_workflow/ame_preset_service.py" line="+63"/>
+        <source>请输入有效的工作流名称</source>
+        <translation>Enter a valid workflow name</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>工作流名称过长</source>
+        <translation>Workflow name is too long</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>工作流路径超出预设目录</source>
+        <translation>Workflow path is outside the preset folder</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+43"/>
+        <source>同名工作流已存在，请使用其他名称</source>
+        <translation>A workflow with this name already exists. Use another name</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>工作流已被删除</source>
+        <translation>The workflow has been deleted</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>无法截取工作流画布</source>
+        <translation>Could not capture the workflow canvas</translation>
+    </message>
+</context>
+<context>
+    <name>AMEThumbnail</name>
+    <message>
+        <location filename="../../services/ame_workflow/thumbnail_service.py" line="+47"/>
+        <source>封面文件无效或超过 128 MB</source>
+        <translation>Cover file is invalid or exceeds 128 MB</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>图片无效或尺寸超过限制（4000 万像素 / 单边 20000）</source>
+        <translation>Invalid image or dimensions exceed limits (40 million pixels / 20,000 px per side)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>无法读取封面图片: {error}</source>
+        <translation>Could not read cover image: {error}</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>封面图片编码失败</source>
+        <translation>Could not encode cover image</translation>
+    </message>
+</context>
+<context>
     <name>AMEWorkflowExecutor</name>
     <message>
-        <location filename="../../services/ame_workflow/workflow_executor.py" line="+38"/>
+        <location filename="../../services/ame_workflow/workflow_executor.py" line="+58"/>
+        <source>工作流仅支持一个输出节点，请仅保留一个输出节点</source>
+        <translation>Only one output node is supported. Keep a single output node</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>输出节点已禁用，请启用输出节点后再开始任务</source>
+        <translation>Output node is disabled. Enable it before starting the task</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>节点 &apos;{target}&apos; 仍依赖已禁用节点 &apos;{source}&apos;，请启用上游节点或调整连线</source>
+        <translation>Node &apos;{target}&apos; depends on disabled node &apos;{source}&apos;. Enable the upstream node or change the connections</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>工作流中存在循环依赖</source>
         <translation>The workflow contains a dependency cycle</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+60"/>
         <source>节点 &apos;{name}&apos; 执行失败</source>
         <translation>Node &apos;{name}&apos; failed</translation>
     </message>
@@ -749,7 +906,7 @@
 <context>
     <name>AMEWorkflowInterface</name>
     <message>
-        <location filename="../../view/ame_workflow_interface.py" line="+110"/>
+        <location filename="../../view/ame_workflow_interface.py" line="+133"/>
         <source>新建工作流</source>
         <translation>New workflow</translation>
     </message>
@@ -759,26 +916,69 @@
         <translation>Workflow name:</translation>
     </message>
     <message>
-        <location line="+21"/>
-        <location line="+11"/>
+        <location line="+60"/>
         <source>已保存</source>
         <translation>Saved</translation>
     </message>
     <message>
-        <location line="-10"/>
-        <location line="+10"/>
+        <location line="+0"/>
         <source>保存到: {name}</source>
         <translation>Saved to: {name}</translation>
     </message>
     <message>
-        <location line="-6"/>
+        <location line="-20"/>
         <source>保存工作流</source>
         <translation>Save workflow</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-51"/>
+        <source>任务正在运行</source>
+        <translation>Task running</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>请等待任务结束后再替换工作流</source>
+        <translation>Wait for the task to finish before replacing the workflow</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>同名工作流已存在，请使用其他名称</source>
+        <translation>A workflow with this name already exists. Use another name</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>新建失败</source>
+        <translation>Could not create workflow</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>工作流文件不存在</source>
+        <translation>Workflow file does not exist</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>加载失败</source>
+        <translation>Load failed</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>输入名称:</source>
         <translation>Name:</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>保存失败</source>
+        <translation>Save failed</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>工作流已保存</source>
+        <translation>Workflow saved</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>封面更新失败: {error}</source>
+        <translation>Could not update cover: {error}</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -786,7 +986,12 @@
         <translation>Import JSON</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
+        <source>导入失败</source>
+        <translation>Import failed</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>已导入</source>
         <translation>Imported</translation>
     </message>
@@ -801,7 +1006,12 @@
         <translation>Export JSON</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
+        <source>导出失败</source>
+        <translation>Export failed</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>已导出</source>
         <translation>Exported</translation>
     </message>
@@ -816,7 +1026,37 @@
         <translation>Group</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+31"/>
+        <source>输出节点过多</source>
+        <translation>Too many output nodes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>工作流仅支持一个输出节点，请仅保留一个输出节点</source>
+        <translation>Only one output node is supported. Keep a single output node</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>输出节点已禁用</source>
+        <translation>Output node disabled</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>请启用输出节点后再开始任务</source>
+        <translation>Enable the output node before starting the task</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>输入文件正在探测</source>
+        <translation>Probing input files</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>请等待轨道探测完成后再开始任务</source>
+        <translation>Wait for track probing to finish before starting the task</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>工作流不完整</source>
         <translation>Incomplete workflow</translation>
     </message>
@@ -826,7 +1066,7 @@
         <translation>Add at least one output node</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+81"/>
         <source>处理完成</source>
         <translation>Processing completed</translation>
     </message>
@@ -836,7 +1076,7 @@
         <translation>AME workflow completed</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="-6"/>
         <source>工作流执行失败</source>
         <translation>Workflow execution failed</translation>
     </message>
@@ -1427,12 +1667,12 @@ See logs/ame_run.log for details.</translation>
     <name>FloatingToolbar</name>
     <message>
         <location filename="../../components/ame_workflow/floating_toolbar.py" line="+42"/>
-        <location line="+104"/>
+        <location line="+111"/>
         <source>开始任务</source>
         <translation>Start</translation>
     </message>
     <message>
-        <location line="-99"/>
+        <location line="-106"/>
         <source>暂停</source>
         <translation>Pause</translation>
     </message>
@@ -1480,6 +1720,11 @@ See logs/ame_run.log for details.</translation>
         <location line="+39"/>
         <source>运行中</source>
         <translation>Running</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>正在取消</source>
+        <translation>Stopping</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -2276,7 +2521,7 @@ See logs/ame_run.log for details.</translation>
 <context>
     <name>NameInputDialog</name>
     <message>
-        <location filename="../../components/ame_workflow/ame_loader_page.py" line="-240"/>
+        <location filename="../../components/ame_workflow/ame_loader_page.py" line="-325"/>
         <source>确定</source>
         <translation>OK</translation>
     </message>
@@ -3571,7 +3816,7 @@ Possible cause: {error}</translation>
 <context>
     <name>WorkflowCard</name>
     <message>
-        <location filename="../../components/ame_workflow/ame_loader_page.py" line="+74"/>
+        <location filename="../../components/ame_workflow/ame_loader_page.py" line="+88"/>
         <source>删除</source>
         <translation>Delete</translation>
     </message>
@@ -3584,6 +3829,24 @@ Possible cause: {error}</translation>
         <location line="+1"/>
         <source>设置封面</source>
         <translation>Set cover</translation>
+    </message>
+</context>
+<context>
+    <name>WorkflowSerializer</name>
+    <message>
+        <location filename="../../services/ame_workflow/workflow_serializer.py" line="+14"/>
+        <source>无效的工作流文件: {detail}</source>
+        <translation>Invalid workflow file: {detail}</translation>
+    </message>
+    <message>
+        <location line="+163"/>
+        <source>加载工作流</source>
+        <translation>Load workflow</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>无法恢复原工作流画布</source>
+        <translation>Could not restore the previous workflow canvas</translation>
     </message>
 </context>
 <context>
