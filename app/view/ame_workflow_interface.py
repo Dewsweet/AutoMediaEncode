@@ -286,6 +286,12 @@ class AMEWorkflowInterface(QWidget):
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=5000, parent=self)
             return
+        if any(isinstance(node, out_cls) and node.disabled() for node in nodes):
+            InfoBar.warning(title=self.tr('输出节点已禁用'),
+                            content=self.tr('请启用输出节点后再开始任务'),
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=3000, parent=self)
+            return
         if any(getattr(node, '_probe_threads', []) for node in nodes):
             InfoBar.warning(title=self.tr('输入文件正在探测'),
                             content=self.tr('请等待轨道探测完成后再开始任务'),

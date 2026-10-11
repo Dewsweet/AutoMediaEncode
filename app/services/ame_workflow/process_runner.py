@@ -178,6 +178,18 @@ def run_pipe(cmd1, kw1, cmd2, kw2, *, timeout=14400, cancelled=None):
                 stdout, _ = p2.communicate(timeout=0.05)
                 _check_wait(control, cmd2, deadline, timeout, cancelled)
                 control.checkpoint()
+                if p2.returncode == 0:
+                    # 消费端可能把生产端异常中断留下的部分帧编码成功。
+                    # 两端均正常结束，才能把媒体文件发布给下游节点。
+                    while True:
+                        _check_wait(control, cmd1, deadline, timeout, cancelled)
+                        try:
+                            p1.wait(timeout=0.05)
+                            break
+                        except subprocess.TimeoutExpired:
+                            continue
+                    if p1.returncode != 0:
+                        return p1.returncode, (stdout or '') + f'\nPipeline producer failed: returncode={p1.returncode}'
                 return p2.returncode, stdout
             except subprocess.TimeoutExpired:
                 if p2.poll() is not None:

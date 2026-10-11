@@ -57,6 +57,20 @@ class AMEWorkflowExecutor(QThread):
         if len(output_nodes) > 1:
             self.error_occurred.emit(self.tr('工作流仅支持一个输出节点，请仅保留一个输出节点'))
             return
+        if any(self._is_disabled(node) for node in output_nodes):
+            self.error_occurred.emit(self.tr('输出节点已禁用，请启用输出节点后再开始任务'))
+            return
+        # 禁用不代表旁路：编码、分离等节点的输入输出格式可能不同。
+        # 在任何文件操作之前检查禁用节点仍连向启用节点的情况。
+        for source, _, target_id, _ in self._edges:
+            target = self._node_map[target_id]
+            if self._is_disabled(source) and not self._is_disabled(target):
+                self.error_occurred.emit(self.tr("节点 '{target}' 仍依赖已禁用节点 '{source}'，请启用上游节点或调整连线").format(
+                    target=target.name(), source=source.name()))
+                return
+        for node in self._nodes:
+            if self._is_disabled(node):
+                self.node_status_changed.emit(node.id, 'skipped')
         order = self._topo_sort()
         if order is None:
             self.error_occurred.emit(self.tr('工作流中存在循环依赖'))
@@ -67,7 +81,7 @@ class AMEWorkflowExecutor(QThread):
         order = [n for n in order if n.id in connected]
         logger.info(f'[AME] 拓扑排序: {[n.name() for n in order]}')
         if not order:
-            order = [n for n in self._nodes if 'Output' in n.__class__.__name__]
+            order = [n for n in self._nodes if 'Output' in n.__class__.__name__ and not self._is_disabled(n)]
         if output_nodes:
             # 唯一输出节点最后执行，包括未连线的输出节点（由其报告缺少输入）。
             order = [node for node in order if node not in output_nodes] + output_nodes
@@ -140,11 +154,11 @@ class AMEWorkflowExecutor(QThread):
         return inp
 
     def _topo_sort(self):
-        ids = {n.id for n in self._nodes}
+        ids = {n.id for n in self._nodes if not self._is_disabled(n)}
         adj = {i: [] for i in ids}
         deg = {i: 0 for i in ids}
         for fn, fp, tid, tp in self._edges:
-            if fn.id != tid:
+            if fn.id in ids and tid in ids and fn.id != tid:
                 adj[fn.id].append(tid)
                 deg[tid] = deg.get(tid, 0) + 1
         q = deque(i for i in ids if deg[i] == 0)
@@ -158,10 +172,14 @@ class AMEWorkflowExecutor(QThread):
                     q.append(v)
         return order if len(order) == len(ids) else None
 
+    @staticmethod
+    def _is_disabled(node):
+        return bool(getattr(node, 'disabled', lambda: False)())
+
     def _resolve_temp_dir(self):
         # 优先: 工作区节点
         for n in self._nodes:
-            if 'Workspace' in n.__class__.__name__:
+            if not self._is_disabled(n) and 'Workspace' in n.__class__.__name__:
                 wd = n.property('workspace', '')
                 wd = Path(wd) if wd else None
                 if wd and wd.is_dir():
@@ -170,7 +188,7 @@ class AMEWorkflowExecutor(QThread):
                     return
         # 其次: 输出节点目录
         for n in self._nodes:
-            if 'Output' in n.__class__.__name__:
+            if not self._is_disabled(n) and 'Output' in n.__class__.__name__:
                 op = n.property('output', '')
                 if not op:
                     continue
@@ -186,7 +204,7 @@ class AMEWorkflowExecutor(QThread):
                         return
         # 最后: 输入文件目录
         for n in self._nodes:
-            if 'Input' in n.__class__.__name__:
+            if not self._is_disabled(n) and 'Input' in n.__class__.__name__:
                 for prop in ['input_file', 'input_multi']:
                     fp = n.property(prop, '')
                     if fp:

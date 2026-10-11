@@ -9,22 +9,22 @@ from app.services.error_service import ErrorService
 def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     """x264/x265/SVTAV1 通用 CLI 编码。
 
-    双输入端口规范: input 端口仅接受视频文件, script 端口仅接受 VS 管道输出,
-    互不关联; script 管道存在则走管道模式, 否则走 input 文件模式。
+    双输入端口规范: file 接受视频文件, pipe 接受 VS 管道输出。
+    管道存在则走管道模式, 否则走文件模式。
     """
     logger.info('\n' * 2 + '=' * 40 + f' [{node.NODE_NAME}] ' + '=' * 40)
-    pipe_raw = (inputs.get('script') or [''])[0]
+    pipe_raw = (inputs.get('pipe') or [''])[0]
     file_raw = (inputs.get('file') or [''])[0]
     is_pipe = isinstance(pipe_raw, dict) and pipe_raw.get('pipe')
 
     if is_pipe:
         src_raw = pipe_raw
-        logger.info(f'[{node.NODE_NAME}] 管道输入 (script 端口)')
+        logger.info(f'[{node.NODE_NAME}] 管道输入 (pipe 端口)')
     elif file_raw:
         src_raw = file_raw
-        logger.info(f'[{node.NODE_NAME}] 文件输入 (input 端口): {file_raw}')
+        logger.info(f'[{node.NODE_NAME}] 文件输入 (file 端口): {file_raw}')
     else:
-        logger.warning(f'[{node.NODE_NAME}] 没有输入 (input 端口需视频文件 / script 端口需 VS 管道)')
+        logger.warning(f'[{node.NODE_NAME}] 没有输入 (file 端口需视频文件 / pipe 端口需 VS 管道)')
         return None
 
     cli_p = ToolService.get_tool_path(tool_key)
@@ -48,7 +48,7 @@ def _do_cli_encode(node, inputs, temp_dir, tool_key, ext):
     cancelled = getattr(node, '_ame_cancelled', lambda: False)
     paused = getattr(node, '_ame_paused', None)
 
-    # ── 管道模式 (script 端口: vspipe → x264/x265/svtav1) ──
+    # ── 管道模式 (pipe 端口: vspipe → x264/x265/svtav1) ──
     if is_pipe:
         pipe_cmd = src_raw['cmd']
         if tool_key.lower() == 'svtav1':
@@ -201,11 +201,14 @@ def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
         return None
     
     widget_data = node.property('Audio_codec', {})
+    codec = default_codec or 'aac'
+    bitrate = compression_level = custom_options = ''
+    args = []
     if isinstance(widget_data, dict):
         if default_codec:
             codec = default_codec
         else:
-            codec = widget_data.get('encoder', default_codec)
+            codec = widget_data.get('encoder') or codec
         bitrate = widget_data.get('bitrate', '')
         compression_level = widget_data.get('compression_level', '')
         custom_options = widget_data.get('custom_cli', '')
@@ -225,7 +228,7 @@ def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
     else:
         if bitrate:
             cmd[-3:-3] = ['-b:a', bitrate + 'k']
-        if compression_level and default_codec == 'flac':
+        if compression_level != '' and codec == 'flac':
             cmd[-3:-3] = ['-compression_level', str(compression_level)]
     logger.info(f'[{node.NODE_NAME}] 组装命令: {" ".join(str(c) for c in cmd)}')
     try:
@@ -248,8 +251,8 @@ def _do_ffmpeg_audio(node, inputs, temp_dir, default_codec, default_ext):
 def _do_ffmpeg_video(node, inputs, temp_dir):
     """通用 FFmpeg 视频编码。
 
-    双输入端口规范: input 端口仅接受视频文件, script 端口仅接受 VS 管道输出,
-    互不关联; script 管道存在则走管道模式, 否则走 input 文件模式。
+    双输入端口规范: file 接受视频文件, pipe 接受 VS 管道输出。
+    管道存在则走管道模式, 否则走文件模式。
     """
     widget_data = node.property('Video_codec', {})
     codec = 'libx264'
@@ -271,8 +274,8 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
     ext = _codec_to_ext(codec)
     dst = Path(temp_dir) / f'v_{node.id}{ext}'
 
-    # 双输入端口: script(管道)优先, input(视频文件)兜底
-    pipe_raw = (inputs.get('script') or [''])[0]
+    # 双输入端口: pipe(管道)优先, file(视频文件)兜底
+    pipe_raw = (inputs.get('pipe') or [''])[0]
     file_src = (inputs.get('file') or [''])[0]
     is_pipe = isinstance(pipe_raw, dict) and pipe_raw.get('pipe')
 
@@ -302,7 +305,7 @@ def _do_ffmpeg_video(node, inputs, temp_dir):
 
     # ── 文件模式 ──
     if not file_src:
-        logger.warning(f'[{codec}] 没有输入 (input 端口需视频文件 / script 端口需 VS 管道)')
+        logger.warning(f'[{codec}] 没有输入 (file 端口需视频文件 / pipe 端口需 VS 管道)')
         return None
     logger.info(f'[{codec}] 输入文件: {file_src}')
     cmd = [ff, '-i', file_src, '-c:v', codec, '-an', str(dst), '-y']
@@ -335,7 +338,7 @@ def _codec_to_ext(codec: str) -> str:
         'hevc': '.h265', 'h265': '.h265', 'libx265': '.h265', 'h265_nvenc': '.h265', 'h265_qsv': '.h265', 'h265_amf': '.h265',
         'av1': '.ivf', 'vp9': '.ivf', 'libsvtav1': '.ivf', 'svtav1': '.ivf', 'libvpx-vp9': '.ivf', 'libvp8': '.ivf',
         'av1_qsv': '.ivf', 'av1_nvenc': '.ivf', 'av1_amf': '.ivf',
-        'aac': '.aac', 'flac': '.flac',
+        'aac': '.aac', 'flac': '.flac', 'alac': '.m4a',
         'opus': '.opus', 'vorbis': '.ogg', 'pcm': '.wav', 'mp3': '.mp3',
         'ac3': '.ac3', 'eac3': '.eac3', 'dts': '.dts', 'ass': '.ass',
         'srt': '.srt', 'vtt': '.vtt',

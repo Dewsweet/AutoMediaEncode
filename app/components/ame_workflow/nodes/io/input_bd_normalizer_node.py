@@ -12,6 +12,7 @@ from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import json
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 from app.services.ame_workflow.process_runner import (
     run_process, check_cancelled, ProcessControl, ProcessCancelled, process_scope)
@@ -162,16 +163,6 @@ def _parse_eac3to_scan(text: str, is_mpls: bool) -> tuple:
 # 肉眼/日志不可见但会破坏行首正则匹配导致 0 轨道, 解析前必须剥离
 _ANSI_RE = re.compile(r'\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07|\x1b[=>]')
 _CTRL_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
-
-
-def _ogm_from_json_chapters(chapters: list) -> str:
-    """mkvmerge -J 的 chapters JSON → OGM 章节 txt 内容"""
-    lines = []
-    for i, ch in enumerate(chapters, 1):
-        start = str(ch.get('start', '00:00:00.000'))[:12]  # 'HH:MM:SS.mmm'
-        lines.append(f'CHAPTER{i:02d}={start}')
-        lines.append(f'CHAPTER{i:02d}NAME=')
-    return '\n'.join(lines)
 
 
 _active_probe_threads = set()
@@ -634,6 +625,8 @@ class InputBDNormalizerNode(AMENodeBase):
                 f = self._extract_chapters_mkvmerge(src, video_file, temp_dir, pn)
                 if f:
                     result.setdefault(pn, []).append(f)
+                else:
+                    return None
         return result or None
 
     # ── 执行: mkvmerge 提取 (连体盘 / eac3to 失败回退) ──
@@ -666,6 +659,8 @@ class InputBDNormalizerNode(AMENodeBase):
             f = self._extract_chapters_mkvmerge(src, video_file, temp_dir, pn)
             if f:
                 result.setdefault(pn, []).append(f)
+            else:
+                return None
         return result or None
 
     def _extract_mkvmerge_track(self, src: str, tt: str, tid: int, pn: str, temp_dir: str):
@@ -698,29 +693,43 @@ class InputBDNormalizerNode(AMENodeBase):
         return None
 
     def _extract_chapters_mkvmerge(self, src: str, video_file, temp_dir: str, pn: str):
-        """mkvmerge backend 的章节: 优先 mkvextract 从已输出容器抽取, 回退 -J JSON 生成 OGM"""
+        """从原始来源保留真实章节；单轨视频已去除章节，不能用来提取。"""
         dst = Path(temp_dir) / f"track_{self.id}_{pn}.txt"
+        mk = ToolService.get_tool_path('mkvmerge')
         mkx = ToolService.get_tool_path('mkvextract')
-        if mkx and video_file and Path(video_file).is_file():
-            try:
-                r = run_process([mkx, 'chapters', str(video_file)], capture_output=True,
-                                   creationflags=subprocess.CREATE_NO_WINDOW, timeout=300)
-                txt = (r.stdout or b'').decode('utf-8', errors='replace')
-                if txt.strip() and 'CHAPTER' in txt:
-                    dst.write_text(txt, encoding='utf-8')
-                    logger.info(f'[InputBD] mkvextract 章节提取成功: {dst}')
-                    return dst
-                logger.warning('[InputBD] mkvextract 未输出章节, 回退 -J 生成')
-            except Exception as e:
-                logger.warning(f'[InputBD] mkvextract 章节提取异常: {e}')
-        data = self._mkvmerge_identify(src)
-        if data:
-            chs = data.get('chapters', []) or []
-            if chs:
-                dst.write_text(_ogm_from_json_chapters(chs), encoding='utf-8')
-                logger.info(f'[InputBD] 由 mkvmerge -J 生成 OGM 章节: {dst}')
+        try:
+            if dst.exists():
+                dst.unlink()
+            if not mk or not mkx:
+                raise RuntimeError('找不到 mkvmerge 或 mkvextract')
+            # mkvextract 仅接受 Matroska；先从 mpls/m2ts 封装章节专用容器。
+            # 不封装媒体轨道，避免复制整部影片，mkvmerge 仍遵循播放列表裁剪。
+            with tempfile.TemporaryDirectory(prefix=f'chapters_{self.id}_', dir=temp_dir) as directory:
+                container = Path(directory) / 'chapters.mkv'
+                r = run_process([mk, '-o', str(container), '-D', '-A', '-S',
+                                 '--no-buttons', '--no-attachments', src],
+                                capture_output=True, timeout=14400)
+                if r.returncode not in (0, 1) or not container.is_file():
+                    raise RuntimeError((r.stdout or b'').decode('utf-8', errors='replace')[-400:])
+                r = run_process([mkx, str(container), 'chapters', '--simple', str(dst)],
+                                capture_output=True, timeout=300)
+                if r.returncode != 0:
+                    raise RuntimeError((r.stdout or b'').decode('utf-8', errors='replace')[-400:])
+                txt = dst.read_text(encoding='utf-8-sig') if dst.is_file() else ''
+                if not re.search(r'^CHAPTER\d+=\d{2}:\d{2}:\d{2}\.\d{3}', txt, re.MULTILINE):
+                    raise RuntimeError('源文件未提供可提取的真实章节')
+                # Windows 下 mkvmerge 自动识别 BOM，避免下一次封装按系统代码页
+                # 读取 UTF-8 章节名而产生乱码。
+                dst.write_text(txt, encoding='utf-8-sig')
+                check_cancelled()
                 return dst
-        logger.warning('[InputBD] 源中未发现章节')
+        except ProcessCancelled:
+            raise
+        except Exception as error:
+            self._last_error = QCoreApplication.translate('AMENodes', '无法提取真实章节: {error}').format(error=error)
+            logger.warning(f'[InputBD] {self._last_error}')
+            if dst.exists():
+                dst.unlink()
         return None
 
 
@@ -756,6 +765,6 @@ class InputBDNormalizerNode(AMENodeBase):
             result = self._extract_mkvmerge(src, tracks, temp_dir)
         else:
             result = self._extract_eac3to(src, tracks, temp_dir)
-        if not result:
+        if not result and not getattr(self, '_last_error', ''):
             self._last_error = ErrorService.cli_error(backend, QCoreApplication.translate('AMENodes', '未能提取任何已连接的轨道'))
         return result or None

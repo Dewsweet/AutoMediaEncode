@@ -16,4 +16,4 @@ class EncoderFFmpegAudioNode(AMENodeBase):
         self.add_custom_widget(FfmpegSimpleOptionsWidget(self.view, 'Audio_codec', items))
 
     def execute(self, inputs, temp_dir):
-        return _do_ffmpeg_audio(self, inputs, temp_dir, 'aac', '.aac')
+        return _do_ffmpeg_audio(self, inputs, temp_dir, None, None)

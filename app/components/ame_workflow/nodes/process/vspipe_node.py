@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
 from app.services.ame_workflow.process_runner import run_process
@@ -19,7 +19,8 @@ class VSPipeNode(AMENodeBase):
     def execute(self, inputs, temp_dir):
         logger.info('\n' * 2 + '=' * 40 + f' [VSPipeNode] ' + '=' * 40)
         script = (inputs.get('script') or [''])[0]
-        if not script:
+        if not script or not Path(script).is_file():
+            self._last_error = QCoreApplication.translate('AMENodes', '未设置有效的 VapourSynth 脚本文件')
             logger.warning('[VSPipe] 没有脚本输入')
             return None
 
@@ -33,12 +34,12 @@ class VSPipeNode(AMENodeBase):
         logger.info(f'[VSPipe] vspipe API 版本: {api_ver}')
 
         if api_ver == '4.0':
-            pipe_cmd = f'"{vspipe}" -c y4m "{script}" -'
+            pipe_cmd = [vspipe, '-c', 'y4m', str(script), '-']
         else:
-            pipe_cmd = f'"{vspipe}" --y4m "{script}" -'
+            pipe_cmd = [vspipe, '--y4m', str(script), '-']
 
         logger.info(f'[VSPipe] 管道命令: {pipe_cmd}')
-        return {'video': [{'cmd': pipe_cmd, 'pipe': True, 'api': api_ver}]}
+        return {'pipe': [{'cmd': pipe_cmd, 'pipe': True, 'api': api_ver}]}
 
     def _detect_api(self, vspipe_path):
         try:
