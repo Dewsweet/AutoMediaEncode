@@ -32,6 +32,10 @@ class AMEWorkflowInterface(QWidget):
 
         self._executor = None
         self._running = False
+        self._cancelling = False
+        self._shutting_down = False
+        self._workflow_error = ''
+        self._other_tasks = set()
         self._current_workflow_name = None
         self._current_workflow_saved = False
         self._suggested_workflow_name = ''
@@ -266,18 +270,30 @@ class AMEWorkflowInterface(QWidget):
         self._ame_graph.create_node(tn, pos=[cur[0], cur[1]])
 
     def _on_start(self):
-        if self._executor and self._running:
-            self._executor.resume()
-            self._toolbar.set_state('running')
+        if self._shutting_down or self._other_tasks:
+            return
+        if self._executor:
+            if self._running and not self._cancelling and self._executor.isRunning():
+                self._executor.resume()
+                self._toolbar.set_state('running')
             return
         out_cls = self._find_output_class()
         nodes = self._ame_graph.all_nodes()
+        if any(getattr(node, '_probe_threads', []) for node in nodes):
+            InfoBar.warning(title=self.tr('输入文件正在探测'),
+                            content=self.tr('请等待轨道探测完成后再开始任务'),
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=3000, parent=self)
+            return
         if not any(isinstance(n, out_cls) for n in nodes):
             InfoBar.warning(title=self.tr('工作流不完整'), content=self.tr('请至少添加一个输出节点'),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         self._running = True
+        self._cancelling = False
+        self._workflow_error = ''
+        self._ame_graph.viewer().setEnabled(False)
         self._toolbar.set_state('running')
         self._progress.setVisible(True)
         self._progress.setValue(0)
@@ -289,66 +305,99 @@ class AMEWorkflowInterface(QWidget):
                     for cp in cps:
                         edges.append((n, pn, cid, cp))
         from app.services.ame_workflow.workflow_executor import AMEWorkflowExecutor
-        self._executor = AMEWorkflowExecutor(nodes, edges)
-        self._executor.progress_updated.connect(lambda v: self._progress.setValue(v))
+        self._executor = AMEWorkflowExecutor(nodes, edges, self)
+        self._executor.progress_updated.connect(self._on_progress)
         self._executor.node_status_changed.connect(self._on_node_status)
         self._executor.finished.connect(self._on_finished)
         self._executor.error_occurred.connect(self._on_error)
-        self._executor.start()
-
         # 通知所有界面: 工作流任务进入执行状态, 其他界面的开始按钮需禁用
         signalBus.taskExecutionStarted.emit('ame_workflow')
+        self._executor.start()
 
     def _on_cancel(self):
-        was_running = bool(self._executor and self._running)
-        if self._executor:
+        if self._executor and self._running and not self._cancelling:
+            self._cancelling = True
+            self._toolbar.set_state('cancelling')
             self._executor.cancel()
-        self._reset_ui()
-        if was_running:
-            # 仅在确有任务运行时发射全局结束信号
-            signalBus.taskExecutionEnded.emit('ame_workflow')
 
     def _on_pause(self):
-        if self._executor:
+        if self._executor and self._running and not self._cancelling:
             self._executor.pause()
             self._toolbar.set_state('paused')
 
     def _reset_ui(self):
         self._running = False
+        self._cancelling = False
         self._toolbar.set_state('idle')
+        self._toolbar.set_locked(bool(self._other_tasks))
+        self._ame_graph.viewer().setEnabled(True)
         self._progress.setVisible(False)
         self._progress.setValue(0)
 
+    def _on_progress(self, value):
+        if self.sender() is self._executor and not self._cancelling:
+            self._progress.setValue(value)
+
     def _on_node_status(self, node_id: str, status: str):
+        if self.sender() is not self._executor or self._shutting_down:
+            return
         node = self._ame_graph.get_node_by_id(node_id)
         if node and hasattr(node, 'set_status'):
             node.set_status(status)
 
     def _on_finished(self):
-        self._running = False
-        self._toolbar.set_state('idle')
+        self._finish_executor(self.sender())
+
+    def _finish_executor(self, executor):
+        if executor is None or executor is not self._executor:
+            return
+        cancelled = self._cancelling or executor._cancelled
+        succeeded = executor.succeeded and not cancelled and not self._workflow_error
+        error = self._workflow_error
+        self._executor = None
+        self._reset_ui()
+        executor.deleteLater()
         signalBus.taskExecutionEnded.emit('ame_workflow')
-        if self._progress.value() >= 100:
+        if self._shutting_down:
+            return
+        if error and not cancelled:
+            InfoBar.error(title=self.tr('工作流执行失败'), content=error,
+                          orient=Qt.Horizontal, isClosable=True,
+                          position=InfoBarPosition.TOP, duration=15000, parent=self)
+        elif succeeded:
+            self._progress.setValue(100)
+            self._progress.setVisible(True)
             InfoBar.success(title=self.tr('处理完成'), content=self.tr('AME 工作流已执行完毕'),
                             orient=Qt.Horizontal, isClosable=True,
                             position=InfoBarPosition.TOP, duration=5000, parent=self)
 
     def _on_error(self, msg):
-        self._running = False
-        self._toolbar.set_state('idle')
-        self._progress.setVisible(False)
-        signalBus.taskExecutionEnded.emit('ame_workflow')
-        InfoBar.error(title=self.tr('工作流执行失败'), content=msg,
-                      orient=Qt.Horizontal, isClosable=True,
-                      position=InfoBarPosition.TOP, duration=15000, parent=self)
+        if self.sender() is self._executor:
+            self._workflow_error = msg
 
     def _on_global_task_started(self, task_id: str):
         """其他界面的任务开始执行时, 锁定工作流工具栏开始按钮(全局任务互斥)"""
-        self._toolbar.set_locked(True)
+        if task_id != 'ame_workflow':
+            self._other_tasks.add(task_id)
+            self._toolbar.set_locked(True)
 
     def _on_global_task_ended(self, task_id: str):
         """全局任务结束后解锁工作流工具栏开始按钮(按当前状态恢复, 幂等)"""
-        self._toolbar.set_locked(False)
+        self._other_tasks.discard(task_id)
+        self._toolbar.set_locked(bool(self._other_tasks))
+
+    def shutdown(self):
+        if self._shutting_down:
+            return
+        self._shutting_down = True
+        executor = self._executor
+        if executor:
+            self._on_cancel()
+        from app.components.ame_workflow.nodes.io.input_bd_normalizer_node import shutdown_probes
+        shutdown_probes()
+        if executor:
+            executor.wait()
+            self._finish_executor(executor)
 
     def _find_output_class(self):
         from app.components.ame_workflow.nodes.io.output_node import OutputNode

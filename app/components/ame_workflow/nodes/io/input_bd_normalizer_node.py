@@ -13,6 +13,8 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from app.services.ame_workflow.process_runner import (
+    run_process, check_cancelled, ProcessControl, ProcessCancelled, process_scope)
 from typing import Text
 
 from PySide6.QtCore import QThread, Signal
@@ -172,6 +174,22 @@ def _ogm_from_json_chapters(chapters: list) -> str:
     return '\n'.join(lines)
 
 
+_active_probe_threads = set()
+_probes_shutting_down = False
+
+
+def shutdown_probes():
+    global _probes_shutting_down
+    _probes_shutting_down = True
+    threads = list(_active_probe_threads)
+    for thread in threads:
+        thread._node._probe_seq += 1
+        thread.cancel()
+    for thread in threads:
+        thread.wait()
+        thread._node._cleanup_probe_thread(thread)
+
+
 class _ProbeThread(QThread):
     """后台探测线程: eac3to/mkvmerge 扫描与 MediaInfo 解析均为外部调用,
     移出 UI 线程避免探测期间界面卡顿; 结果经信号回主线程处理。"""
@@ -183,14 +201,27 @@ class _ProbeThread(QThread):
         self._node = node
         self._src = src
         self._seq = seq
+        self._control = ProcessControl()
+
+    def cancel(self):
+        self._control.cancel()
 
     def run(self):
         try:
             # _resolve_tracks 仅做子进程调用与 pymediainfo 解析, 无 UI 操作
-            tracks, backend = self._node._resolve_tracks(self._src)
+            with process_scope(self._control):
+                check_cancelled()
+                tracks, backend = self._node._resolve_tracks(self._src)
+                check_cancelled()
+        except ProcessCancelled:
+            return
         except Exception as e:
             logger.error(f'[InputBD] 后台探测异常: {e}')
             tracks, backend = None, None
+        finally:
+            self._control.close()
+        if self._control.cancelled.is_set():
+            return
         self.probe_done.emit(self._seq, self._src, tracks or [], backend or '')
 
 
@@ -284,25 +315,32 @@ class InputBDNormalizerNode(AMENodeBase):
 
     # ── 后台探测 ──
     def _start_probe(self, fp: str):
+        if _probes_shutting_down:
+            return
+        for thread in self._probe_threads:
+            thread.cancel()
         self._probe_seq += 1
         th = _ProbeThread(self, fp, self._probe_seq)
         self._probe_threads.append(th)
+        _active_probe_threads.add(th)
         th.probe_done.connect(self._on_probe_done)
-        th.finished.connect(th.deleteLater)
         th.finished.connect(lambda t=th: self._cleanup_probe_thread(t))
         th.start()
         logger.info(f'[InputBD] 后台探测中(界面不阻塞): {fp}')
 
     def _cleanup_probe_thread(self, th):
+        _active_probe_threads.discard(th)
         try:
             self._probe_threads.remove(th)
         except ValueError:
             pass
+        th.deleteLater()
 
 
     def _on_probe_done(self, seq: int, src: str, tracks: list, backend: str):
         """后台探测完成回调: 过期结果丢弃, 有效结果写入缓存并重建端口"""
-        if seq != self._probe_seq:
+        if (seq != self._probe_seq or _probes_shutting_down
+                or not self.graph or self.graph.get_node_by_id(self.id) is not self):
             return  # 过期结果(探测期间切换了文件或引擎)
         if not tracks or backend not in ('eac3to', 'mkvmerge'):
             logger.warning(f'[InputBD] 未探测到任何轨道: {src}')
@@ -367,7 +405,7 @@ class InputBDNormalizerNode(AMENodeBase):
             cmd = [exe, src]
             logger.info(f'[InputBD] eac3to 扫描: {" ".join(str(c) for c in cmd)}')
             # cwd 固定为工具目录: eac3to 会向 CWD 写 log.txt, 避免散落到 temp/主程序目录
-            r = subprocess.run(cmd, capture_output=True,
+            r = run_process(cmd, capture_output=True,
                                creationflags=subprocess.CREATE_NO_WINDOW, timeout=300,
                                cwd=str(Path(exe).parent))
             text = ((r.stdout or b'') + (r.stderr or b'')).decode('utf-8', errors='replace')
@@ -396,7 +434,7 @@ class InputBDNormalizerNode(AMENodeBase):
             logger.warning('[InputBD] 找不到 mkvmerge, 请检查工具路径')
             return None
         try:
-            r = subprocess.run([mk, '-J', src], capture_output=True,
+            r = run_process([mk, '-J', src], capture_output=True,
                                creationflags=subprocess.CREATE_NO_WINDOW, timeout=300)
             if r.returncode != 0:
                 logger.warning(f'[InputBD] mkvmerge -J 失败: returncode={r.returncode}, '
@@ -446,12 +484,14 @@ class InputBDNormalizerNode(AMENodeBase):
             return 'unknown'
         total_s = 0.0
         for seg in segments:
+            check_cancelled()
             p = stream_dir / seg
             if not p.is_file():
                 logger.info(f'[InputBD] 引用的 m2ts 不存在, 跳过连体盘判定: {p}')
                 return 'unknown'
             try:
                 info = parse_media_info(str(p), library_file=mi)
+                check_cancelled()
                 gen = info.general_tracks[0] if info.general_tracks else None
                 if gen is None or gen.duration is None:
                     return 'unknown'
@@ -540,7 +580,7 @@ class InputBDNormalizerNode(AMENodeBase):
                 cmd = [eac, src, f"{t['idx']}:{dst}"]
                 logger.info(f'[InputBD] eac3to 提取: {" ".join(str(c) for c in cmd)}')
                 # cwd 固定为工具目录: 避免 eac3to 的 log.txt 写入 temp 目录
-                r = subprocess.run(cmd, capture_output=True,
+                r = run_process(cmd, capture_output=True,
                                    creationflags=subprocess.CREATE_NO_WINDOW, timeout=14400,
                                    cwd=str(Path(eac).parent))
                 if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
@@ -579,7 +619,7 @@ class InputBDNormalizerNode(AMENodeBase):
                 cmd = [eac, src, f"{t['idx']}:{dst}"]
                 logger.info(f'[InputBD] eac3to 提取章节: {" ".join(str(c) for c in cmd)}')
                 # cwd 固定为工具目录: 避免 eac3to 的 log.txt 写入 temp 目录
-                r = subprocess.run(cmd, capture_output=True,
+                r = run_process(cmd, capture_output=True,
                                    creationflags=subprocess.CREATE_NO_WINDOW, timeout=14400,
                                    cwd=str(Path(eac).parent))
                 if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
@@ -646,7 +686,7 @@ class InputBDNormalizerNode(AMENodeBase):
         cmd = [mk, '-o', str(dst), *no, *sel, '--no-buttons', src]
         logger.info(f'[InputBD] mkvmerge 提取: {" ".join(str(c) for c in cmd)}')
         try:
-            r = subprocess.run(cmd, capture_output=True,
+            r = run_process(cmd, capture_output=True,
                                creationflags=subprocess.CREATE_NO_WINDOW, timeout=14400)
             if r.returncode in (0, 1) and dst.is_file() and dst.stat().st_size > 0:
                 logger.info(f'[InputBD] mkvmerge 提取成功: {dst}')
@@ -663,7 +703,7 @@ class InputBDNormalizerNode(AMENodeBase):
         mkx = ToolService.get_tool_path('mkvextract')
         if mkx and video_file and Path(video_file).is_file():
             try:
-                r = subprocess.run([mkx, 'chapters', str(video_file)], capture_output=True,
+                r = run_process([mkx, 'chapters', str(video_file)], capture_output=True,
                                    creationflags=subprocess.CREATE_NO_WINDOW, timeout=300)
                 txt = (r.stdout or b'').decode('utf-8', errors='replace')
                 if txt.strip() and 'CHAPTER' in txt:

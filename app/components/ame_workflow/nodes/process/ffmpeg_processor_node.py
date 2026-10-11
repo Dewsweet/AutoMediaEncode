@@ -1,6 +1,7 @@
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
-import subprocess, shlex, re, time
+import shlex, re
 from pathlib import Path
+from .._helpers import _run_with_progress
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import CLITextWidget, CustomTextWidget
 from app.services.tool_service import ToolService
@@ -140,37 +141,22 @@ class FFmpegProcessorNode(AMENodeBase):
 
         # 7. 轮询执行
         logger.info(f'[{self.NODE_NAME}] 执行命令: {" ".join(cmd)}')
-        cf = subprocess.CREATE_NO_WINDOW
-
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, encoding='utf-8', errors='replace', creationflags=cf, bufsize=1)
-
-        output_lines = []
         cancelled = getattr(self, '_ame_cancelled', lambda: False)
         paused = getattr(self, '_ame_paused', None)
-
-        for line in proc.stdout:
-            output_lines.append(line.strip())
-            # 相应工作流的取消和暂停请求
-            if paused and paused():
-                while paused():
-                    time.sleep(0.1)
-                    if cancelled():
-                        proc.terminate(); proc.wait(3); return None
-            if cancelled():
-                proc.terminate(); proc.wait(3); return None
-
-        proc.wait()
+        returncode, output = _run_with_progress(cmd, cancelled, paused, encoding='utf-8')
+        if returncode is None:
+            return None
+        output_lines = output.splitlines()
 
         # 8. 清理临时 concat 列表
         # if concat_txt and concat_txt.exists():
         #     concat_txt.unlink()
 
-        if proc.returncode == 0 and final_out_path and final_out_path.is_file() and final_out_path.stat().st_size > 0:
+        if returncode == 0 and final_out_path and final_out_path.is_file() and final_out_path.stat().st_size > 0:
             logger.info(f'[{self.NODE_NAME}] 处理成功: {final_out_path.name}')
             return {'file': [str(final_out_path)]}
         else:
-            logger.error(f'[{self.NODE_NAME}] 处理失败: returncode={proc.returncode}')
+            logger.error(f'[{self.NODE_NAME}] 处理失败: returncode={returncode}')
             err_text = "\n".join(output_lines[-10:]) if output_lines else QCoreApplication.translate('AMENodes', '无输出')
             self._last_error = ErrorService.ffmpeg_error(err_text)
             return None

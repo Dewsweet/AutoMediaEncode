@@ -130,6 +130,7 @@ class MainWindow(FluentWindow):
         if self._shutting_down:
             return
         self._shutting_down = True
+        self.ameWorkflowInterface.shutdown()
         taskManager.shutdown()
         self.demuxingInterface.inputFilesCard.shutdown()
         self.muxingInterface.shutdown()

@@ -1,6 +1,7 @@
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
+from app.services.ame_workflow.process_runner import run_process
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import ActionButtonWidget
 from app.services.tool_service import ToolService
@@ -90,7 +91,7 @@ class SplitterNode(AMENodeBase):
             cmd = [ff, '-i', src, '-map', f"0:{t['idx']}", *codec_param, dst, '-y']
             logger.info(f'[Splitter] 提取: {" ".join(str(c) for c in cmd)}')
             try:
-                r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=300)
+                r = run_process(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=300)
                 if r.returncode == 0 and dst.is_file() and dst.stat().st_size > 0:
                     result.setdefault(pn, []).append(dst)
                     logger.info(f'[Splitter] 提取成功: {dst}')
@@ -105,7 +106,7 @@ class SplitterNode(AMENodeBase):
         tracks = []
         try:
             cmd = [ff, '-i', src, '-hide_banner']
-            r = subprocess.run(cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=60)
+            r = run_process(cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=60)
             if not r.stderr:
                 return tracks
             stderr_text = r.stderr.decode('utf-8', errors='replace')

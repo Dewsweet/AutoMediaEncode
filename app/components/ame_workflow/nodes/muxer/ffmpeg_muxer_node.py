@@ -1,6 +1,7 @@
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
+from app.services.ame_workflow.process_runner import run_process
 from .._base import AMENodeBase, C, P
 from .._widgets import NodeComboBoxWidget
 from app.services.tool_service import ToolService
@@ -39,5 +40,5 @@ class MuxerFFmpegNode(AMENodeBase):
         for _ in af:
             cmd.extend(['-map', str(si)]); si += 1
         cmd.extend(['-c', 'copy', dst, '-y'])
-        subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
+        run_process(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
         return {'file': [dst]} if dst.is_file() else None

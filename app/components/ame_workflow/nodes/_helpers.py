@@ -1,5 +1,6 @@
-import subprocess, shlex, time
+import subprocess, shlex
 from pathlib import Path
+from app.services.ame_workflow.process_runner import run_process, run_pipe, ProcessCancelled
 from app.services.tool_service import ToolService
 from app.common.logger import logger
 from app.services.setting.preset_service import preset_service
@@ -360,95 +361,24 @@ def _build_cli_args(node, tool_key):
     return cli_args
 
 
-def _run_with_progress(cmd, cancelled, paused=None, timeout=14400, text=True):
-    """Popen 轮询执行命令，支持取消和暂停检测"""
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=text, creationflags=subprocess.CREATE_NO_WINDOW, bufsize=1)
-    start = time.time()
-
-    output_lines = []
-
-    for line in proc.stdout:
-        output_lines.append(line)
-
-        if paused and paused():
-            while paused():
-                time.sleep(0.1)
-                if cancelled():
-                    proc.terminate()
-                    try: proc.wait(timeout=3)
-                    except subprocess.TimeoutExpired: proc.kill()
-                    return None
-        if cancelled():
-            proc.terminate()
-            try: proc.wait(timeout=3)
-            except subprocess.TimeoutExpired: proc.kill()
-            return None
-        if timeout and time.time() - start > timeout:
-            proc.terminate()
-            try: proc.wait(timeout=3)
-            except subprocess.TimeoutExpired: proc.kill()
-            return -1
-    proc.wait()
-    full_output = "".join(output_lines)
-    return proc.returncode, full_output
+def _run_with_progress(cmd, cancelled, paused=None, timeout=14400, text=True, encoding=None):
+    """统一返回 (returncode, output)，取消返回 (None, output)。"""
+    try:
+        result = run_process(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             text=text, encoding=encoding, errors='replace' if text else None,
+                             timeout=timeout, cancelled=cancelled)
+        return result.returncode, result.stdout
+    except ProcessCancelled:
+        return None, '' if text else b''
+    except subprocess.TimeoutExpired:
+        return -1, f'Process timed out after {timeout}s'
 
 
 def _run_pipe(cmd1, kw1, cmd2, kw2, node, timeout=14400):
-    """双进程管道: proc1 stdout → proc2 stdin. 支持取消/暂停. 返回 proc2.returncode 或 None"""
     cancelled = getattr(node, '_ame_cancelled', lambda: False)
-    paused = getattr(node, '_ame_paused', None)
-    cf = subprocess.CREATE_NO_WINDOW
-
-    kw2 = kw2 or {}
-    kw2['stdout'] = subprocess.PIPE
-    kw2['stderr'] = subprocess.STDOUT
-    kw2['text'] = True
-    kw2['bufsize'] = 1
-
-    p1 = subprocess.Popen(cmd1, stdout=subprocess.PIPE, **(kw1 or {}), creationflags=cf) # kw1 是字典，
-    p2 = subprocess.Popen(cmd2, stdin=p1.stdout, **(kw2 or {}), creationflags=cf)
-    p1.stdout.close()
-
-    start = time.time()
-    out_lines = []
-
-    for line in p2.stdout:
-        out_lines.append(line)
-        
-        if paused and paused():
-            while paused():
-                time.sleep(0.1)
-                if cancelled():
-                    p2.terminate(); p1.terminate()
-                    for p in (p2, p1):
-                        try: p.wait(timeout=3)
-                        except subprocess.TimeoutExpired: p.kill()
-                    return None
-        if cancelled():
-            p2.terminate(); p1.terminate()
-            for p in (p2, p1):
-                try: p.wait(timeout=3)
-                except subprocess.TimeoutExpired: p.kill()
-            return None
-        if timeout and time.time() - start > timeout:
-            p2.terminate(); p1.terminate()
-            for p in (p2, p1):
-                try: p.wait(timeout=3)
-                except subprocess.TimeoutExpired: p.kill()
-            return -1
-        time.sleep(0.1)
-
-    if p1.poll() is None:
-        p1.terminate()
-        try: p1.wait(timeout=5)
-        except subprocess.TimeoutExpired: p1.kill()
-    # stdout EOF 只代表子进程关闭了标准输出, 不代表已被回收;
-    # 未 wait 前 returncode 恒为 None, 会被上游误判为"用户取消"
     try:
-        p2.wait(timeout=30)
+        return run_pipe(cmd1, kw1, cmd2, kw2, timeout=timeout, cancelled=cancelled)
+    except ProcessCancelled:
+        return None, ''
     except subprocess.TimeoutExpired:
-        p2.kill()
-        p2.wait()
-    full_output = "".join(out_lines)
-    return p2.returncode, full_output
+        return -1, f'Pipeline timed out after {timeout}s'

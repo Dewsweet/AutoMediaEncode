@@ -134,6 +134,13 @@ class FloatingToolbar(QFrame):
             self.cancel_btn.setEnabled(True)
             self._row2.setEnabled(False)
             self._row3.setEnabled(False)
+        elif state == 'cancelling':
+            self.start_btn.setEnabled(False)
+            self.start_btn.setText(self.tr('正在取消'))
+            self.pause_btn.setEnabled(False)
+            self.cancel_btn.setEnabled(False)
+            self._row2.setEnabled(False)
+            self._row3.setEnabled(False)
         elif state == 'paused':
             self.start_btn.setEnabled(True)
             self.start_btn.setText(self.tr('继续'))

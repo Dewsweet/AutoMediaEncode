@@ -1,8 +1,8 @@
-import uuid, time
 from pathlib import Path
 from collections import deque
 from PySide6.QtCore import QThread, Signal
 from app.common.logger import logger
+from .process_runner import ProcessControl, ProcessCancelled, process_scope
 
 
 class AMEWorkflowExecutor(QThread):
@@ -18,17 +18,36 @@ class AMEWorkflowExecutor(QThread):
         self._paused = False
         self._node_map = {n.id: n for n in self._nodes}
         self._temp_dir = ''
+        self._control = ProcessControl()
+        self.succeeded = False
 
     def cancel(self):
         self._cancelled = True
+        self._paused = False
+        self._control.cancel()
 
     def pause(self):
         self._paused = True
+        self._control.paused.set()
 
     def resume(self):
         self._paused = False
+        self._control.paused.clear()
 
     def run(self):
+        try:
+            with process_scope(self._control):
+                self._execute()
+        except ProcessCancelled:
+            pass
+        except Exception as error:
+            logger.exception('[AME] 工作流执行异常')
+            if not self._cancelled:
+                self.error_occurred.emit(str(error))
+        finally:
+            self._control.close()
+
+    def _execute(self):
         logger.info('\n' * 10 + '=' * 100 + '\n' + '=' * 100)
         logger.info(f'[AME] 开始执行工作流, {len(self._nodes)} 个节点, {len(self._edges)} 条连线')
         if not self._nodes:
@@ -52,10 +71,7 @@ class AMEWorkflowExecutor(QThread):
         for i, node in enumerate(order):
             if self._cancelled:
                 return
-            while self._paused:
-                time.sleep(0.1)
-                if self._cancelled:
-                    return
+            self._control.checkpoint()
 
             logger.info(f'[AME] 执行节点: {node.name()} ({node.__class__.__name__})')
             self.node_status_changed.emit(node.id, 'running')
@@ -67,12 +83,16 @@ class AMEWorkflowExecutor(QThread):
             result = None
             try:
                 result = node.execute(inputs, self._temp_dir)
+            except ProcessCancelled:
+                self.node_status_changed.emit(node.id, 'cancelled')
+                return
             except Exception as e:
                 logger.error(f'[AME] 节点 {node.name()} 执行异常: {e}')
                 import traceback
                 logger.error(traceback.format_exc())
 
             if self._cancelled:
+                self.node_status_changed.emit(node.id, 'cancelled')
                 return
 
             if result is not None or node.__class__.__name__ == 'OutputNode':
@@ -96,6 +116,8 @@ class AMEWorkflowExecutor(QThread):
                 return
             self.progress_updated.emit(int((i + 1) / total * 100))
 
+        self._control.checkpoint()
+        self.succeeded = True
         logger.info(f'[AME] 工作流执行完成')
 
     def _collect(self, node, port_data):

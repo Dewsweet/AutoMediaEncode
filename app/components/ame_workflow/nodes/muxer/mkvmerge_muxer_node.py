@@ -1,6 +1,7 @@
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 import subprocess, types
 from pathlib import Path
+from app.services.ame_workflow.process_runner import run_process
 from .._base import AMENodeBase, C, P, HIDDEN
 from .._widgets import MkvInlineConfigButton
 from app.services.tool_service import ToolService
@@ -227,7 +228,7 @@ class MuxerMkvmergeNode(AMENodeBase):
             return None
 
         logger.info(f'[MuxerMKV] 命令: {" ".join(cmd)}')
-        r = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
+        r = run_process(cmd, creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=14400)
         if r.returncode not in (0, 1):
             logger.error(f'[MuxerMKV] 失败: {r.stderr}')
             return None

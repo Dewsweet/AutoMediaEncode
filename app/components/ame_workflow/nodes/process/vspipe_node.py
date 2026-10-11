@@ -1,6 +1,7 @@
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 import subprocess
 from pathlib import Path
+from app.services.ame_workflow.process_runner import run_process
 from .._base import AMENodeBase, C, P, HIDDEN
 from app.services.tool_service import ToolService
 from app.common.logger import logger
@@ -41,7 +42,7 @@ class VSPipeNode(AMENodeBase):
 
     def _detect_api(self, vspipe_path):
         try:
-            r = subprocess.run(
+            r = run_process(
                 [vspipe_path, '-v'],
                 capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=10
             )
