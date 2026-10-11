@@ -132,7 +132,8 @@ class AMELoaderPage(QWidget):
         container.setObjectName("AMELoaderContainer")
         container.setContentsMargins(20, 0, 20, 0)
         self._flow = FlowLayout(container, needAni=False)
-        self._flow.setSpacing(12)
+        self._flow.setHorizontalSpacing(12)
+        self._flow.setVerticalSpacing(12)
         self._scroll.setWidget(container)
         layout.addWidget(self._scroll, 1)
 
@@ -160,13 +161,33 @@ class AMELoaderPage(QWidget):
         self._import_btn.clicked.connect(self._on_import)
         self._export_btn.clicked.connect(self._on_export)
 
-    def load(self):
-        self._clear_cards()
-        for info in preset_service.list_workflows():
-            self._add_card(info)
+    def load(self, selected_name=None):
+        if selected_name is None and self._selected:
+            selected_name = self._selected.name
+        workflows = preset_service.list_workflows()
+        updates_enabled = self.updatesEnabled()
+        self.setUpdatesEnabled(False)
+        try:
+            self._clear_cards()
+            for info in workflows:
+                self._add_card(info)
+                if info.name == selected_name:
+                    self._set_selected(info)
+            # 新卡片显示后立即排布，避免在下一轮事件前停留在默认的 (0, 0)。
+            container = self._scroll.widget()
+            self._flow.invalidate()
+            self._flow.activate()
+            self._flow.setGeometry(container.contentsRect())
+            container.updateGeometry()
+        finally:
+            self.setUpdatesEnabled(updates_enabled)
 
     def _clear_cards(self):
+        self._set_selected(None)
         for card in self._cards:
+            # deleteLater 不会立即移除布局项；先移除并隐藏，防止新旧卡片重叠。
+            self._flow.removeWidget(card)
+            card.hide()
             card.deleteLater()
         self._cards.clear()
 
@@ -179,18 +200,23 @@ class AMELoaderPage(QWidget):
         card.set_thumb_requested.connect(self._on_card_thumb)
         self._flow.addWidget(card)
         self._cards.append(card)
+        card.show()
 
-    def _on_card_clicked(self, info):
+    def _set_selected(self, info):
         for c in self._cards:
             c.set_selected(c.info() is info)
         self._selected = info
-        self._open_btn.setEnabled(True)
-        self._export_btn.setEnabled(True)
-        self._export_btn.setEnabled(True)
+        self._open_btn.setEnabled(info is not None)
+        self._export_btn.setEnabled(info is not None)
+
+    def _on_card_clicked(self, info):
+        if any(c.info() is info for c in self._cards):
+            self._set_selected(info)
 
     def _on_card_double(self, info):
-        self._selected = info
-        self._emit_selected()
+        if any(c.info() is info for c in self._cards):
+            self._set_selected(info)
+            self._emit_selected()
 
     def _on_card_delete(self, info):
         try:
@@ -198,9 +224,6 @@ class AMELoaderPage(QWidget):
         except Exception as error:
             self._file_error(self.tr('删除失败'), error)
             return
-        self._selected = None
-        self._open_btn.setEnabled(False)
-        self._export_btn.setEnabled(False)
         self.load()
 
     def _on_card_rename(self, info):
@@ -214,7 +237,8 @@ class AMELoaderPage(QWidget):
                 except Exception as error:
                     self._file_error(self.tr('重命名失败'), error)
                     return
-                self.load()
+                selected_name = new_name if self._selected and self._selected.name == info.name else None
+                self.load(selected_name=selected_name)
 
     def _on_card_thumb(self, info):
         path, _ = QFileDialog.getOpenFileName(self, self.tr('选择封面'), "", "Images (*.png *.jpg *.jpeg)")
@@ -243,11 +267,7 @@ class AMELoaderPage(QWidget):
                 super().mousePressEvent(event)
                 return
             child = child.parentWidget()
-        for c in self._cards:
-            c.set_selected(False)
-        self._selected = None
-        self._open_btn.setEnabled(False)
-        self._export_btn.setEnabled(False)
+        self._set_selected(None)
         super().mousePressEvent(event)
 
     def _on_import(self):
