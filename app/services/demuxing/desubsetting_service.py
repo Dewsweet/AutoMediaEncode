@@ -57,10 +57,9 @@ class SubtitleProcessService:
                         in_assfonts_section = True
                         continue
                     if in_assfonts_section:
-                        if line.strip() == "" or "----" in line:
-                            continue
-                        else:
+                        if line.lstrip().startswith("["):
                             in_assfonts_section = False
+                        else:
                             continue
                             
                     # 跳过注释行

@@ -4,12 +4,16 @@ import subprocess
 import shlex
 import time
 import json
+from pathlib import Path
+from collections import deque
 from PySide6.QtCore import QThread, Signal
 from ..tool_service import ToolService
 from ..error_service import ErrorService
 from ...common.logger import logger
 from ...common.signal_bus import signalBus
 from ffmpeg_progress_yield import FfmpegProgress
+from ..output_service import OutputTransaction
+from ..process_service import kill_process
 
 class MuxWorker(QThread):
     def __init__(self, payload: dict, parent=None):
@@ -22,21 +26,18 @@ class MuxWorker(QThread):
         self._current_subprocess = None
 
     def cancel(self):
-        self._is_cancelled = True
+        self.stop()
 
     def stop(self):
         """外部调用以强制停止任务"""
         self._is_cancelled = True
-        if self._current_ff_process is not None:
-            try:
-                self._current_ff_process.quit()
-            except Exception:
-                pass
-        if self._current_subprocess is not None:
-            try:
-                self._current_subprocess.terminate()
-            except Exception:
-                pass
+        kill_process(self._current_ff_process)
+        kill_process(self._current_subprocess)
+
+    def _fail(self, message):
+        if not self._is_cancelled and not self._has_error:
+            self._has_error = True
+            signalBus.taskError.emit(self.task_id, message)
 
     @staticmethod
     def format_time(seconds: float) -> str:
@@ -51,42 +52,62 @@ class MuxWorker(QThread):
         logger.info(f"\n\n\n{'='*20} 混流任务开始编排: {self.task_id} {'='*20}")
         logger.debug(f"Payload 详情:\n{json.dumps(self.payload, indent=4, ensure_ascii=False)}")
 
+        outputs = None
         try:
+            if self._is_cancelled:
+                return
             states = self.payload.get('states', {})
             output_state = states.get('output_state', {})
             container = states.get('option_state', {}).get('container')
             output_path = output_state.get('output_path')
-            tracks_state = states.get('tracks_state', {})
+            tracks_state = dict(states.get('tracks_state', {}))
             ordered_tracks = states.get('ordered_tracks', [])
             chapter_files = states.get('chapter_files', [])
             attachment_state = states.get('option_state', {}).get('enable_attachment', False)
             attachments = states.get('attachment_state', {}).get('attachments', [])
+            embedded_attachments = states.get('attachment_state', {}).get('embedded_attachments', {})
+            if attachment_state:
+                for source, ids in embedded_attachments.items():
+                    if ids:
+                        tracks_state.setdefault(source, {'empty': False})
+
+            if not output_path or not tracks_state:
+                raise ValueError(self.tr("请设置输出路径并选择需要封装的轨道"))
+            outputs = OutputTransaction(list(tracks_state) + chapter_files + attachments)
+            outputs.plan(output_path)
+            staged_output = str(outputs.stage(output_path))
 
             container_str = str(container).lower() if container else ''
             
             if container_str in {'mp4', 'mov'}:
-                self._run_ffmpeg_mux(output_path, tracks_state, chapter_files, attachments)
+                self._run_ffmpeg_mux(staged_output, tracks_state, chapter_files, attachments)
             elif container_str == 'mkv':
-                self._run_mkvmerge_mux(output_path, tracks_state, chapter_files, attachments, attachment_state, ordered_tracks)
+                self._run_mkvmerge_mux(staged_output, tracks_state, chapter_files, attachments, attachment_state, ordered_tracks, embedded_attachments)
             else:
-                signalBus.taskError.emit(self.task_id, self.tr("不支持的封装格式: {container}").format(container=container_str))
+                self._fail(self.tr("不支持的封装格式: {container}").format(container=container_str))
                 logger.error(f"[Task {self.task_id}] 不支持的封装格式: {container_str}")
 
             if not self._is_cancelled and not self._has_error:
-                run_duration = time.time() - task_start_time
-                logger.info(f"{'='*20} 混流任务全部完成: {self.task_id}, 总耗时: {run_duration:.2f}s {'='*20}\n")
-                signalBus.taskCompleted.emit(self.task_id)
+                outputs.commit()
 
         except Exception as e:
             if not self._is_cancelled:
                 logger.exception("混流执行异常")
+                self._fail(self.tr("混流执行失败: {error}").format(error=str(e)))
+        finally:
+            if outputs is not None:
+                outputs.cleanup()
 
-    def _run_mkvmerge_mux(self, output_path: str, tracks_state: dict, chapter_files: list, attachments: list, attachment_state: bool, ordered_tracks: list):
+        if not self._is_cancelled and not self._has_error:
+            run_duration = time.time() - task_start_time
+            logger.info(f"{'='*20} 混流任务全部完成: {self.task_id}, 总耗时: {run_duration:.2f}s {'='*20}\n")
+            signalBus.taskCompleted.emit(self.task_id)
+
+    def _run_mkvmerge_mux(self, output_path: str, tracks_state: dict, chapter_files: list, attachments: list, attachment_state: bool, ordered_tracks: list, embedded_attachments=None):
         mkvmerge_path = ToolService.get_tool_path('mkvmerge')
         if not mkvmerge_path:
             logger.error(f"[Task {self.task_id}] 未找到 MkvMerge 可执行文件, 停止运行")
-            signalBus.taskError.emit(self.task_id, self.tr("未找到 MkvMerge 可执行文件, 请检查相关设置或查看 log"))
-            self._has_error = True
+            self._fail(self.tr("未找到 MkvMerge 可执行文件, 请检查相关设置或查看 log"))
             return
 
         cmd = [mkvmerge_path, '-o', output_path]
@@ -111,7 +132,10 @@ class MuxWorker(QThread):
             if not tracks.get('keep_chapters', False):
                 cmd.append('--no-chapters')
             
-            if not attachment_state:
+            selected_attachments = (embedded_attachments or {}).get(file_path, [])
+            if attachment_state and selected_attachments:
+                cmd.extend(['--attachments', ','.join(str(i) for i in selected_attachments)])
+            else:
                 cmd.append('--no-attachments')
 
             # 控制复制的轨道
@@ -178,57 +202,55 @@ class MuxWorker(QThread):
 
         logger.info(f"[Task {self.task_id}] mkvmerge command:\n{shlex.join(cmd)}")
         
-        self._current_subprocess = subprocess.Popen(
+        process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             encoding='utf-8',
+            errors='replace',
             creationflags=creation_flags
         )
+        self._current_subprocess = process
 
         progress_pattern = re.compile(r"Progress:\s*(\d+)%")
         start_time = time.time()
 
-        while True:
+        output_lines = deque(maxlen=100)
+        try:
             if self._is_cancelled:
-                self._current_subprocess.terminate()
-                signalBus.taskError.emit(self.task_id, self.tr("任务已被用户取消"))
-                return
-
-            line = self._current_subprocess.stdout.readline()
-            if not line and self._current_subprocess.poll() is not None:
-                break
-
-            match = progress_pattern.search(line)
-            if match:
-                percent = float(match.group(1))
-                time_left_str = "--:--"
-                if 0 < percent <= 100:
-                    elapsed = time.time() - start_time
-                    total_est = elapsed / (percent / 100.0)
-                    rem_time = total_est - elapsed
-                    time_left_str = self.format_time(rem_time)
-
-                signalBus.taskProgressUpdated.emit(self.task_id, 1, 1, self.tr("混流 (mkvmerge)"), percent, time_left_str)
-
-        returncode = self._current_subprocess.wait()
-        self._current_subprocess = None
-        
-        # 0 是成功, 1 是带警告的成功
-        if returncode == 0 or returncode == 1:
-            signalBus.taskProgressUpdated.emit(self.task_id, 1, 1, self.tr("混流 (mkvmerge)"), 100.0, "00:00:00")
-        elif not self._is_cancelled:
-            stderr_text = self._current_subprocess.stderr.read() if self._current_subprocess and self._current_subprocess.stderr else ""
-            main_error = ErrorService.cli_error('mkvmerge', stderr_text)
-            signalBus.taskError.emit(self.task_id, self.tr("混流失败 (code {code}):\n{error}").format(code=returncode, error=main_error))
+                kill_process(process)
+            for line in process.stdout:
+                output_lines.append(line)
+                if self._is_cancelled:
+                    kill_process(process)
+                    break
+                match = progress_pattern.search(line)
+                if match:
+                    percent = float(match.group(1))
+                    time_left_str = "--:--"
+                    if 0 < percent <= 100:
+                        elapsed = time.time() - start_time
+                        time_left_str = self.format_time(elapsed / (percent / 100.0) - elapsed)
+                    signalBus.taskProgressUpdated.emit(self.task_id, 1, 1, self.tr("混流 (mkvmerge)"), percent, time_left_str)
+            returncode = process.wait()
+            if not self._is_cancelled:
+                if returncode in (0, 1):
+                    signalBus.taskProgressUpdated.emit(self.task_id, 1, 1, self.tr("混流 (mkvmerge)"), 100.0, "00:00:00")
+                else:
+                    main_error = ErrorService.cli_error('mkvmerge', ''.join(output_lines))
+                    self._fail(self.tr("混流失败 (code {code}):\n{error}").format(code=returncode, error=main_error))
+        finally:
+            kill_process(process)
+            process.wait()
+            process.stdout.close()
+            self._current_subprocess = None
 
     def _run_ffmpeg_mux(self, output_path: str, tracks_state: dict, chapter_files: list, attachments: list):
         ffmpeg_path = ToolService.get_tool_path('ffmpeg')
         if not ffmpeg_path:
             logger.error(f"[Task {self.task_id}] 未找到 FFMpeg 可执行文件, 停止运行")
-            signalBus.taskError.emit(self.task_id, self.tr("未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log"))
-            self._has_error = True
+            self._fail(self.tr("未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log"))
             return
 
         cmd = [ffmpeg_path, '-y']
@@ -248,7 +270,7 @@ class MuxWorker(QThread):
                 map_args.extend(['-map', f'{input_idx}:{track["id"]}'])
 
         if not map_args:
-            signalBus.taskError.emit(self.task_id, self.tr('MP4 / MOV 至少需要一个可封装的视频或音频轨道'))
+            self._fail(self.tr('MP4 / MOV 至少需要一个可封装的视频或音频轨道'))
             return
 
         cmd.extend(map_args)
@@ -268,7 +290,7 @@ class MuxWorker(QThread):
 
             for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=popen_kwargs):
                 if self._is_cancelled:
-                    self._current_ff_process.quit()
+                    kill_process(self._current_ff_process)
                     return
 
                 time_left_str = "--:--"
@@ -289,6 +311,6 @@ class MuxWorker(QThread):
                 err_msg = str(e)
                 logger.error(f"[Task {self.task_id}] FFmpeg mux execution failed:\n{err_msg}")
                 main_error = ErrorService.ffmpeg_error(err_msg)
-                signalBus.taskError.emit(self.task_id, self.tr("混流失败:\n{error}").format(error=main_error))
+                self._fail(self.tr("混流失败:\n{error}").format(error=main_error))
         finally:
             self._current_ff_process = None

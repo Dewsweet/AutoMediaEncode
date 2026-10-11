@@ -1,8 +1,8 @@
 # coding: utf-8
 import time
-import bcp47
+import re
 from pathlib import Path
-from PySide6.QtCore import Qt, QThread, Signal, QSettings, QTimer
+from PySide6.QtCore import Qt, QThread, Signal, QSettings, QTimer, QCoreApplication
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QStackedWidget, QFileDialog
 from qfluentwidgets import qrouter, StrongBodyLabel, InfoBar, InfoBarPosition
 
@@ -17,18 +17,20 @@ from ..services.muxing.mux_probe_service import MuxProbeService
 
 class MuxProbeWorker(QThread):
     """用于在后台异步探测媒体文件信息的线程"""
-    infoLoaded = Signal(str, object) # 参数: (文件路径, 探测结果字典)
-    workFinished = Signal()
+    infoLoaded = Signal(int, str, object)
 
-    def __init__(self, file_paths: list, parent=None):
+    def __init__(self, file_paths: list, request_id, parent=None):
         super().__init__(parent)
         self.file_paths = file_paths
+        self.request_id = request_id
 
     def run(self):
         for path in self.file_paths:
-            file_info = MuxProbeService.probe_file(path)
-            self.infoLoaded.emit(path, file_info)
-        self.workFinished.emit()
+            if self.isInterruptionRequested():
+                break
+            file_info = MuxProbeService.probe_file(path, cancelled=self.isInterruptionRequested)
+            if not self.isInterruptionRequested():
+                self.infoLoaded.emit(self.request_id, path, file_info)
 
 class MuxingInterface(QWidget):
     def __init__(self, parent=None):
@@ -46,6 +48,10 @@ class MuxingInterface(QWidget):
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
 
         self._probe_workers = []
+        self._probe_generation = 0
+        self._ignored_probe_paths = set()
+        self._shutting_down = False
+        QCoreApplication.instance().aboutToQuit.connect(self.shutdown)
         self.mux_ext_filter = self.tr("所支持的媒体文件 ({extensions});;所有文件 (*)").format(extensions=" ".join(f"*{ext}" for ext in MUXING_EXTS))
 
         self._initWidget()
@@ -137,16 +143,16 @@ class MuxingInterface(QWidget):
             self.on_files_loaded(files)
 
     def _handle_files_added(self, file_paths: list):
-        if not file_paths:
+        if not file_paths or self._shutting_down:
             return
             
         # 允许多个加载任务并发执行（存入列表防止被 Python GC 强制回收导致奔溃）
-        worker = MuxProbeWorker(file_paths, self)
+        self._ignored_probe_paths.difference_update(file_paths)
+        worker = MuxProbeWorker(file_paths, self._probe_generation, self)
         self._probe_workers.append(worker)
         
         worker.infoLoaded.connect(self._on_show_loaded_info)
-        worker.workFinished.connect(self._update_output_path)
-        worker.workFinished.connect(lambda: self._cleanup_worker(worker))
+        worker.finished.connect(self._on_probe_finished)
         worker.start()
 
     def on_files_loaded(self, files: list):
@@ -167,13 +173,28 @@ class MuxingInterface(QWidget):
             self.stackedWidget.setCurrentIndex(1)
         self._handle_files_added(files)
 
-    def _cleanup_worker(self, worker):
+    def _on_probe_finished(self):
+        worker = self.sender()
         if worker in self._probe_workers:
             self._probe_workers.remove(worker)
             worker.deleteLater()
+            if not self._shutting_down:
+                self._update_output_path()
 
-    def _on_show_loaded_info(self, file_path: str, file_info: dict):
+    def shutdown(self):
+        self._shutting_down = True
+        self._probe_generation += 1
+        for worker in self._probe_workers:
+            worker.requestInterruption()
+        for worker in self._probe_workers:
+            worker.wait()
+            worker.deleteLater()
+        self._probe_workers.clear()
+
+    def _on_show_loaded_info(self, request_id: int, file_path: str, file_info: dict):
         """接收探测结果的槽函数，负责将文件信息展示到 UI 上，并关联轨道和附件"""
+        if self._shutting_down or request_id != self._probe_generation or file_path in self._ignored_probe_paths:
+            return
         if file_info:
             # 添加到 InputFilesCard 的表格中，并获取返回的 color_emoji
             color_emoji = self.inputFilesCard.add_file_to_table(file_info)
@@ -189,6 +210,7 @@ class MuxingInterface(QWidget):
 
     def _handle_files_removed(self, paths: list):
         """当文件被移除时, 更新 TrackCard 和 AttachmentCard 中对应的轨道和附件"""
+        self._ignored_probe_paths.update(paths)
         for path in paths:
             self.trackCard.remove_tracks_by_file(path)
             self.attachmentCard.remove_attachments_by_file(path)
@@ -196,6 +218,9 @@ class MuxingInterface(QWidget):
 
     def _handle_files_cleared(self):
         """当文件被清空时, 清空 TrackCard 和 AttachmentCard 中的所有轨道和附件"""
+        self._probe_generation += 1
+        for worker in self._probe_workers:
+            worker.requestInterruption()
         self.trackCard.clear_all_tracks()
         self.attachmentCard.clear_all_attachments()
         self._update_output_path()
@@ -275,7 +300,12 @@ class MuxingInterface(QWidget):
                 
         output_path = Path(first_file_path).with_suffix(ext)
         if output_path.exists():
-             output_path = output_path.with_stem(output_path.stem + '_muxed')
+            base = output_path.with_stem(output_path.stem + '_muxed')
+            output_path = base
+            index = 2
+            while output_path.exists():
+                output_path = base.with_stem(f'{base.stem}_{index}')
+                index += 1
 
         self.outputCard.output_path_lineEdit.setText(str(output_path))
 
@@ -284,7 +314,7 @@ class MuxingInterface(QWidget):
         track_data = self.trackCard.get_selected_tracks()
         option_state = self.optionCard.get_state()
         output_state = self.outputCard.get_state()
-        attachment_state = self.attachmentCard.get_state() if self.optionCard.enable_attachment_checkbox.isChecked() else {'attachments': []}
+        attachment_state = self.attachmentCard.get_state() if self.optionCard.enable_attachment_checkbox.isChecked() else {'attachments': [], 'embedded_attachments': {}}
         input_files = track_data.get('files', {})
         chapter_files = track_data.get('chapter_files', [])
         ordered_tracks = track_data.get('ordered_tracks', [])
@@ -336,7 +366,8 @@ class MuxingInterface(QWidget):
         # 判断轨道中的语言标签是否合法
         for track in enabled_video_tracks + enabled_audio_tracks + enabled_sub_tracks:
             language = track.get('language', '')
-            if language.lower() != 'und' and not language in bcp47.tags:
+            # 这里只检查标签语法；语言注册表和完整 BCP 47 语义由 mkvmerge 校验。
+            if not re.fullmatch(r'(?:[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*|x(?:-[A-Za-z0-9]{1,8})+)', language):
                 InfoBar.warning(
                     title=self.tr('注意'),
                     content=self.tr('语言标签 "[{language}]" 不合法, 请修改为合法 BCP 47 语言标签').format(language=language),

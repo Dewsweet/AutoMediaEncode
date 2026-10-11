@@ -9,6 +9,7 @@ from qfluentwidgets import (HeaderCardWidget, SimpleCardWidget, TableWidget, Scr
                             CheckBox, BodyLabel, ComboBox, LineEdit, PrimaryPushButton, StrongBodyLabel, EditableComboBox, PushButton, ToolButton, IconWidget, RadioButton, InfoBar, InfoBarPosition)
 from qfluentwidgets import FluentIcon as FIF
 from ..common.media_utils import MUXING_EXTS
+from ..common.task_types import MuxAttachmentState
 
 class InputFilesCard(HeaderCardWidget):
     filesAdded = Signal(list)
@@ -351,7 +352,7 @@ class TrackCard(HeaderCardWidget):
                 entries = prop.get('num_entries')
                 if entries: props_str = f"{entries} entries"
                 
-            lang = prop.get('language', 'und') if t_type != 'chapters' else 'und'
+            lang = (prop.get('language_ietf') or prop.get('language') or 'und') if t_type != 'chapters' else 'und'
             name = prop.get('track_name', '')
             if name is None: name = ''
             t_id = str(track.get('id', ''))
@@ -1012,6 +1013,7 @@ class AttachmentCard(HeaderCardWidget):
             
             name_item = QTableWidgetItem(att_name)
             name_item.setData(Qt.UserRole, source_file) # 将源视频路径存在此处方便后续删除
+            name_item.setData(Qt.UserRole + 1, att.get('id'))
             name_item.setCheckState(Qt.CheckState.Checked)
             
             size_item = QTableWidgetItem(size_str)
@@ -1059,12 +1061,17 @@ class AttachmentCard(HeaderCardWidget):
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                 self.table.setItem(row, col, item)
 
-    def get_state(self) -> dict:
+    def get_state(self) -> MuxAttachmentState:
         attachments = []
+        embedded_attachments = {}
         for row in range(self.table.rowCount()):
-            if self.table.item(row, 0).checkState() == Qt.Checked:
-                name = self.table.item(row, 0).text()
-                directory = self.table.item(row, 2).text()
-                if not self.table.item(row, 2).data(Qt.UserRole):
-                    attachments.append(str(Path(directory) / name))
-        return {'attachments': attachments}
+            item = self.table.item(row, 0)
+            if self.table.item(row, 2).data(Qt.UserRole):
+                source = item.data(Qt.UserRole)
+                selected = embedded_attachments.setdefault(source, [])
+                attachment_id = item.data(Qt.UserRole + 1)
+                if item.checkState() == Qt.Checked and attachment_id is not None:
+                    selected.append(attachment_id)
+            elif item.checkState() == Qt.Checked:
+                attachments.append(item.data(Qt.UserRole))
+        return {'attachments': attachments, 'embedded_attachments': embedded_attachments}

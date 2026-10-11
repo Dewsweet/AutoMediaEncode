@@ -29,6 +29,10 @@ class DemuxPayload(TypedDict):
     files: List[str]
     states: DemuxStates
 
+class MuxAttachmentState(TypedDict):
+    attachments: List[str]  # 外部附件路径
+    embedded_attachments: Dict[str, List[int]]  # 源文件路径 -> 选中的内置附件 ID
+
 class MuxStates(TypedDict):
     """混流任务的状态配置"""
     tracks_state: Dict[str, Dict[str, List[Dict[str, Any]]]] # filepath -> {video: [], audio: [], subtitle: []}
@@ -36,7 +40,7 @@ class MuxStates(TypedDict):
     chapter_files: List[str]
     option_state: Dict[str, Any]
     output_state: Dict[str, Any]
-    attachment_state: Dict[str, Any]
+    attachment_state: MuxAttachmentState
 
 class MuxPayload(TypedDict):
     """混流任务的 Payload 结构"""

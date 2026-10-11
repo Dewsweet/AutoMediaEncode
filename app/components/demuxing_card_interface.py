@@ -1,5 +1,5 @@
 from pathlib import Path
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, QThread, Signal, QCoreApplication
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTreeWidgetItem, QApplication
 
 from qfluentwidgets import CardWidget, HeaderCardWidget, TreeWidget, RoundMenu, Action, BodyLabel, ComboBox, CheckBox, LineEdit, PushButton, PrimaryPushButton, InfoBar, InfoBarPosition, FluentIcon as FIF
@@ -9,17 +9,21 @@ from ..common.media_utils import classify_files, get_present_types, DEMUXING_EXT
 
 class ProbeWorker(QThread):
     """后台扫描文件的线程，防止界面卡顿"""
-    file_probed = Signal(str, dict)
+    file_probed = Signal(int, str, dict)
 
-    def __init__(self, files, probe_service, parent=None):
+    def __init__(self, files, probe_service, request_id, parent=None):
         super().__init__(parent)
         self.files = files
         self.probe_service = probe_service
+        self.request_id = request_id
 
     def run(self):
         for file_path in self.files:
+            if self.isInterruptionRequested():
+                break
             data = self.probe_service.probe_file(file_path)
-            self.file_probed.emit(file_path, data)
+            if not self.isInterruptionRequested():
+                self.file_probed.emit(self.request_id, file_path, data)
 
 class InputFilesCard(HeaderCardWidget):
     load_files_requested = Signal()
@@ -44,6 +48,10 @@ class InputFilesCard(HeaderCardWidget):
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
 
         self.loading_items = {} # 记录正在加载的文件对应的树节点，key为文件路径，value 为 QTreeWidgetItem
+        self._probe_workers = []
+        self._request_id = 0
+        self._shutting_down = False
+        QCoreApplication.instance().aboutToQuit.connect(self.shutdown)
 
         self._connect_signals()
 
@@ -73,6 +81,11 @@ class InputFilesCard(HeaderCardWidget):
             self.update_files(files)
 
     def update_files(self, files: list):
+        if self._shutting_down:
+            return
+        self._request_id += 1
+        for worker in self._probe_workers:
+            worker.requestInterruption()
         self.inputFilesTree.clear()
         self.loading_items.clear()
         
@@ -90,11 +103,31 @@ class InputFilesCard(HeaderCardWidget):
             self.loading_items[file_path] = top_item
             
         # 启动后台线程读取信息
-        self.worker = ProbeWorker(files, self.probe_service, self)
+        self.worker = ProbeWorker(files, self.probe_service, self._request_id, self)
+        self._probe_workers.append(self.worker)
         self.worker.file_probed.connect(self._on_file_probed)
+        self.worker.finished.connect(self._on_probe_finished)
         self.worker.start()
 
-    def _on_file_probed(self, file_path: str, probe_data: dict):
+    def _on_probe_finished(self):
+        worker = self.sender()
+        if worker in self._probe_workers:
+            self._probe_workers.remove(worker)
+            worker.deleteLater()
+
+    def shutdown(self):
+        self._shutting_down = True
+        self._request_id += 1
+        for worker in self._probe_workers:
+            worker.requestInterruption()
+        for worker in self._probe_workers:
+            worker.wait()
+            worker.deleteLater()
+        self._probe_workers.clear()
+
+    def _on_file_probed(self, request_id: int, file_path: str, probe_data: dict):
+        if self._shutting_down or request_id != self._request_id:
+            return
         top_item = self.loading_items.get(file_path)
         if not top_item: return
 

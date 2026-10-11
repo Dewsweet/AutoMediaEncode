@@ -171,11 +171,7 @@ class TaskCard(QWidget):
                 total_percent = 100.0
             self.task_card.progessStateLabel.setText(self.tr("运行中: {percent:.1f}%").format(percent=total_percent))
 
-        # 如果文件处理完了更新 Processing 的文本为 "任务完成"
-        if current_idx >= self.total_files and percent >= 100:
-            self.is_finished = True
-            self.task_card.progessStateLabel.setText(self.tr('任务完成: 100.0%'))
-            self.task_card.title_stop_btn.setEnabled(False)
+        # 工具到达 100% 后还要校验和发布产物；最终状态由 taskCompleted 决定。
 
     def mark_as_error(self, error_msg: str):
         """任务出错强制终止UI样式更改"""

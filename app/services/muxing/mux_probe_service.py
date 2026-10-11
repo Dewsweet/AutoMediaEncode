@@ -2,13 +2,14 @@
 import json
 import subprocess
 import os
+import time
 from pathlib import Path
 from ...services.tool_service import ToolService
 from ...common.logger import logger
 
 class MuxProbeService:
     @staticmethod
-    def probe_file(file_path: str) -> dict:
+    def probe_file(file_path: str, cancelled=None) -> dict:
         """
         探测媒体文件, 返回轨道信息及其属性。
         """
@@ -25,19 +26,39 @@ class MuxProbeService:
         creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         
         try:
-            result = subprocess.run(
+            with subprocess.Popen(
                 cmd, 
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, 
                 creationflags=creation_flags, 
+                stdin=subprocess.DEVNULL,
                 text=True, 
-                encoding='utf-8'
-            )
-            if result.returncode != 0 and result.returncode != 1:
-                logger.error(f"mkvmerge 探测失败 (code {result.returncode}): {result.stderr}")
+                encoding='utf-8',
+                errors='replace'
+            ) as process:
+                deadline = time.monotonic() + 30
+                try:
+                    while True:
+                        if cancelled is not None and cancelled():
+                            process.kill()
+                            process.communicate()
+                            return {}
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError("mkvmerge probe timed out after 30s")
+                        try:
+                            stdout, stderr = process.communicate(timeout=0.1)
+                            break
+                        except subprocess.TimeoutExpired:
+                            continue
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                        process.communicate()
+            if process.returncode not in (0, 1):
+                logger.error(f"mkvmerge 探测失败 (code {process.returncode}): {stderr}")
                 return {}
                 
-            data = json.loads(result.stdout)
+            data = json.loads(stdout)
             container_type = data.get('container', {}).get('type', 'Unknown')
             tracks = data.get('tracks', [])
             chapters = data.get('chapters', [])

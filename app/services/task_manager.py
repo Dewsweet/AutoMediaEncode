@@ -26,6 +26,7 @@ class TaskManager(QObject):
         self._initialized = True
         
         self.workers = {}  # 存放所有的后台 Worker {task_id: QThread}
+        self._shutting_down = False
 
         # 挂载信号总线监听
         signalBus.taskAdded.connect(self._on_task_added)
@@ -34,49 +35,50 @@ class TaskManager(QObject):
     def _on_task_added(self, payload: dict):
         task_id = payload.get("task_id")
         task_type = payload.get("type", "")
+        worker_class = {"Recode": RecodeWorker, "Demux": DemuxWorker, "Mux": MuxWorker}.get(task_type)
+        if worker_class is None:
+            return
 
-        # 根据任务类型，实例化对应的执行器 (Worker)
-        if task_type == "Recode":
-            worker = RecodeWorker(payload=payload, parent=self)
-            
-            # 当该任务在后台自然结束（即使因为错误或已完成），将其从管理器中移除清理
-            worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
-            
-            self.workers[task_id] = worker
-            # 这里暂时维持和之前一样的“收到就立即启动”策略，如果日后需要做串行或限制并发数量，就在这里用队列进行阻塞或分配
-            worker.start()
-        elif task_type == "Demux":
-            worker = DemuxWorker(payload=payload, parent=self)
-            worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
-            self.workers[task_id] = worker
-            worker.start()
-
-        elif task_type == "Mux":
-            worker = MuxWorker(payload=payload, parent=self)
-            worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
-            self.workers[task_id] = worker
-            worker.start()
-
-        if task_id in self.workers:
-            # 通知所有界面: 已有任务进入执行状态, 其他界面的开始按钮需禁用
-            signalBus.taskExecutionStarted.emit(task_id)
-        else:
-            pass
+        if self._shutting_down:
+            return
+        if self.workers:
+            signalBus.taskError.emit(task_id, self.tr("已有任务正在运行或中止，请等待其结束"))
+            return
+        try:
+            if not task_id or not payload.get("files"):
+                raise ValueError(self.tr("任务缺少编号或输入文件"))
+            worker = worker_class(payload=payload, parent=self)
+        except Exception as exc:
+            signalBus.taskError.emit(task_id or "", self.tr("无法启动任务: {error}").format(error=str(exc)))
+            return
+        worker.finished.connect(lambda t_id=task_id: self._cleanup_worker(t_id))
+        self.workers[task_id] = worker
+        signalBus.taskExecutionStarted.emit(task_id)
+        worker.start()
 
     def _on_task_stop_requested(self, task_id: str):
         worker = self.workers.get(task_id)
         if worker:
             worker.stop()
-            # 从UI点击中止后直接抛出 cancelled 信号给 UI更新
-            signalBus.taskCancelled.emit(task_id)
 
     def _cleanup_worker(self, task_id: str):
         if task_id in self.workers:
-            # 安全清理
-            del self.workers[task_id]
+            worker = self.workers.pop(task_id)
+            if worker._is_cancelled and not worker._has_error:
+                signalBus.taskCancelled.emit(task_id)
+            worker.deleteLater()
             # worker.finished 在任务完成/出错/被取消三种结局下均会触发,
             # 在此处统一发射全局结束信号, 通知所有界面恢复开始按钮
             signalBus.taskExecutionEnded.emit(task_id)
+
+    def shutdown(self):
+        """先终止全部进程，再等待线程释放输出与管道。"""
+        self._shutting_down = True
+        for worker in list(self.workers.values()):
+            worker.stop()
+        for task_id, worker in list(self.workers.items()):
+            worker.wait()
+            self._cleanup_worker(task_id)
 
 # 创建单例即可生效，由于这里是挂载在 signalBus 上的
 taskManager = TaskManager()

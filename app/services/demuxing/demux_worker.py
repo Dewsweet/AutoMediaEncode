@@ -5,6 +5,8 @@ import shlex
 import traceback
 import subprocess
 import re
+from collections import deque
+from uuid import uuid4
 from pathlib import Path
 from PySide6.QtCore import QThread
 from ffmpeg_progress_yield import FfmpegProgress
@@ -14,6 +16,8 @@ from ...common.logger import logger
 from ..tool_service import ToolService
 from ..error_service import ErrorService
 from .desubsetting_service import SubtitleProcessService
+from ..output_service import OutputTransaction, safe_filename
+from ..process_service import kill_process
 
 class DemuxWorker(QThread):
     def __init__(self, payload: dict, parent=None):
@@ -25,23 +29,53 @@ class DemuxWorker(QThread):
 
         self._codec_ext_map = {
             # 视频
-            "avc": ".h264", "hevc": ".h265", "v_mpeg4/iso/avc": ".h264", "v_mpegh/iso/hevc": ".h265", "vp8": ".lvf", "vp9": ".ivf", "av1": ".ivf", "mpeg-4 visual": ".mkv", "ffv1": ".ffv1",
+            "avc": ".h264", "hevc": ".h265", "v_mpeg4/iso/avc": ".h264", "v_mpegh/iso/hevc": ".h265", "vp8": ".ivf", "vp9": ".ivf", "av1": ".ivf", "mpeg-4 visual": ".mkv", "ffv1": ".mkv",
             # 音频
             "aac": ".aac", "alac": ".caf", "flac": ".flac", "opus": ".opus", "vorbis": ".ogg", "pcm": ".wav", "mpeg audio": ".mp3", "mpega": ".mp3", "mp3": ".mp3",
             "ac-3": ".ac3", "e-ac-3": ".eac3", "dts": ".dts", "dts-hd": ".dts", 
             "truehd": ".thd", "mlp fba": ".thd",
             # 字幕
-            "ass": ".ass", "advanced ssa": ".ass", "ssa": ".ssa", "subrip": ".srt", "srt": ".srt", "vtt": ".vtt", "pgs": ".sup", "hdmv pgs": ".sup", "vobsub": ".sub"
+            "ass": ".ass", "advanced ssa": ".ass", "ssa": ".ssa", "subrip": ".srt", "srt": ".srt", "utf-8": ".srt", "timed text": ".srt", "webvtt": ".vtt", "vtt": ".vtt", "pgs": ".sup", "hdmv pgs": ".sup", "vobsub": ".sub"
         }
 
     def stop(self):
         """外部调用以强制停止任务"""
         self._is_cancelled = True
-        if self._current_ff_process is not None:
-            try:
-                self._current_ff_process.quit()
-            except Exception:
-                pass
+        kill_process(self._current_ff_process)
+
+    def _fail(self, task_id, message):
+        if not self._is_cancelled and not self._has_error:
+            self._has_error = True
+            signalBus.taskError.emit(task_id, message)
+
+    def _output_dir(self, file_path):
+        output = self.payload.get("states", {}).get("output_state", {})
+        return file_path.parent if output.get("use_source_dir", True) else Path(output.get("output_dir") or file_path.parent)
+
+    def _track_output(self, file_path, track):
+        kind = track.get("type")
+        options = self.payload.get("states", {}).get("option_state", {})
+        matroska = file_path.suffix.lower() in {".mkv", ".mka", ".mks"}
+        if kind == "attachment":
+            if not matroska:
+                raise ValueError(self.tr("仅支持从 Matroska 文件提取附件"))
+            name = safe_filename(track.get("filename") or f"attachment_{track.get('idx', 1)}")
+        elif kind == "chapter":
+            name = safe_filename(f"{file_path.stem}_chapters.{options.get('chapter_suffix', 'XML').lower()}")
+        elif kind in {"video", "audio", "subtitle"}:
+            codec = str(track.get("codec") or "").lower()
+            ext = self._codec_ext_map.get(codec)
+            if file_path.suffix.lower() in {".m2ts", ".ts"} and kind == "audio" and "pcm" in codec:
+                ext = ".wav"
+            if not ext:
+                if matroska:
+                    raise ValueError(self.tr("不支持的抽流编码格式: {codec}").format(codec=codec))
+                ext = {"video": ".mkv", "audio": ".mka", "subtitle": ".srt"}[kind]
+            index = track.get("id", "") if matroska else track.get("idx", 0)
+            name = safe_filename(f"{file_path.stem}_track_{kind}_{index}{ext}")
+        else:
+            raise ValueError(self.tr("不支持的抽流轨道类型: {type}").format(type=kind))
+        return self._output_dir(file_path) / name
 
     def run(self):
         task_id = self.payload.get("task_id")
@@ -53,12 +87,26 @@ class DemuxWorker(QThread):
         logger.info(f"包含文件数: {total_files}")
         logger.debug(f"Payload 详情:\n{json.dumps(self.payload, indent=4, ensure_ascii=False)}")
 
-        for idx, f_path in enumerate(files, start=1):
-            if self._is_cancelled:
-                logger.info(f"已中止任务: {task_id}")
-                break
-                
-            self._process_single_file(task_id, f_path, idx, total_files)
+        self._outputs = OutputTransaction(files)
+        try:
+            for f_path in files:
+                file_path = Path(f_path)
+                for track in self.payload.get("states", {}).get("tracks_state", {}).get(f_path, []):
+                    target = self._track_output(file_path, track)
+                    self._outputs.plan(target)
+                    if target.suffix == ".sub" and file_path.suffix.lower() in {".mkv", ".mka", ".mks"}:
+                        self._outputs.plan(target.with_suffix(".idx"))
+            for idx, f_path in enumerate(files, start=1):
+                if self._is_cancelled or self._has_error:
+                    break
+                self._process_single_file(task_id, f_path, idx, total_files)
+            if not self._is_cancelled and not self._has_error:
+                self._outputs.commit()
+        except Exception as exc:
+            logger.exception(f"[Task {task_id}] 抽流任务失败")
+            self._fail(task_id, self.tr("任务执行失败: {error}").format(error=str(exc)))
+        finally:
+            self._outputs.cleanup()
 
         if not self._is_cancelled and not self._has_error:
             run_duration = time.time() - task_start_time
@@ -92,7 +140,13 @@ class DemuxWorker(QThread):
         is_matroska = in_ext in ['.mkv', '.mka', '.mks']
         
         if is_matroska:
-            self._extract_with_mkvextract(task_id, file_path, fname, out_dir_path, tracks, option_state, idx, total_files)
+            # mkvextract 不支持 V_FFV1 的裸流导出，使用 FFmpeg 无损复制为独立 MKV。
+            ffmpeg_tracks = [t for t in tracks if t.get("type") == "video" and str(t.get("codec", "")).lower() == "ffv1"]
+            native_tracks = [t for t in tracks if t not in ffmpeg_tracks]
+            if native_tracks:
+                self._extract_with_mkvextract(task_id, file_path, fname, out_dir_path, native_tracks, option_state, idx, total_files)
+            if ffmpeg_tracks and not self._has_error and not self._is_cancelled:
+                self._extract_with_ffmpeg(task_id, file_path, fname, out_dir_path, ffmpeg_tracks, option_state, idx, total_files)
         else:
             self._extract_with_ffmpeg(task_id, file_path, fname, out_dir_path, tracks, option_state, idx, total_files)
 
@@ -101,8 +155,7 @@ class DemuxWorker(QThread):
         mkvextract_path = ToolService.get_tool_path('mkvextract')
         if not mkvextract_path:
             logger.error(f"[{task_id}] 未找到 MkvExtract 可执行文件, 停止运行")
-            signalBus.taskError.emit(task_id, self.tr("未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log"))
-            self._has_error = True
+            self._fail(task_id, self.tr("未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log"))
             return
 
         logger.info(f"[{task_id}] 检测到 Matroska 格式，使用 mkvextract 处理: {file_path.name}")
@@ -121,8 +174,7 @@ class DemuxWorker(QThread):
             # 独立处理章节抽取
             if t_type == "chapter":
                 ch_format = option_state.get("chapter_suffix", "XML").lower()
-                ch_ext = f".{ch_format}"
-                ch_out = out_dir_path / f"{fname}_chapters{ch_ext}"
+                ch_out = self._outputs.stage(self._track_output(file_path, track))
                 if ch_format in ["txt", "ogm"]:
                     chapter_args.extend(["-s", ch_out.as_posix()])
                 else:
@@ -131,8 +183,7 @@ class DemuxWorker(QThread):
                 
             if t_type == "attachment":
                 a_idx = track.get("idx", 1)  # attachment 本身的 1-based index
-                a_name = track.get("filename", f"attachment_{a_idx}")
-                out_file = out_dir_path / f"{a_name}"
+                out_file = self._outputs.stage(self._track_output(file_path, track))
                 attachments_args.append(f"{a_idx}:{out_file.as_posix()}")
                 continue
                 
@@ -140,20 +191,12 @@ class DemuxWorker(QThread):
             if str(t_id) == "":
                 continue
                 
-            t_codec = track.get("codec", "").lower()
-            out_ext = self._codec_ext_map.get(t_codec)
-            if not out_ext:
-                if t_type == "video": out_ext = ".mkv"
-                elif t_type == "audio": out_ext = ".mka"
-                elif t_type == "subtitle": out_ext = ".ass"
-                else: continue
-                
-            out_file = out_dir_path / f"{fname}_track_{t_type}_{t_id}{out_ext}"
+            out_file = self._outputs.stage(self._track_output(file_path, track))
             out_posix = out_file.as_posix()
             
             tracks_args.append(f"{t_id}:{out_posix}")
             
-            if t_type == "subtitle" and option_state.get("desubsetting"):
+            if out_file.suffix in {".ass", ".ssa"} and option_state.get("desubsetting"):
                 generated_ass_files.append(out_posix)
 
         # 组装最终命令
@@ -185,8 +228,7 @@ class DemuxWorker(QThread):
         ffmpeg_bin_path = ToolService.get_tool_path('ffmpeg')
         if not ffmpeg_bin_path:
             logger.error(f"[{task_id}] 未找到 ffmpeg 可执行文件, 停止运行")
-            signalBus.taskError.emit(task_id, self.tr("未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log"))
-            self._has_error = True
+            self._fail(task_id, self.tr("未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log"))
             return
 
         cmd_list = [ffmpeg_bin_path, "-y", "-i", file_path.as_posix()]
@@ -204,9 +246,8 @@ class DemuxWorker(QThread):
             
             if t_type == "chapter":
                 ch_format = option_state.get("chapter_suffix", "XML").lower()
-                ch_ext = f".{ch_format}"
-                chapter_ffmeta = out_dir_path / f"{fname}_chapters_ffmeta.txt"
-                chapter_out = out_dir_path / f"{fname}_chapters{ch_ext}"
+                chapter_out = self._outputs.stage(self._track_output(file_path, track))
+                chapter_ffmeta = chapter_out.parent / f".ame-chapters-{uuid4().hex}.txt"
                 cmd_list.extend(["-f", "ffmetadata", chapter_ffmeta.as_posix()])
                 continue
 
@@ -216,14 +257,7 @@ class DemuxWorker(QThread):
             ffmpeg_stream_type = type_map.get(t_type)
             stream_specifier = f"0:{ffmpeg_stream_type}:{t_idx}"
             
-            out_ext = self._codec_ext_map.get(t_codec)
-            if not out_ext:
-                if t_type == "video": out_ext = ".mkv"
-                elif t_type == "audio": out_ext = ".mka"
-                elif t_type == "subtitle": out_ext = ".ass"
-                else: continue
-
-            out_file = out_dir_path / f"{fname}_track_{t_type}_{t_idx}{out_ext}"
+            out_file = self._outputs.stage(self._track_output(file_path, track))
             out_posix = out_file.as_posix()
             
             cmd_list.extend(["-map", stream_specifier])
@@ -233,12 +267,15 @@ class DemuxWorker(QThread):
                 cmd_list.extend(["-c:a", "pcm_s24le"])
                 if not out_posix.endswith(".wav"):
                     out_posix = out_posix.rsplit(".", 1)[0] + ".wav"
+            elif t_type == "subtitle" and out_file.suffix in {".srt", ".ass", ".ssa", ".vtt"}:
+                encoder = {".srt": "srt", ".ass": "ass", ".ssa": "ass", ".vtt": "webvtt"}[out_file.suffix]
+                cmd_list.extend(["-c:s", encoder])
             else:
                 cmd_list.extend(["-c", "copy"])
                 
             cmd_list.append(out_posix)
 
-            if t_type == "subtitle" and option_state.get("desubsetting"):
+            if out_file.suffix in {".ass", ".ssa"} and option_state.get("desubsetting"):
                 generated_ass_files.append(out_posix)
 
         has_valid_tracks = chapter_ffmeta is not None or any(t.get("type") in ("video", "audio", "subtitle") for t in tracks)
@@ -248,7 +285,7 @@ class DemuxWorker(QThread):
             logger.info(f"[Task {task_id}] FFmpeg command:\n" + shlex.join(cmd_list))
             self._run_cli_with_progress(task_id, idx, total_files, file_path.name, cmd_list, "ffmpeg")
 
-        if chapter_ffmeta is not None and chapter_ffmeta.exists() and not self._is_cancelled:
+        if chapter_ffmeta is not None and chapter_ffmeta.exists() and not self._is_cancelled and not self._has_error:
             chapters_raw = []
             cur = None
             for line in chapter_ffmeta.read_text("utf-8").splitlines():
@@ -329,7 +366,7 @@ class DemuxWorker(QThread):
         out_path.write_text("\n".join(lines), encoding="utf-8")
 
     def _post_process_subtitles(self, generated_ass_files: list):
-        if not self._is_cancelled and generated_ass_files:
+        if not self._is_cancelled and not self._has_error and generated_ass_files:
             for ass_f in generated_ass_files:
                 if Path(ass_f).exists():
                     logger.info(f"正在进行字幕去子集化处理: {ass_f}")
@@ -337,7 +374,7 @@ class DemuxWorker(QThread):
                     if success:
                         logger.info(f"字幕去子集化成功: {ass_f}")
                     else:
-                        logger.error(f"字幕去子集化失败: {ass_f}")
+                        raise RuntimeError(self.tr("字幕去子集化失败: {path}").format(path=ass_f))
 
     @staticmethod
     def format_time(seconds: float) -> str:
@@ -358,7 +395,7 @@ class DemuxWorker(QThread):
         
         creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0 
         try:
-            self._current_ff_process = subprocess.Popen(
+            process = subprocess.Popen(
                 cmd_list,
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.STDOUT, 
@@ -367,12 +404,16 @@ class DemuxWorker(QThread):
                 encoding='utf-8', 
                 errors='replace'
             )
-            
+            self._current_ff_process = process
+            output_lines = deque(maxlen=100)
+            if self._is_cancelled:
+                kill_process(process)
             progress_pattern = re.compile(r"Progress:\s*(\d+)%")
             
-            for line in self._current_ff_process.stdout:
+            for line in process.stdout:
+                output_lines.append(line)
                 if self._is_cancelled:
-                    self._current_ff_process.kill()
+                    kill_process(process)
                     break
                     
                 match = progress_pattern.search(line)
@@ -391,9 +432,11 @@ class DemuxWorker(QThread):
                         task_id, file_idx, total_files, file_name, prg_value, time_left_str
                     )
             
-            self._current_ff_process.wait()
-            
-            if not self._is_cancelled:
+            returncode = process.wait()
+            if not self._is_cancelled and returncode not in (0, 1):
+                main_error = ErrorService.cli_error("mkvextract", "".join(output_lines))
+                self._fail(task_id, self.tr("文件 [{filename}] 抽流失败 (code {code}):\n{error}").format(filename=file_name, code=returncode, error=main_error))
+            elif not self._is_cancelled:
                 signalBus.taskProgressUpdated.emit(task_id, file_idx, total_files, file_name, 100.0, "00:00:00")
                 
         except Exception as e:
@@ -402,8 +445,12 @@ class DemuxWorker(QThread):
                 logger.error(error_msg)
                 main_error = ErrorService.cli_error("mkvextract", str(error_msg))
                 main_error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=file_name, error=main_error)
-                signalBus.taskError.emit(task_id, main_error_msg)
+                self._fail(task_id, main_error_msg)
         finally:
+            if 'process' in locals():
+                kill_process(process)
+                process.wait()
+                process.stdout.close()
             self._current_ff_process = None
 
 
@@ -419,7 +466,7 @@ class DemuxWorker(QThread):
             self._current_ff_process = FfmpegProgress(cmd_list)
             for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=popen_kwargs):
                 if self._is_cancelled:
-                    self._current_ff_process.quit()
+                    kill_process(self._current_ff_process)
                     break
                 
                 time_left_str = "--:--"
@@ -449,6 +496,6 @@ class DemuxWorker(QThread):
                 logger.error(err_msg)
                 main_error = ErrorService.ffmpeg_error(err_msg)
                 error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=file_name, error=main_error)
-                signalBus.taskError.emit(task_id, error_msg)
+                self._fail(task_id, error_msg)
         finally:
             self._current_ff_process = None

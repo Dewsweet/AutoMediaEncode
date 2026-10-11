@@ -16,6 +16,8 @@ from ...common.logger import logger
 from ..tool_service import ToolService
 from ..error_service import ErrorService
 from .ffmpeg_builder import FFmpegBuilder
+from ..output_service import OutputTransaction, safe_filename
+from ..process_service import kill_process
 
 class RecodeWorker(QThread):
     def __init__(self, payload: dict, parent=None):
@@ -27,6 +29,7 @@ class RecodeWorker(QThread):
         
         # 保存由 FfmpegProgress 返回的迭代器引用，以便中途强杀进程
         self._current_ff_process = None 
+        self._current_subprocess = None
 
         self._popen_kwargs = {}
         if os.name == 'nt':
@@ -36,11 +39,29 @@ class RecodeWorker(QThread):
     def stop(self):
         """外部调用以强制停止任务"""
         self._is_cancelled = True
-        if self._current_ff_process is not None:
-            try:
-                self._current_ff_process.quit()
-            except Exception:
-                pass
+        kill_process(self._current_ff_process)
+        kill_process(self._current_subprocess)
+
+    def _fail(self, task_id, message):
+        if not self._is_cancelled and not self._has_error:
+            self._has_error = True
+            signalBus.taskError.emit(task_id, message)
+
+    def _output_path(self, f_path):
+        states = self.payload.get("states", {})
+        file_path = Path(f_path)
+        kind = next((k for k, v in classify_files([f_path]).items() if v), "unknown")
+        if kind == "video":
+            ext = states.get("video_state", {}).get("container", "mp4").lower()
+        elif kind in {"audio", "image", "subtitle"}:
+            _, ext = getattr(self.builder, f"build_{kind}_kwargs")(states.get(f"{kind}_state", {}))
+            ext = ext or file_path.suffix.lstrip(".")
+        else:
+            raise ValueError(self.tr("不支持的输入文件: {path}").format(path=f_path))
+        output = states.get("output_state", {})
+        parent = file_path.parent if output.get("use_source_dir", True) else Path(output.get("output_dir") or file_path.parent)
+        suffix = output.get("custom_suffix", "") if output.get("use_custom_suffix") else ""
+        return parent / safe_filename(file_path.stem + suffix + "." + ext.lower())
 
     def run(self):
         task_id = self.payload.get("task_id")
@@ -56,13 +77,21 @@ class RecodeWorker(QThread):
         formatted_payload = json.dumps(self.payload, indent=4, ensure_ascii=False)
         logger.debug(f"Payload 详情:\n{formatted_payload}")
 
-        # 针对图片类没有持续进度的数据，用计次模式
-        for idx, f_path in enumerate(files, start=1):
-            if self._is_cancelled:
-                logger.info(f"已中止任务: {task_id}")
-                break
-                
-            self._process_single_file(task_id, f_path, idx, total_files)
+        self._outputs = OutputTransaction(files)
+        try:
+            for f_path in files:
+                self._outputs.plan(self._output_path(f_path))
+            for idx, f_path in enumerate(files, start=1):
+                if self._is_cancelled or self._has_error:
+                    break
+                self._process_single_file(task_id, f_path, idx, total_files)
+            if not self._is_cancelled and not self._has_error:
+                self._outputs.commit()
+        except Exception as exc:
+            logger.exception(f"[Task {task_id}] 转码任务失败")
+            self._fail(task_id, self.tr("任务执行失败: {error}").format(error=str(exc)))
+        finally:
+            self._outputs.cleanup()
 
         if not self._is_cancelled and not self._has_error:
             run_duration = time.time() - task_start_time
@@ -76,7 +105,6 @@ class RecodeWorker(QThread):
         audio_state = states.get('audio_state', {})
         image_state = states.get('image_state', {})
         subtitle_state = states.get('subtitle_state', {})
-        output_state = states.get('output_state', {})
 
         file_path = Path(f_path)
         in_path_str = file_path.as_posix()
@@ -87,31 +115,13 @@ class RecodeWorker(QThread):
         is_image = bool(classification['image'])
         is_subtitle = bool(classification['subtitle'])
 
-        audio_kwargs, audio_container = self.builder.build_audio_kwargs(audio_state)
-        image_kwargs, image_container = self.builder.build_image_kwargs(image_state)
-        subtitle_kwargs, subtitle_container = self.builder.build_subtitle_kwargs(subtitle_state)
+        audio_kwargs, _ = self.builder.build_audio_kwargs(audio_state)
+        image_kwargs, _ = self.builder.build_image_kwargs(image_state)
+        subtitle_kwargs, _ = self.builder.build_subtitle_kwargs(subtitle_state)
 
-        out_ext = file_path.suffix
-        if is_video:
-            out_ext = "." + video_state.get('container', 'mp4').lower()
-        elif is_audio:
-            out_ext = ("." + audio_container).lower() if audio_container else file_path.suffix
-        elif is_image:
-            out_ext = ("." + image_container).lower() if image_container else file_path.suffix
-        elif is_subtitle:
-            out_ext = ("." + subtitle_container).lower() if subtitle_container else file_path.suffix
-        
-        out_dir = output_state.get('output_dir', '')
-        if output_state.get('use_source_dir', True) or not out_dir:
-            out_dir_path = file_path.parent
-        else:
-            out_dir_path = Path(out_dir)
-        
-        fname = file_path.stem
-        if output_state.get('use_custom_suffix') and output_state.get('custom_suffix'):
-            fname += output_state.get('custom_suffix', '')
-            
-        out_path = out_dir_path / (fname + out_ext)
+        out_path = self._outputs.stage(self._output_path(f_path))
+        out_dir_path = out_path.parent
+        fname = out_path.stem
         out_path_str = out_path.as_posix()
         
         passlogfile_base_name = f"{fname}_passlog_{task_id}"
@@ -122,8 +132,7 @@ class RecodeWorker(QThread):
         if not ffmpeg_bin_path:
             ffmpeg_bin_path = 'ffmpeg' # fallback
             logger.warning("未在配置或Path中找到ffmpeg对应的程序文件, 停止运行")
-            signalBus.taskError.emit(task_id, self.tr("未找到 FFMpeg 程序文件\n请检查相关设置或查看 log"))
-            self._has_error = True
+            self._fail(task_id, self.tr("未找到 FFMpeg 程序文件\n请检查相关设置或查看 log"))
             return
 
 
@@ -132,7 +141,7 @@ class RecodeWorker(QThread):
                 v_kwargs_list = self.builder.build_video_kwargs(video_state)
                 total_passes = len(v_kwargs_list)
                 for pass_num, v_kw in enumerate(v_kwargs_list, start=1):
-                    if self._is_cancelled:
+                    if self._is_cancelled or self._has_error:
                         break
                         
                     merged_kw = v_kw.copy()
@@ -180,13 +189,25 @@ class RecodeWorker(QThread):
                 
                 # 图片字幕任务极快，直接使用 subprocess 丢后台
                 try:
-                    subprocess.run(cmd_list, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60, **self._popen_kwargs)
+                    with subprocess.Popen(cmd_list, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, **self._popen_kwargs) as process:
+                        self._current_subprocess = process
+                        if self._is_cancelled:
+                            kill_process(process)
+                        try:
+                            _, stderr = process.communicate(timeout=60)
+                        except subprocess.TimeoutExpired:
+                            kill_process(process)
+                            process.communicate()
+                            raise
+                        if self._is_cancelled:
+                            return
+                        if process.returncode:
+                            raise subprocess.CalledProcessError(process.returncode, cmd_list, stderr=stderr)
                 except subprocess.TimeoutExpired:
                     if self._is_cancelled:
                         return
                     logger.error(f"[Task {task_id}] Subprocess timed out after 60s")
-                    signalBus.taskError.emit(task_id, self.tr("文件 [{filename}] 处理超时(60s)").format(filename=file_path.name))
-                    self.stop()
+                    self._fail(task_id, self.tr("文件 [{filename}] 处理超时(60s)").format(filename=file_path.name))
                     return
                 except subprocess.CalledProcessError as e:
                     if self._is_cancelled:
@@ -195,9 +216,10 @@ class RecodeWorker(QThread):
                     logger.error(f"[Task {task_id}] Subprocess execution failed: {stderr_text}")
                     main_error = ErrorService.ffmpeg_error(stderr_text)
                     error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=file_path.name, error=main_error)
-                    signalBus.taskError.emit(task_id, error_msg)
-                    self.stop()
+                    self._fail(task_id, error_msg)
                     return
+                finally:
+                    self._current_subprocess = None
                 # 瞬间跑完则抛出100%完成
                 signalBus.taskProgressUpdated.emit(task_id, idx, total_files, file_path.name, 100.0, self.tr("完成"))
                 
@@ -205,8 +227,7 @@ class RecodeWorker(QThread):
             if self._is_cancelled:
                 return
             logger.exception(f"[Task {task_id}] Processing file failed:") # 替代原有的 traceback.format_exc()
-            signalBus.taskError.emit(task_id, self.tr("未能成功打包成FFmpeg命令，可能是界面参数导致异常:\n{error}").format(error=str(e)))
-            self.stop()
+            self._fail(task_id, self.tr("未能成功打包成FFmpeg命令，可能是界面参数导致异常:\n{error}").format(error=str(e)))
         finally:
             if is_video and 'v_kwargs_list' in locals() and len(v_kwargs_list) > 1:
                 # 清除当前文件生成的临时 2-pass log 文件
@@ -226,7 +247,7 @@ class RecodeWorker(QThread):
         try:
             for progress in self._current_ff_process.run_command_with_progress(popen_kwargs=self._popen_kwargs): 
                 if self._is_cancelled:
-                    self._current_ff_process.quit()
+                    kill_process(self._current_ff_process)
                     break
                 
                 # 兼容 2-pass 的进度均分
@@ -258,7 +279,6 @@ class RecodeWorker(QThread):
             logger.exception(f"[Task {task_id}] FfmpegProgress execution failed:") 
             main_error = ErrorService.ffmpeg_error(err_msg)
             error_msg = self.tr("文件 [{filename}] 处理失败\n[可能因为]: {error}").format(filename=filename, error=main_error)
-            signalBus.taskError.emit(task_id, error_msg)
-            self.stop()
+            self._fail(task_id, error_msg)
         finally:
             self._current_ff_process = None

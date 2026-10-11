@@ -151,6 +151,9 @@ class TaskInterface(QWidget):
             # 更新为 100% 并在UI展现完成状态
             # 修复 TypeError: current_idx 参数必须为 int，不能为 None
             card.update_task_progress(card.total_files, self.tr("全部完成"), 100.0, "00:00:00")
+            card.is_finished = True
+            card.task_card.progessStateLabel.setText(self.tr('任务完成: 100.0%'))
+            card.task_card.title_stop_btn.setEnabled(False)
             
         InfoBar.success(
             title=self.tr('任务完成'),

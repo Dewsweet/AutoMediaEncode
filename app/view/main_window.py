@@ -14,6 +14,7 @@ from .muxing_interface import MuxingInterface
 from .ame_workflow_interface import AMEWorkflowInterface
 from app.common.config import cfg, WINDOW_NAME, AUTHOR, VERSION
 from app.common import resource
+from app.services.task_manager import taskManager
 
 class MainWindow(FluentWindow):
     def __init__(self):
@@ -30,6 +31,8 @@ class MainWindow(FluentWindow):
         self.muxingInterface = MuxingInterface(self)
         self.ameWorkflowInterface = AMEWorkflowInterface(self)
         self.initNavigation()
+        self._shutting_down = False
+        QApplication.instance().aboutToQuit.connect(self.shutdown)
         
 
         # 背景图片缓存，避免每帧重复读取硬盘导致严重卡顿
@@ -120,5 +123,14 @@ class MainWindow(FluentWindow):
 
 
     def closeEvent(self, event):
-        self.mediaInfoInterface.shutdown()
+        self.shutdown()
         super().closeEvent(event)
+
+    def shutdown(self):
+        if self._shutting_down:
+            return
+        self._shutting_down = True
+        taskManager.shutdown()
+        self.demuxingInterface.inputFilesCard.shutdown()
+        self.muxingInterface.shutdown()
+        self.mediaInfoInterface.shutdown()

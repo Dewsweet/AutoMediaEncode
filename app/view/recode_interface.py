@@ -276,21 +276,7 @@ class RecodeInterface(QWidget):
                 )
                 return
         
-        # 文件格式冲突检查
-        for file in files:
-            # 获取扩展名并去到"."，进行简单的格式冲突检查
-            f = Path(file).suffix.strip(".").lower()
-            if f in [video_state.get('container', '').lower(), audio_state.get('encoder_format', '').lower(), image_state.get('encoder_format', '').lower(), subtitle_state.get('encoder_format', '').lower()] and not output_state.get('custom_suffix'):
-                InfoBar.warning(
-                    title=self.tr('注意'),
-                    content=self.tr("输入文件容器与输出容器设置冲突: {format}\n请检查或者启用输出自定义后缀设置").format(format=f),
-                    orient=Qt.Horizontal,
-                    isClosable=False,
-                    position=InfoBarPosition.TOP_RIGHT,
-                    duration=5000,
-                    parent=self
-                )
-                return
+        # 后台按实际输出路径预检整个批次，容器相同但目录不同是合法操作。
         
         # 输出目录设置检查
         if not output_state.get('output_dir') and not output_state.get('use_source_dir'):

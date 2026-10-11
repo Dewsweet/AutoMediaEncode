@@ -1020,7 +1020,7 @@
 <context>
     <name>AttachmentCard</name>
     <message>
-        <location filename="../../components/muxing_card_interface.py" line="+922"/>
+        <location filename="../../components/muxing_card_interface.py" line="+923"/>
         <location line="+30"/>
         <source>添加附件</source>
         <translation>Add attachments</translation>
@@ -1066,7 +1066,7 @@
         <translation>Select attachment files</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+35"/>
         <source>内置附件</source>
         <translation>Embedded attachment</translation>
     </message>
@@ -1216,17 +1216,49 @@
 <context>
     <name>DemuxWorker</name>
     <message>
-        <location filename="../../services/demuxing/demux_worker.py" line="+104"/>
+        <location filename="../../services/demuxing/demux_worker.py" line="+61"/>
+        <source>仅支持从 Matroska 文件提取附件</source>
+        <translation>Attachments can only be extracted from Matroska files</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>不支持的抽流编码格式: {codec}</source>
+        <translation>Unsupported codec for demuxing: {codec}</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>不支持的抽流轨道类型: {type}</source>
+        <translation>Unsupported track type for demuxing: {type}</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>任务执行失败: {error}</source>
+        <translation>Task failed: {error}</translation>
+    </message>
+    <message>
+        <location line="+51"/>
         <source>未找到 MkvExtract 可执行文件, 请检查相关设置或查看 log</source>
         <translation>mkvextract was not found. Please check the tool settings or the log.</translation>
     </message>
     <message>
-        <location line="+84"/>
+        <location line="+73"/>
         <source>未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log</source>
         <translation>FFmpeg was not found. Please check the tool settings or the log.</translation>
     </message>
     <message>
-        <location line="+213"/>
+        <location line="+146"/>
+        <source>字幕去子集化失败: {path}</source>
+        <translation>Failed to remove subtitle font subset data: {path}</translation>
+    </message>
+    <message>
+        <location line="+61"/>
+        <source>文件 [{filename}] 抽流失败 (code {code}):
+{error}</source>
+        <translation>Failed to demux [{filename}] (code {code}):
+{error}</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>处理时发生错误: {error}
 {traceback}</source>
         <translation>An error occurred while processing: {error}
@@ -1234,7 +1266,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <location line="+47"/>
+        <location line="+51"/>
         <source>文件 [{filename}] 处理失败
 [可能因为]: {error}</source>
         <translation>Failed to process [{filename}]
@@ -1619,13 +1651,13 @@ See logs/ame_run.log for details.</translation>
         <translation>Deselect all</translation>
     </message>
     <message>
-        <location filename="../../components/demuxing_card_interface.py" line="+29"/>
-        <location filename="../../components/muxing_card_interface.py" line="-998"/>
+        <location filename="../../components/demuxing_card_interface.py" line="+33"/>
+        <location filename="../../components/muxing_card_interface.py" line="-999"/>
         <source>输入文件</source>
         <translation>Input files</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+38"/>
         <location filename="../../components/muxing_card_interface.py" line="+157"/>
         <source>载入文件失败</source>
         <translation>Could not load files</translation>
@@ -1636,12 +1668,12 @@ See logs/ame_run.log for details.</translation>
         <translation>No valid media files found. Please select files again.</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+26"/>
         <source>文件加载中……</source>
         <translation>Loading file...</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+41"/>
         <source>解析失败: {error}</source>
         <translation>Could not read file: {error}</translation>
     </message>
@@ -1768,7 +1800,7 @@ See logs/ame_run.log for details.</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/main_window.py" line="+111"/>
+        <location filename="../../view/main_window.py" line="+114"/>
         <source>媒体信息</source>
         <translation>Media information</translation>
     </message>
@@ -2048,40 +2080,49 @@ See logs/ame_run.log for details.</translation>
 <context>
     <name>MuxWorker</name>
     <message>
-        <location filename="../../services/muxing/mux_worker.py" line="+72"/>
+        <location filename="../../services/muxing/mux_worker.py" line="+87"/>
         <source>不支持的封装格式: {container}</source>
         <translation>Unsupported container: {container}</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+23"/>
         <source>未找到 MkvMerge 可执行文件, 请检查相关设置或查看 log</source>
         <translation>mkvmerge was not found. Please check the tool settings or the log.</translation>
     </message>
     <message>
-        <location line="+108"/>
         <source>任务已被用户取消</source>
-        <translation>The task was canceled by the user.</translation>
+        <translation type="vanished">The task was canceled by the user</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <location line="+7"/>
+        <location line="-35"/>
+        <source>请设置输出路径并选择需要封装的轨道</source>
+        <translation>Set an output path and select tracks to mux</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>混流执行失败: {error}</source>
+        <translation>Muxing failed: {error}</translation>
+    </message>
+    <message>
+        <location line="+139"/>
+        <location line="+4"/>
         <source>混流 (mkvmerge)</source>
         <translation>Muxing (mkvmerge)</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>混流失败 (code {code}):
 {error}</source>
         <translation>Muxing failed (code {code}):
 {error}</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+11"/>
         <source>未找到 FFMpeg 可执行文件, 请检查相关设置或查看 log</source>
         <translation>FFmpeg was not found. Please check the tool settings or the log.</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+20"/>
         <source>MP4 / MOV 至少需要一个可封装的视频或音频轨道</source>
         <translation>MP4 / MOV requires at least one video or audio track.</translation>
     </message>
@@ -2102,7 +2143,7 @@ See logs/ame_run.log for details.</translation>
 <context>
     <name>MuxingInterface</name>
     <message>
-        <location filename="../../view/muxing_interface.py" line="+49"/>
+        <location filename="../../view/muxing_interface.py" line="+55"/>
         <source>所支持的媒体文件 ({extensions});;所有文件 (*)</source>
         <translation>Supported media files ({extensions});;All files (*)</translation>
     </message>
@@ -2118,13 +2159,13 @@ See logs/ame_run.log for details.</translation>
     </message>
     <message>
         <location line="+0"/>
-        <location line="+351"/>
+        <location line="+376"/>
         <location line="+15"/>
         <source>开始混流</source>
         <translation>Start muxing</translation>
     </message>
     <message>
-        <location line="-354"/>
+        <location line="-379"/>
         <source>📌 媒体文件混流 😇</source>
         <translation>📌 Media muxing 😇</translation>
     </message>
@@ -2149,17 +2190,17 @@ See logs/ame_run.log for details.</translation>
         <translation>Please select supported media files for muxing.</translation>
     </message>
     <message>
-        <location line="+152"/>
+        <location line="+176"/>
         <location line="+10"/>
         <location line="+10"/>
-        <location line="+13"/>
+        <location line="+14"/>
         <location line="+11"/>
         <location line="+10"/>
         <source>注意</source>
         <translation>Attention</translation>
     </message>
     <message>
-        <location line="-53"/>
+        <location line="-54"/>
         <source>MP4 / MOV 不会封装软字幕和章节，请关闭对应轨道。</source>
         <translation>MP4 / MOV does not mux subtitle tracks or chapters here. Disable those tracks.</translation>
     </message>
@@ -2174,7 +2215,7 @@ See logs/ame_run.log for details.</translation>
         <translation>Enable at least one video or audio track for MP4 / MOV.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>语言标签 &quot;[{language}]&quot; 不合法, 请修改为合法 BCP 47 语言标签</source>
         <translation>Invalid language tag &quot;[{language}]&quot;. Enter a valid BCP 47 language tag.</translation>
     </message>
@@ -2382,6 +2423,35 @@ No flags are set by default; common choices are Default track and Forced display
     </message>
 </context>
 <context>
+    <name>OutputService</name>
+    <message>
+        <location filename="../../services/output_service.py" line="+17"/>
+        <source>不安全的输出文件名: {name}</source>
+        <translation>Unsafe output filename: {name}</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>输出路径与输入文件相同: {path}</source>
+        <translation>Output path matches an input file: {path}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>多个输出文件使用了相同路径: {path}</source>
+        <translation>Multiple output files use the same path: {path}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+17"/>
+        <source>输出文件已存在，请更改输出名称或目录: {path}</source>
+        <translation>Output file already exists. Change the output name or folder: {path}</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>任务未生成预期输出文件: {path}</source>
+        <translation>The task did not create the expected output file: {path}</translation>
+    </message>
+</context>
+<context>
     <name>PresetEditDialog</name>
     <message>
         <location filename="../../components/preset_dialog.py" line="+52"/>
@@ -2489,12 +2559,12 @@ No flags are set by default; common choices are Default track and Forced display
     </message>
     <message>
         <location line="+0"/>
-        <location line="+319"/>
+        <location line="+305"/>
         <source>开始转码</source>
         <translation>Start recoding</translation>
     </message>
     <message>
-        <location line="-315"/>
+        <location line="-301"/>
         <source>视频文件 ({extensions})</source>
         <translation>Video files ({extensions})</translation>
     </message>
@@ -2558,13 +2628,12 @@ No flags are set by default; common choices are Default track and Forced display
     <message>
         <location line="+31"/>
         <location line="+14"/>
-        <location line="+16"/>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>注意</source>
         <translation>Attention</translation>
     </message>
     <message>
-        <location line="-42"/>
+        <location line="-28"/>
         <source>文件列表为空, 请检查输入文件</source>
         <translation>No files selected. Please check the input files.</translation>
     </message>
@@ -2576,14 +2645,13 @@ No flags are set by default; common choices are Default track and Forced display
 {file}</translation>
     </message>
     <message>
-        <location line="+16"/>
         <source>输入文件容器与输出容器设置冲突: {format}
 请检查或者启用输出自定义后缀设置</source>
-        <translation>The input and output formats are the same: {format}
-Check the settings or enable a custom filename suffix.</translation>
+        <translation type="vanished">The input and output formats are the same: {format}
+Check the settings or enable a custom filename suffix</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>输出目录未设置, 请检查输出设置</source>
         <translation>No output folder selected. Please check the output settings.</translation>
     </message>
@@ -2611,19 +2679,29 @@ Check the settings or enable a custom filename suffix.</translation>
 <context>
     <name>RecodeWorker</name>
     <message>
-        <location filename="../../services/recode/recode_worker.py" line="+125"/>
+        <location filename="../../services/recode/recode_worker.py" line="+60"/>
+        <source>不支持的输入文件: {path}</source>
+        <translation>Unsupported input file: {path}</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>任务执行失败: {error}</source>
+        <translation>Task failed: {error}</translation>
+    </message>
+    <message>
+        <location line="+43"/>
         <source>未找到 FFMpeg 程序文件
 请检查相关设置或查看 log</source>
         <translation>FFmpeg was not found.
 Please check the tool settings or the log.</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+75"/>
         <source>文件 [{filename}] 处理超时(60s)</source>
         <translation>Processing [{filename}] timed out (60s)</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+8"/>
         <location line="+63"/>
         <source>文件 [{filename}] 处理失败
 [可能因为]: {error}</source>
@@ -2631,7 +2709,7 @@ Please check the tool settings or the log.</translation>
 Possible cause: {error}</translation>
     </message>
     <message>
-        <location line="-58"/>
+        <location line="-57"/>
         <source>完成</source>
         <translation>Completed</translation>
     </message>
@@ -2643,7 +2721,7 @@ Possible cause: {error}</translation>
 {error}</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+30"/>
         <source>计算中...</source>
         <translation>Calculating...</translation>
     </message>
@@ -2984,12 +3062,11 @@ Possible cause: {error}</translation>
         <translation>Running: {percent:.1f}%</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>任务完成: 100.0%</source>
-        <translation>Completed: 100.0%</translation>
+        <translation type="vanished">Completed: 100.0%</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>运行错误</source>
         <translation>Failed</translation>
     </message>
@@ -3018,7 +3095,7 @@ Possible cause: {error}</translation>
 <context>
     <name>TaskCardTemplate</name>
     <message>
-        <location line="-108"/>
+        <location line="-104"/>
         <source>点击查看详细进度</source>
         <translation>Click to view detailed progress</translation>
     </message>
@@ -3076,7 +3153,12 @@ Possible cause: {error}</translation>
         <translation>All files completed</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+2"/>
+        <source>任务完成: 100.0%</source>
+        <translation>Completed: 100.0%</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>任务完成</source>
         <translation>Task completed</translation>
     </message>
@@ -3084,6 +3166,24 @@ Possible cause: {error}</translation>
         <location line="+1"/>
         <source>你添加的任务已全部执行完毕。请手动关闭此弹窗! </source>
         <translation>The task has completed. You can close this notification. </translation>
+    </message>
+</context>
+<context>
+    <name>TaskManager</name>
+    <message>
+        <location filename="../../services/task_manager.py" line="+45"/>
+        <source>已有任务正在运行或中止，请等待其结束</source>
+        <translation>A task is running or stopping. Wait for it to finish</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>任务缺少编号或输入文件</source>
+        <translation>The task is missing its ID or input files</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>无法启动任务: {error}</source>
+        <translation>Unable to start task: {error}</translation>
     </message>
 </context>
 <context>
