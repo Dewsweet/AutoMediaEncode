@@ -1,5 +1,5 @@
 """AME 工作流加载页 — 卡片网格 + 底部按钮栏"""
-from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtCore import Qt, Signal, QSize, Slot
 from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                 QLabel, QFileDialog)
@@ -10,6 +10,7 @@ from qfluentwidgets import (TitleLabel, SubtitleLabel, BodyLabel, CaptionLabel, 
                             MessageBoxBase, LineEdit, ElevatedCardWidget, ScrollArea)
 
 from app.services.ame_workflow.ame_preset_service import preset_service, WorkflowInfo
+from app.services.ame_workflow.thumbnail_service import thumbnail_service
 
 
 class NameInputDialog(MessageBoxBase):
@@ -63,11 +64,11 @@ class WorkflowCard(ElevatedCardWidget):
         layout.addWidget(self._time_label)
 
     def _load_thumbnail(self):
-        pix = None
-        if self._info.thumbnail and self._info.thumbnail.exists():
-            pix = QPixmap(str(self._info.thumbnail))
-        if not pix or pix.isNull():
-            pix = QPixmap(':app/images/default_project.png')
+        self._thumbnail_active = True
+        self._thumbnail_key = None
+        self._thumbnail_service = thumbnail_service()
+        self._thumbnail_service.ready.connect(self._on_thumbnail_ready)
+        pix = QPixmap(':app/images/default_project.png')
         if pix and not pix.isNull():
             scaled = pix.scaled(184, 108, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
             if scaled.width() > 184 or scaled.height() > 108:
@@ -75,6 +76,20 @@ class WorkflowCard(ElevatedCardWidget):
                 y = (scaled.height() - 108) // 2
                 scaled = scaled.copy(x, y, 184, 108)
             self._thumb.setPixmap(scaled)
+        if self._info.thumbnail:
+            self._thumbnail_key = self._thumbnail_service.request(self._info.thumbnail)
+            cached = self._thumbnail_service.cached(self._thumbnail_key)
+            if cached is not None:
+                self._on_thumbnail_ready(self._thumbnail_key, *cached)
+
+    @Slot(object, object, str)
+    def _on_thumbnail_ready(self, key, image, error):
+        if self._thumbnail_active and key == self._thumbnail_key and image is not None:
+            self._thumb.setPixmap(QPixmap.fromImage(image))
+
+    def cancel_thumbnail(self):
+        self._thumbnail_active = False
+        self._thumbnail_service.ready.disconnect(self._on_thumbnail_ready)
 
     def info(self):
         return self._info
@@ -112,6 +127,10 @@ class AMELoaderPage(QWidget):
         self.setObjectName('AMELoaderPage')
         self._cards = []
         self._selected = None
+        self._pending_covers = {}
+        self._closing = False
+        self._thumbnail_service = thumbnail_service()
+        self._thumbnail_service.prepared.connect(self._on_cover_prepared)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 20, 0, 20)
@@ -187,6 +206,7 @@ class AMELoaderPage(QWidget):
         for card in self._cards:
             # deleteLater 不会立即移除布局项；先移除并隐藏，防止新旧卡片重叠。
             self._flow.removeWidget(card)
+            card.cancel_thumbnail()
             card.hide()
             card.deleteLater()
         self._cards.clear()
@@ -243,12 +263,38 @@ class AMELoaderPage(QWidget):
     def _on_card_thumb(self, info):
         path, _ = QFileDialog.getOpenFileName(self, self.tr('选择封面'), "", "Images (*.png *.jpg *.jpeg)")
         if path:
+            token = object()
+            self._pending_covers[info.name] = (token, preset_service.thumbnail_revision(info.name))
+            self._thumbnail_service.prepare(token, path)
+
+    @Slot(object, object, str)
+    def _on_cover_prepared(self, token, data, error):
+        if self._closing:
+            return
+        for name, (pending, revision) in list(self._pending_covers.items()):
+            if pending != token:
+                continue
+            del self._pending_covers[name]
+            if revision != preset_service.thumbnail_revision(name):
+                return  # 图片处理期间工作流已被重命名或删除。
             try:
-                preset_service.set_thumbnail(info.name, path)
-            except Exception as error:
-                self._file_error(self.tr('设置封面失败'), error)
+                if error:
+                    raise ValueError(error)
+                preset_service.set_thumbnail_data(name, data)
+            except Exception as exception:
+                self._file_error(self.tr('设置封面失败'), exception)
                 return
             self.load()
+            return
+
+    def shutdown(self):
+        if self._closing:
+            return
+        self._closing = True
+        self._pending_covers.clear()
+        self._thumbnail_service.prepared.disconnect(self._on_cover_prepared)
+        self._clear_cards()
+        self._thumbnail_service.shutdown()
 
     def _on_new(self):
         self.new_requested.emit()

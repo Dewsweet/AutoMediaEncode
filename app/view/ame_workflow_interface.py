@@ -184,6 +184,12 @@ class AMEWorkflowInterface(QWidget):
         self._current_workflow_name = name
         self._current_workflow_saved = True
         self._suggested_workflow_name = ''
+        if preset_service.last_thumbnail_error:
+            InfoBar.warning(title=self.tr('工作流已保存'),
+                            content=self.tr('封面更新失败: {error}').format(error=preset_service.last_thumbnail_error),
+                            orient=Qt.Horizontal, isClosable=True,
+                            position=InfoBarPosition.TOP, duration=8000, parent=self)
+            return
         InfoBar.success(title=self.tr('已保存'), content=self.tr('保存到: {name}').format(name=name),
                         orient=Qt.Horizontal, isClosable=True,
                         position=InfoBarPosition.TOP, duration=2000, parent=self)
@@ -411,6 +417,7 @@ class AMEWorkflowInterface(QWidget):
         if executor:
             executor.wait()
             self._finish_executor(executor)
+        self._loader.shutdown()
 
     def _find_output_class(self):
         from app.components.ame_workflow.nodes.io.output_node import OutputNode
