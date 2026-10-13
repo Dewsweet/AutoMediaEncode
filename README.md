@@ -1,44 +1,46 @@
-**| 简体中文 | [English](README_en.md) |**
+**| 简体中文 | [English](docs/README_en.md) |**
 
-# AutoMediaEncode(AME)
+# AutoMediaEncode (AME)
 <div align="center">
-  <img src="app/resource/images/logo_src.png" alt="AME Preview" width="40%">
+  <img src="app/resource/images/logo_src.png" alt="AME Logo" width="40%">
 </div>
 
-AME 是一款基于 PySide6 和 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 构建的媒体处理现代化 GUI 工具。
+AME 是一款面向 Windows 的媒体处理桌面软件，使用 PySide6 和 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 构建。
 
-可以算是 [AutoEncode-V](https://github.com/Dewsweet/AutoEncode-V) 的 GUI 版/升级版/ ProMax 版，将原本 Batch 脚本中的**媒体信息**、**视频转码**、**视频抽流**、**媒体混流**等重要功能 GUI 实现，并且参考 Comfui [NodeGraphQt](https://github.com/jchanvfx/NodeGraphQt) 实现了节点式工作流。
+可以算是 [AutoEncode-V](https://github.com/Dewsweet/AutoEncode-V) 的 GUI 版/升级版/ ProMax 版，将原本 Batch 脚本中的**媒体信息**、**视频转码**、**视频抽流**、**媒体混流**等重要功能 GUI 实现，并基于 [NodeGraphQt](https://github.com/jchanvfx/NodeGraphQt) 实现了节点式工作流，用于编排可重复执行的媒体处理流程。
 
 本项目~~是自用, 原本是不想记忆cli命令和反复查询文档, 用来快速处理日常编辑的视频文件~~。现旨在为不擅长使用命令行的用户提供快速简单的媒体处理功能，同时也为熟悉命令行操作的用户提供较复杂的工作流编辑体验。
 
 由于本人能力有限, 本项目部分代码使用 AI 编写, 有问题也可以提交 [issues](https://github.com/Dewsweet/AutoMediaEncode/issues)。
 
-## 主要特性
-- [x] **媒体信息**：调用 `Mediainfo` 获取输入文件的基本媒体信息，提供简易和详细两种展示文本。
-- [x] **媒体重编码**：调用 `FFmpeg` 对输入视频、音频、图片、字幕进行转码处理。视频支持 H.264/H.265/SVT-AV1 及常见显卡硬件加速编码 (NVENC 等)，可自定义相关 `ffmpeg` 参数。
-- [x] **媒体抽流**：参考 `gMKVExtractGUI` 的界面设计，调用 `mkvextract` 和 `ffmpeg` 对视频文件进行轨道提取。内置字幕子集化还原工具，勾选后可将子集化字幕对照字体映射表恢复为正常字幕后导出。
-- [x] **媒体混流**：参考 `mkvtoolnix-gui` 的界面设计，调用 `mkvmerge` 和 `ffmpeg` 对输入文件进行混流封装。考虑到 mkvmerge 参数繁多，仅启用了常用选项，有更多功能需求可提交 issues 或使用 mkvtoolnix-gui。
-- [x] **节点式工作流**：基于 NodeGraphQt 实现的节点式工作流编辑器，支持将转码、抽流、混流等功能模块化为节点进行流程编排。现已完善基本媒体编码处理，后续可以继续按功能新增更多节点类型。
-- [x] **任务监控系统**：并行任务队列，以卡片形式实时展示 FFmpeg 进度 (当前进度、总体进度、ETA)，支持健壮的报错与中止保护。
-- [x] **个性化与设置**：支持明/暗主题自适应、自定义主题色、自定义背景图片、编码器预设管理、工具路径配置等。
+## 主要功能
+
+- **媒体信息**：使用 MediaInfo 查看媒体文件的基本信息和详细报告。
+- **媒体重编码**：通过 FFmpeg 等工具处理视频、音频、图片和字幕；支持 x264、x265、SVT-AV1 及部分硬件编码器，并可设置编码参数和预设。
+- **媒体抽流**：使用 mkvextract 和 FFmpeg 提取媒体轨道；支持字幕子集化还原等处理选项。
+- **媒体混流**：使用 MKVToolNix（mkvmerge）和 FFmpeg 将视频、音频、字幕、章节及附件等轨道封装到媒体文件中。
+- **节点式工作流**：通过画布连接输入、轨道探测、处理、编码、封装和输出节点；支持保存、导入、导出工作流，并可执行、暂停或取消任务。初次上手可以阅读[AME 节点式工作流使用说明](docs/AME%20工作流使用说明.md)。
+- **任务监控**：查看任务状态、处理进度和预计剩余时间，并查看错误信息。
+- **界面设置**：支持简体中文和英文界面、明暗主题、主题色、背景图片、工具路径及编码器预设管理。
+
 
 ## 安装与运行
 
-### 方法一：Release 下载
-GUI 通过 Nuitka 打包构建为可执行文件。你可以在 [Releases](https://github.com/Dewsweet/AutoMediaEncode/releases) 下载压缩包，解压到合理位置即可直接运行。
+### 下载发行版
 
-如果你下载的是非完整包 (不含 CLI 工具)，可自行下载对应程序并放置到软件根目录下的 `tools/` 文件夹中，或添加到系统环境变量。
+AME 的图形界面通过 Nuitka 打包为可执行文件。前往 [Releases](https://github.com/Dewsweet/AutoMediaEncode/releases) 下载发行版并解压运行。部分媒体功能需要额外的命令行工具或动态库；请查看发行包说明，并在软件设置中配置工具路径，或将工具放入软件的 `tools/` 目录、加入系统 `PATH`。
 
-### 方法二：源码运行
-推荐使用 Python 3.10+ 及虚拟环境：
+### 从源码运行
 
-```bash
+AME 面向 Windows，源码运行需要 Python 3.10 或更高版本。建议使用虚拟环境：
+
+```powershell
 git clone https://github.com/Dewsweet/AutoMediaEncode.git
-cd AutoMediaEncode
+Set-Location AutoMediaEncode
 python -m venv .venv
-.\.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python main.py
+python AutoMediaEncode.py
 ```
 
 ## 鸣谢
@@ -46,7 +48,9 @@ python main.py
 - [FFmpeg](https://ffmpeg.org/)
 - [MediaInfo](https://mediaarea.net/)
 - [MKVToolNix](https://mkvtoolnix.download/)
-- x264 / x265 / SVT-AV1
+- x264、x265、SVT-AV1 视频编码器
+- qaac、flac 音频编码器
+- eac3to
 
 感谢以下社区与教程对多媒体处理知识的普及：
 - VCB-Studio 公开教程: [https://guides.vcb-s.com/](https://guides.vcb-s.com/)
